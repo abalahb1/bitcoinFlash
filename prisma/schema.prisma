@@ -1,0 +1,59 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["public"]
+}
+
+model User {
+  id                  String    @id @default(cuid())
+  name                String
+  email               String    @unique
+  phone               String?
+  password            String
+  wallet_balance_usdt Float     @default(0.00)
+  wallet_balance_btc  Float     @default(0.00)
+  wallet_ref          String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  payments            Payment[]
+
+  @@schema("public")
+}
+
+model Package {
+  id          String   @id @default(cuid())
+  name        String
+  usdt_amount String
+  btc_amount  String
+  price_usd   Float
+  duration    Int      @default(45)
+  transfers   Int      @default(27)
+  payments    Payment[]
+
+  @@schema("public")
+}
+
+model Payment {
+  id          String   @id @default(cuid())
+  user_id     String
+  package_id  String
+  buyer_wallet String
+  status      String   @default("pending")
+  created_at  Int
+  user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  package     Package  @relation(fields: [package_id], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@schema("public")
+}
