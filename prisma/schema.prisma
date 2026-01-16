@@ -28,7 +28,8 @@ model User {
   usdt_trc20_address  String?   // عنوان USDT TRC20
   kyc_passport_url    String?   // مسار جواز السفر
   kyc_selfie_url      String?   // مسار السيلفي
-  kyc_status          String    @default("pending") // pending, approved, rejected
+  kyc_status          String    @default("none") // none, pending, approved, rejected
+  is_verified         Boolean   @default(false)  // Admin-controlled verification status
   commission_wallet   String?   // عنوان محفظة العمولات
   
   createdAt           DateTime  @default(now())

@@ -57,16 +57,19 @@ export async function POST(request: NextRequest) {
         wallet_balance_usdt: user.wallet_balance_usdt,
         wallet_balance_btc: user.wallet_balance_btc,
         wallet_ref: user.wallet_ref,
+        kyc_status: user.kyc_status,
+        is_verified: user.is_verified,
         createdAt: user.createdAt,
       }
     })
 
-    // Set httpOnly cookie
+    // Set persistent httpOnly cookie
     response.cookies.set('auth-token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
+      path: '/',
+      maxAge: 60 * 60 * 24 * 7, // 7 days (seconds)
     })
 
     return response

@@ -152,21 +152,22 @@ bot.action('wizard_add_user', (ctx) => {
 
 bot.action('list_users', async (ctx) => {
     const users = await prisma.user.findMany({ take: 10, orderBy: { createdAt: 'desc' } })
-    
     if (users.length === 0) {
-        return ctx.editMessageText('👥 No users found.', { ...Markup.inlineKeyboard([[Markup.button.callback('⬅️ Back', 'menu_users')]]) })
+        await ctx.answerCbQuery('No users found')
+        return
     }
-
-    // Since we can't show infinite lists cleanly in one msg, we show last 10
-    // And provide delete buttons
-    
     for (const u of users) {
+        const verifyBtn = u.is_verified 
+            ? Markup.button.callback('✅ Verified', `toggle_verify_${u.id}`)
+            : Markup.button.callback('❌ Not Verified', `toggle_verify_${u.id}`)
+        
         await ctx.reply(
-            `👤 *${u.name}*\n📧 ${u.email}\n💳 Balance: ${u.wallet_balance_usdt} USDT`,
+            `👤 *${u.name}*\n📧 ${u.email}\n💰 USDT: $${u.wallet_balance_usdt}\n🆔 \`${u.id}\`\n${u.is_verified ? '✅ Account Verified' : '❌ Not Verified'}`,
             {
                 parse_mode: 'Markdown',
                 ...Markup.inlineKeyboard([
-                    Markup.button.callback('❌ Delete', `delete_user_${u.email}`)
+                    [verifyBtn],
+                    [Markup.button.callback('🗑 Delete', `delete_user_${u.email}`)]
                 ])
             }
         )
@@ -179,11 +180,46 @@ bot.action(/^delete_user_(.+)$/, async (ctx) => {
     try {
         await prisma.user.delete({ where: { email } })
         await ctx.answerCbQuery('User deleted')
-        await ctx.deleteMessage() // Remove user card
+        await ctx.deleteMessage()
     } catch (e) {
         await ctx.answerCbQuery('Failed to delete')
     }
 })
+
+bot.action(/^toggle_verify_(.+)$/, async (ctx) => {
+    const id = ctx.match[1]
+    try {
+        const user = await prisma.user.findUnique({ where: { id } })
+        if (!user) {
+            await ctx.answerCbQuery('User not found')
+            return
+        }
+        
+        const newStatus = !user.is_verified
+        await prisma.user.update({ 
+            where: { id }, 
+            data: { is_verified: newStatus } 
+        })
+        
+        await ctx.answerCbQuery(newStatus ? '✅ Verified' : '❌ Unverified')
+        await ctx.editMessageText(
+            `👤 *${user.name}*\n📧 ${user.email}\n💰 USDT: $${user.wallet_balance_usdt}\n🆔 \`${id}\`\n${newStatus ? '✅ Account Verified' : '❌ Not Verified'}`,
+            {
+                parse_mode: 'Markdown',
+                ...Markup.inlineKeyboard([
+                    [newStatus 
+                        ? Markup.button.callback('✅ Verified', `toggle_verify_${id}`)
+                        : Markup.button.callback('❌ Not Verified', `toggle_verify_${id}`)
+                    ],
+                    [Markup.button.callback('🗑 Delete', `delete_user_${user.email}`)]
+                ])
+            }
+        )
+    } catch (e) {
+        await ctx.answerCbQuery('Failed to update')
+    }
+})
+
 
 
 // --- FINANCE MODULE ---
@@ -288,18 +324,22 @@ bot.action('menu_kyc', async (ctx) => {
     
     if (kycs.length === 0) {
         await ctx.answerCbQuery('No pending KYC')
+        await ctx.reply('✅ No pending KYC requests', Markup.inlineKeyboard([[Markup.button.callback('⬅️ Back', 'menu_main')]]))
         return
     }
     
     for (const u of kycs) {
         await ctx.reply(
-            `🆔 *KYC Request*\n${u.name}\n${u.email}`,
+            `🆔 *KYC Request*\n\n` +
+            `👤 Name: ${u.name}\n` +
+            `📧 Email: ${u.email}\n` +
+            `🆔 ID: \`${u.id}\`\n\n` +
+            `📄 Status: Pending Review`,
             {
                 parse_mode: 'Markdown',
                 ...Markup.inlineKeyboard([
-                    Markup.button.callback('See Docs (Passport)', `see_pass_${u.id}`),
-                    Markup.button.callback('✅ Approve', `kyc_app_${u.id}`),
-                    Markup.button.callback('❌ Reject', `kyc_rej_${u.id}`)
+                    [Markup.button.callback('📄 View Passport', `see_pass_${u.id}`), Markup.button.callback('🤳 View Selfie', `see_selfie_${u.id}`)],
+                    [Markup.button.callback('✅ Approve KYC', `kyc_app_${u.id}`), Markup.button.callback('❌ Reject KYC', `kyc_rej_${u.id}`)]
                 ])
             }
         )
@@ -330,17 +370,50 @@ bot.action(/^see_pass_(.+)$/, async (ctx) => {
     }
 })
 
+// View Selfie Handler
+bot.action(/^see_selfie_(.+)$/, async (ctx) => {
+    const id = ctx.match[1]
+    const u = await prisma.user.findUnique({ where: { id } })
+    if (u && u.kyc_selfie_url) {
+        try {
+            // Check if it's base64
+            if (u.kyc_selfie_url.startsWith('data:')) {
+                const base64Data = u.kyc_selfie_url.split(',')[1]
+                const buffer = Buffer.from(base64Data, 'base64')
+                await ctx.replyWithPhoto({ source: buffer })
+            } else {
+                // Fallback for old file urls
+                const p = path.join(process.cwd(), 'public', u.kyc_selfie_url)
+                if(fs.existsSync(p)) await ctx.replyWithPhoto({ source: p })
+                else await ctx.reply(`Image URL: ${u.kyc_selfie_url}`)
+            }
+        } catch (e) {
+            await ctx.reply('❌ Error rendering selfie')
+        }
+    } else {
+        await ctx.reply('No selfie uploaded')
+    }
+})
+
+
+
 bot.action(/^kyc_app_(.+)$/, async (ctx) => {
     const id = ctx.match[1]
+    const user = await prisma.user.findUnique({ where: { id } })
+    
     await prisma.user.update({ where: { id }, data: { kyc_status: 'approved' } })
     await ctx.answerCbQuery('Approved')
     await ctx.deleteMessage()
+    await ctx.reply(`✅ *KYC Approved* for ${user?.name}\n\nUser has been notified.`, { parse_mode: 'Markdown' })
 })
 bot.action(/^kyc_rej_(.+)$/, async (ctx) => {
      const id = ctx.match[1]
+     const user = await prisma.user.findUnique({ where: { id } })
+     
     await prisma.user.update({ where: { id }, data: { kyc_status: 'rejected' } })
     await ctx.answerCbQuery('Rejected')
     await ctx.deleteMessage()
+    await ctx.reply(`❌ *KYC Rejected* for ${user?.name}\n\nUser has been notified to resubmit.`, { parse_mode: 'Markdown' })
 })
 
 // --- STATS ---
