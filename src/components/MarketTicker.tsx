@@ -9,10 +9,10 @@ interface CryptoData {
   price: string
   change: number
   volume: string
-  chart: string // Dummy path for mini chart svg
+  chart: string
 }
 
-const MARKET_DATA: CryptoData[] = [
+const INITIAL_MARKET_DATA: CryptoData[] = [
   { symbol: 'BTC/USDT', price: '95,607.00', change: 1.2, volume: '42.5B', chart: '↗' },
   { symbol: 'ETH/USDT', price: '3,317.80', change: -0.8, volume: '18.2B', chart: '↘' },
   { symbol: 'BNB/USDT', price: '932.84', change: 2.5, volume: '2.1B', chart: '↗' },
@@ -22,16 +22,47 @@ const MARKET_DATA: CryptoData[] = [
 ]
 
 export function TopTicker() {
+  const [marketData, setMarketData] = useState<CryptoData[]>(INITIAL_MARKET_DATA)
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setMarketData(prevData => 
+        prevData.map(coin => {
+          // Random price fluctuation between -0.5% to +0.5%
+          const priceNum = parseFloat(coin.price.replace(/,/g, ''))
+          const fluctuation = (Math.random() - 0.5) * 0.01 // -0.5% to +0.5%
+          const newPrice = priceNum * (1 + fluctuation)
+          
+          // Random change fluctuation
+          const changeFluctuation = (Math.random() - 0.5) * 0.2 // -0.1 to +0.1
+          const newChange = parseFloat((coin.change + changeFluctuation).toFixed(2))
+          
+          return {
+            ...coin,
+            price: newPrice.toLocaleString('en-US', { 
+              minimumFractionDigits: 2, 
+              maximumFractionDigits: 2 
+            }),
+            change: newChange,
+            chart: newChange >= 0 ? '↗' : '↘'
+          }
+        })
+      )
+    }, 2000) // Update every 2 seconds
+
+    return () => clearInterval(interval)
+  }, [])
+
   return (
     <div className="w-full bg-[#050510] border-b border-white/5 h-10 flex items-center overflow-hidden relative z-50">
       <div className="flex animate-ticker whitespace-nowrap">
-        {[...MARKET_DATA, ...MARKET_DATA, ...MARKET_DATA].map((coin, i) => (
+        {[...marketData, ...marketData, ...marketData].map((coin, i) => (
           <div key={i} className="flex items-center gap-4 px-6 border-r border-white/5 text-xs font-mono">
             <span className="text-gray-400 font-bold">{coin.symbol}</span>
             <span className="text-white font-medium">{coin.price}</span>
             <span className={`flex items-center gap-1 ${coin.change >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
               {coin.change >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-              {Math.abs(coin.change)}%
+              {Math.abs(coin.change).toFixed(1)}%
             </span>
           </div>
         ))}
@@ -42,15 +73,46 @@ export function TopTicker() {
   )
 }
 
+
 export function HeroMarketSlides() {
+  const [marketData, setMarketData] = useState<CryptoData[]>(INITIAL_MARKET_DATA)
   const [currentIndex, setCurrentIndex] = useState(0)
 
+  // Update prices
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setMarketData(prevData => 
+        prevData.map(coin => {
+          const priceNum = parseFloat(coin.price.replace(/,/g, ''))
+          const fluctuation = (Math.random() - 0.5) * 0.01
+          const newPrice = priceNum * (1 + fluctuation)
+          
+          const changeFluctuation = (Math.random() - 0.5) * 0.2
+          const newChange = parseFloat((coin.change + changeFluctuation).toFixed(2))
+          
+          return {
+            ...coin,
+            price: newPrice.toLocaleString('en-US', { 
+              minimumFractionDigits: 2, 
+              maximumFractionDigits: 2 
+            }),
+            change: newChange,
+            chart: newChange >= 0 ? '↗' : '↘'
+          }
+        })
+      )
+    }, 2000)
+
+    return () => clearInterval(interval)
+  }, [])
+
+  // Slide rotation
   useEffect(() => {
     const timer = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % MARKET_DATA.length)
+      setCurrentIndex((prev) => (prev + 1) % marketData.length)
     }, 4000)
     return () => clearInterval(timer)
-  }, [])
+  }, [marketData.length])
 
   return (
     <div className="w-full py-4 bg-gradient-to-r from-[#050510]/80 via-[#0a0a1f]/80 to-[#050510]/80 backdrop-blur-sm border-y border-white/5">
@@ -84,18 +146,18 @@ export function HeroMarketSlides() {
                className="absolute inset-0 flex items-center justify-between px-6 bg-white/5 rounded-xl border border-white/10"
              >
                 <div className="flex items-center gap-3">
-                   <div className={`p-2 rounded-lg ${MARKET_DATA[currentIndex].change >= 0 ? 'bg-emerald-500/10' : 'bg-red-500/10'}`}>
-                      <BarChart2 className={`w-5 h-5 ${MARKET_DATA[currentIndex].change >= 0 ? 'text-emerald-400' : 'text-red-400'}`} />
+                   <div className={`p-2 rounded-lg ${marketData[currentIndex].change >= 0 ? 'bg-emerald-500/10' : 'bg-red-500/10'}`}>
+                      <BarChart2 className={`w-5 h-5 ${marketData[currentIndex].change >= 0 ? 'text-emerald-400' : 'text-red-400'}`} />
                    </div>
                    <div>
-                      <h3 className="text-white font-bold text-sm tracking-wide">{MARKET_DATA[currentIndex].symbol}</h3>
-                      <p className="text-xs text-gray-500">Vol: {MARKET_DATA[currentIndex].volume}</p>
+                      <h3 className="text-white font-bold text-sm tracking-wide">{marketData[currentIndex].symbol}</h3>
+                      <p className="text-xs text-gray-500">Vol: {marketData[currentIndex].volume}</p>
                    </div>
                 </div>
                 <div className="text-right">
-                   <div className="text-white font-mono font-bold text-lg">{MARKET_DATA[currentIndex].price}</div>
-                   <div className={`text-xs font-medium ${MARKET_DATA[currentIndex].change >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                      {MARKET_DATA[currentIndex].change > 0 ? '+' : ''}{MARKET_DATA[currentIndex].change}%
+                   <div className="text-white font-mono font-bold text-lg">{marketData[currentIndex].price}</div>
+                   <div className={`text-xs font-medium ${marketData[currentIndex].change >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                      {marketData[currentIndex].change > 0 ? '+' : ''}{marketData[currentIndex].change.toFixed(1)}%
                    </div>
                 </div>
              </motion.div>
