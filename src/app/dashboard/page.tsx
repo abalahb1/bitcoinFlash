@@ -284,10 +284,10 @@ function Navbar({ currentView, setCurrentView, onLogout }: {
             onClick={() => setCurrentView('landing')}
             className="flex items-center gap-3 text-2xl font-bold text-white hover:text-cyan-400 transition-colors"
           >
-            <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-full bg-[#F7931A] flex items-center justify-center">
               <Bitcoin className="w-5 h-5 text-white" />
             </div>
-            <span className="tracking-wider uppercase hidden md:inline">BitcoinFlash</span>
+            <span className="tracking-wider uppercase hidden md:inline">Bitcoin Flash</span>
             <span className="tracking-wider uppercase md:hidden">Flash</span>
           </button>
 
@@ -315,8 +315,8 @@ function Navbar({ currentView, setCurrentView, onLogout }: {
               <SheetContent side="right" className="bg-[#0a0a1f] border-white/10 w-[80%]">
                  <SheetHeader className="mb-6 text-left">
                     <SheetTitle className="text-white flex items-center gap-2">
-                       <Bitcoin className="w-6 h-6 text-orange-500" />
-                       BitcoinFlash
+                       <Bitcoin className="w-6 h-6 text-[#F7931A]" />
+                       Bitcoin Flash
                     </SheetTitle>
                  </SheetHeader>
                  <div className="flex flex-col gap-2">
@@ -369,21 +369,24 @@ function LandingView({ setCurrentView }: { setCurrentView: (view: View) => void 
       <HeroMarketSlides />
 
       <div className="text-center space-y-8 max-w-4xl mx-auto py-8">
-        <Badge variant="outline" className="border-orange-500/30 text-orange-400 px-4 py-1.5 rounded-full uppercase tracking-widest text-xs bg-orange-500/5 backdrop-blur-sm">
-           <Bitcoin className="w-3 h-3 mr-2 fill-orange-400" />
-           BitcoinFlash Protocol V3
+        <Badge variant="outline" className="border-[#F7931A]/30 text-[#F7931A] px-4 py-1.5 rounded-full uppercase tracking-widest text-xs bg-[#F7931A]/5 backdrop-blur-sm">
+           <Bitcoin className="w-3 h-3 mr-2 fill-[#F7931A]" />
+           Bitcoin Flash Protocol V3
         </Badge>
         <h1 className="text-5xl md:text-7xl font-bold text-white tracking-tight leading-tight">
            Generate Non-Spendable <br/>
-           <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-500">USDT Flash Tokens</span>
+           <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#F7931A] to-yellow-500">Flash Bitcoin (BTC)</span>
         </h1>
         <p className="text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed">
-           Advanced simulation software for institutional testing. 
-           Tokens appear on-chain with full confirmation validity for limited duration.
+           Advanced simulation software generating Flash Bitcoin tokens supported by major wallets.
+           <span className="block mt-2 text-white font-medium">
+             Supports: Binance, Coinbase, MetaMask
+           </span>
+           <span className="text-sm text-gray-500 mt-1 block">(More exchanges coming soon)</span>
         </p>
         
         <div className="flex flex-wrap justify-center gap-6 pt-4">
-           <Button onClick={() => setCurrentView('packages')} className="h-14 px-10 text-lg rounded-full bg-orange-500 text-black hover:bg-orange-400 shadow-[0_0_40px_rgba(249,115,22,0.3)] transition-all hover:scale-105 font-bold">
+           <Button onClick={() => setCurrentView('packages')} className="h-14 px-10 text-lg rounded-full bg-[#F7931A] text-black hover:bg-[#F7931A]/90 shadow-[0_0_40px_rgba(247,147,26,0.3)] transition-all hover:scale-105 font-bold">
               <Bitcoin className="mr-2 w-5 h-5 fill-black" /> Get Flash Limit
            </Button>
            <Button variant="outline" onClick={() => setCurrentView('account')} className="h-14 px-10 text-lg rounded-full border-white/20 text-white hover:bg-white/10 hover:border-white/30 backdrop-blur-sm">
@@ -400,7 +403,7 @@ function LandingView({ setCurrentView }: { setCurrentView: (view: View) => void 
              { label: "Traceability", value: "0%", icon: Shield }
           ].map((stat, i) => (
              <div key={i} className="text-center p-8 bg-[#0a0a1f]/50 hover:bg-white/5 transition-colors group">
-                <stat.icon className="w-6 h-6 text-gray-500 mx-auto mb-4 group-hover:text-orange-400 transition-colors" />
+                <stat.icon className="w-6 h-6 text-gray-500 mx-auto mb-4 group-hover:text-[#F7931A] transition-colors" />
                 <div className="text-3xl font-bold text-white mb-1 group-hover:scale-110 transition-transform">{stat.value}</div>
                 <div className="text-xs text-gray-500 uppercase tracking-widest font-medium">{stat.label}</div>
              </div>

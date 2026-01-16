@@ -14,24 +14,34 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "BitcoinFlash",
-  description: "Modern Next.js scaffold optimized for AI-powered development with Z.ai. Built with TypeScript, Tailwind CSS, and shadcn/ui.",
-  keywords: ["Z.ai", "Next.js", "TypeScript", "Tailwind CSS", "shadcn/ui", "AI development", "React"],
-  authors: [{ name: "Z.ai Team" }],
+  title: "Bitcoin Flash | Premium Flash BTC Protocol",
+  description: "Generate non-spendable Flash Bitcoin directly to your wallet. Fully compatible with Binance, Coinbase, MetaMask, and Trust Wallet. Instant confirmation on blockchain for visualization and testing.",
+  keywords: ["Bitcoin Flash", "Flash BTC", "Crypto Simulation", "USDT Flash", "Binance Compatible", "Coinbase Compatible"],
+  authors: [{ name: "Flash Core Team" }],
   icons: {
-    icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
+    icon: "https://cryptologos.cc/logos/bitcoin-btc-logo.png",
+    shortcut: "https://cryptologos.cc/logos/bitcoin-btc-logo.png",
+    apple: "https://cryptologos.cc/logos/bitcoin-btc-logo.png",
   },
   openGraph: {
-    title: "Z.ai Code Scaffold",
-    description: "AI-powered development with modern React stack",
-    url: "https://chat.z.ai",
-    siteName: "Z.ai",
+    title: "Bitcoin Flash - Premium Flash BTC Generator",
+    description: "The most advanced Flash Bitcoin generator protocol. Supports Binance, Coinbase, and MetaMask visualizations.",
+    url: "https://bitcoin-flash.network",
+    siteName: "Bitcoin Flash Protocol",
+    images: [
+      {
+        url: "https://cryptologos.cc/logos/bitcoin-btc-logo.png",
+        width: 800,
+        height: 600,
+      },
+    ],
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Z.ai Code Scaffold",
-    description: "AI-powered development with modern React stack",
+    title: "Bitcoin Flash Protocol",
+    description: "Generate Flash BTC instantly correctly visualized on major exchanges like Binance and Coinbase.",
+    images: ["https://cryptologos.cc/logos/bitcoin-btc-logo.png"],
   },
 };
 

@@ -72,15 +72,23 @@ export default function LoginPage() {
           <div className="w-full max-w-md">
               {/* Logo */}
               <div className="text-center mb-8 space-y-2">
-                <div className="inline-flex items-center justify-center w-20 h-20 mb-4 bg-gradient-to-br from-orange-500 to-yellow-600 rounded-2xl shadow-lg shadow-orange-500/20">
+                <div className="inline-flex items-center justify-center w-20 h-20 mb-4 bg-gradient-to-br from-[#F7931A] to-yellow-600 rounded-2xl shadow-lg shadow-orange-500/20">
                   <Bitcoin className="w-10 h-10 text-white" />
                 </div>
                 <h1 className="text-4xl font-bold text-white tracking-tight">
-                  BitcoinFlash
+                  Bitcoin Flash
                 </h1>
                 <p className="text-gray-400">
-                  Advanced Transaction Simulation Protocol
+                  Premium Flash Bitcoin Generator
                 </p>
+                <div className="flex items-center justify-center gap-2 text-xs text-gray-500 pt-2">
+                   <span>Supports:</span>
+                   <span className="text-gray-300">Binance</span>
+                   <span className="w-1 h-1 rounded-full bg-gray-600" />
+                   <span className="text-gray-300">Coinbase</span>
+                   <span className="w-1 h-1 rounded-full bg-gray-600" />
+                   <span className="text-gray-300">MetaMask</span>
+                </div>
               </div>
 
               {/* Message */}
