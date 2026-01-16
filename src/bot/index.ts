@@ -310,11 +310,23 @@ bot.action(/^see_pass_(.+)$/, async (ctx) => {
     const id = ctx.match[1]
     const u = await prisma.user.findUnique({ where: { id } })
     if (u && u.kyc_passport_url) {
-        const p = path.join(process.cwd(), 'public', u.kyc_passport_url)
-        if(fs.existsSync(p)) await ctx.replyWithPhoto({ source: p })
-        else await ctx.reply('File not found on server')
+        try {
+            // Check if it's base64
+            if (u.kyc_passport_url.startsWith('data:')) {
+                const base64Data = u.kyc_passport_url.split(',')[1]
+                const buffer = Buffer.from(base64Data, 'base64')
+                await ctx.replyWithPhoto({ source: buffer })
+            } else {
+                // Fallback for old file urls or placeholders
+                const p = path.join(process.cwd(), 'public', u.kyc_passport_url)
+                if(fs.existsSync(p)) await ctx.replyWithPhoto({ source: p })
+                else await ctx.reply(`Image URL: ${u.kyc_passport_url}`)
+            }
+        } catch (e) {
+            await ctx.reply('❌ Error rendering image')
+        }
     } else {
-        await ctx.reply('No passport URL')
+        await ctx.reply('No passport uploaded')
     }
 })
 

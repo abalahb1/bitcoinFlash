@@ -12,6 +12,7 @@ import type { User as UserType, Package as PackageType, Payment } from '@prisma/
 import { TopTicker, HeroMarketSlides } from '@/components/MarketTicker'
 import { WalletEnhancements } from '@/components/WalletEnhancements'
 import { AccountSettings } from '@/components/AccountSettings'
+import { KYCBlockingModal } from '@/components/KYCBlockingModal'
 
 type View = 'auth' | 'landing' | 'packages' | 'wallet' | 'payment' | 'account' | 'history'
 
@@ -212,6 +213,13 @@ export default function Home() {
           setCurrentView={setCurrentView}
           onLogout={handleLogout}
         />
+
+        {/* KYC Lock */}
+        {user && user.kyc_status !== 'approved' && (
+           <div className="relative z-50">
+             <KYCBlockingModal status={user.kyc_status as any} userId={user.id} />
+           </div>
+        )}
 
         <main className="flex-1 container mx-auto px-4 py-8">
           {message && (
