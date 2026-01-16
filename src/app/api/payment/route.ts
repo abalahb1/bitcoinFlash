@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { jwtVerify } from 'jose'
+import { sendTelegramMessage } from '@/lib/telegram'
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'your-secret-key-change-in-production')
 
@@ -26,6 +27,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const user = await db.user.findUnique({ where: { id: userId } })
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
     const body = await request.json()
     const { package_id, buyer_wallet } = body
 
@@ -48,9 +54,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check for recent pending payment
-    const now = Math.floor(Date.now() / 1000)
-    const oneHourAgo = now - 3600
+    // Check for recent pending payment (last 1 hour)
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000)
 
     const existingPayment = await db.payment.findFirst({
       where: {
@@ -67,21 +72,33 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Parse amount from package (remove commas)
+    const amount = parseFloat(pkg.usdt_amount.replace(/,/g, ''))
+    const commission = amount * 0.10 // 10% commission
+
     // Create payment
     const payment = await db.payment.create({
       data: {
         user_id: userId,
         package_id,
         buyer_wallet,
+        amount: amount,
+        commission: commission,
         status: 'pending',
-        created_at: now,
+        // created_at is default now() handled by Prisma default
       }
     })
 
-    return NextResponse.json({
-      message: 'Payment submitted successfully',
-      payment
-    })
+    // Notify Admin via Telegram
+    await sendTelegramMessage(
+      `💰 *New Payment Request*\n` +
+      `User: ${user.name}\n` +
+      `Amount: ${pkg.usdt_amount} USDT\n` +
+      `Package: ${pkg.name}\n` +
+      `Action: Check bot menu /payments to confirm.`
+    )
+
+    return NextResponse.json({ success: true, paymentId: payment.id })
   } catch (error) {
     console.error('Payment error:', error)
     return NextResponse.json(

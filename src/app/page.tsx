@@ -7,19 +7,13 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
-import { Loader2, Wallet, Copy, CheckCircle2, Bitcoin, Zap, Shield, Clock, ArrowRight, User, LayoutDashboard, Package, LogOut, ChevronRight, Terminal, Activity } from 'lucide-react'
+import { Loader2, Wallet, Copy, CheckCircle2, Bitcoin, Zap, Shield, Clock, ArrowRight, User, LayoutDashboard, Package, LogOut, ChevronRight, Terminal, Activity, BarChart2, History, Trash2 } from 'lucide-react'
 import type { User as UserType, Package as PackageType, Payment } from '@prisma/client'
-import { GlitchText } from '@/components/effects/GlitchText'
-import { TypingText } from '@/components/effects/TypingText'
-import { Scanlines } from '@/components/effects/Scanlines'
-import { BinaryParticles } from '@/components/effects/BinaryParticles'
-import { HexagonGrid } from '@/components/effects/HexagonGrid'
-import { CyberBorder } from '@/components/effects/CyberBorder'
-import { PulseRing } from '@/components/effects/PulseRing'
-import { DigitalOperations } from '@/components/effects/DigitalOperations'
-import { FloatingCryptoCoins, TradingPairsAnimation } from '@/components/CryptoAnimations'
+import { TopTicker, HeroMarketSlides } from '@/components/MarketTicker'
+import { WalletEnhancements } from '@/components/WalletEnhancements'
+import { AccountSettings } from '@/components/AccountSettings'
 
-type View = 'auth' | 'landing' | 'packages' | 'wallet' | 'payment'
+type View = 'auth' | 'landing' | 'packages' | 'wallet' | 'payment' | 'account' | 'history'
 
 const SELLER_WALLET = "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh"
 
@@ -177,21 +171,28 @@ export default function Home() {
   // ===== AUTH VIEW =====
   if (currentView === 'auth') {
     return (
-      <div className="min-h-screen flex flex-col bg-gradient-to-br from-[#050510] via-[#0a0a1f] to-[#050510] relative overflow-hidden">
-        {/* Hacker Effects */}
-        <DigitalOperations maxOperations={12} color="#00f3ff" />
-        <BinaryParticles count={15} size={10} color="#00f3ff" />
-        <HexagonGrid opacity={0.015} />
-        <Scanlines opacity={0.02} />
-        {/* Crypto Animations */}
-        <FloatingCryptoCoins count={15} />
-        <TradingPairsAnimation count={6} />
-        <div className="relative z-10">
-          <AuthView
-            onLogin={handleLogin}
-            loading={loading}
-            message={message}
-          />
+      <div className="min-h-screen flex flex-col bg-[#050510] relative overflow-hidden">
+        {/* Professional Background */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#02020a] to-[#0a0a1f] z-0" />
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 z-0 mix-blend-soft-light" />
+        <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-cyan-500/5 rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-purple-500/5 rounded-full blur-[100px] pointer-events-none" />
+        
+        {/* Market Ticker */}
+        <div className="h-10">
+           <TopTicker />
+        </div>
+        
+        <div className="relative z-10 flex-1 flex flex-col pt-10">
+          <HeroMarketSlides />
+          
+          <div className="flex-1 flex items-center justify-center p-4">
+            <AuthView
+                onLogin={handleLogin}
+                loading={loading}
+                message={message}
+            />
+          </div>
         </div>
       </div>
     )
@@ -200,16 +201,12 @@ export default function Home() {
   // ===== MAIN APP WITH NAVBAR =====
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-[#050510] via-[#0a0a1f] to-[#050510] relative overflow-hidden">
-      {/* Hacker Effects */}
-      <DigitalOperations maxOperations={15} color="#00f3ff" />
-      <BinaryParticles count={18} size={10} color="#00f3ff" />
-      <HexagonGrid opacity={0.015} />
-      <Scanlines opacity={0.02} />
-      {/* Crypto Animations */}
-      <FloatingCryptoCoins count={20} />
-      <TradingPairsAnimation count={8} />
-
+      {/* Background */}
+      <div className="absolute inset-0 bg-gradient-to-b from-[#02020a] to-[#0a0a1f] z-0 pointer-events-none" />
+      <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 z-0 mix-blend-soft-light pointer-events-none" />
+      
       <div className="relative z-10">
+        <TopTicker />
         <Navbar
           currentView={currentView}
           setCurrentView={setCurrentView}
@@ -238,6 +235,8 @@ export default function Home() {
             />
           )}
           {currentView === 'wallet' && <WalletView user={user} />}
+          {currentView === 'account' && <AccountView user={user} />}
+          {currentView === 'history' && <HistoryView user={user} />}
           {currentView === 'payment' && selectedPackage && (
             <PaymentView
               pkg={selectedPackage}
@@ -266,18 +265,17 @@ function Navbar({ currentView, setCurrentView, onLogout }: {
   onLogout: () => void
 }) {
   return (
-    <nav className="sticky top-0 z-50 border-b border-cyan-500/20 bg-[#0a0a1f]/95 backdrop-blur-md">
+    <nav className="sticky top-0 z-40 border-b border-white/5 bg-[#0a0a1f]/80 backdrop-blur-md">
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           <button
             onClick={() => setCurrentView('landing')}
-            className="flex items-center gap-3 text-2xl font-bold text-cyan-400 hover:text-cyan-300 transition-colors"
+            className="flex items-center gap-3 text-2xl font-bold text-white hover:text-cyan-400 transition-colors"
           >
-            <div className="relative">
-              <PulseRing maxRings={2} color="#00f3ff" />
-              <Bitcoin className="w-8 h-8" />
+            <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center">
+              <Bitcoin className="w-5 h-5 text-white" />
             </div>
-            <span className="tracking-wider uppercase"><GlitchText text="Bitcoin Flash" /></span>
+            <span className="tracking-wider uppercase">BitcoinFlash</span>
           </button>
 
           <div className="hidden md:flex items-center gap-1">
@@ -286,14 +284,14 @@ function Navbar({ currentView, setCurrentView, onLogout }: {
               onClick={() => setCurrentView('landing')}
               icon={<LayoutDashboard className="w-4 h-4" />}
             >
-              Home
+              Dashboard
             </NavButton>
             <NavButton
               active={currentView === 'packages'}
               onClick={() => setCurrentView('packages')}
-              icon={<Package className="w-4 h-4" />}
+              icon={<Zap className="w-4 h-4" />}
             >
-              Packages
+              Flash Limits
             </NavButton>
             <NavButton
               active={currentView === 'wallet'}
@@ -302,25 +300,27 @@ function Navbar({ currentView, setCurrentView, onLogout }: {
             >
               Wallet
             </NavButton>
+            <NavButton
+              active={currentView === 'account'}
+              onClick={() => setCurrentView('account')}
+              icon={<User className="w-4 h-4" />}
+            >
+              Agent
+            </NavButton>
+            <NavButton
+              active={currentView === 'history'}
+              onClick={() => setCurrentView('history')}
+              icon={<History className="w-4 h-4" />}
+            >
+              Log
+            </NavButton>
             <Button
               variant="ghost"
               onClick={onLogout}
               className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
             >
               <LogOut className="w-4 h-4 mr-2" />
-              Logout
-            </Button>
-          </div>
-
-          {/* Mobile menu button */}
-          <div className="md:hidden flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onLogout}
-              className="text-red-400"
-            >
-              <LogOut className="w-5 h-5" />
+              Disconnect
             </Button>
           </div>
         </div>
@@ -341,8 +341,8 @@ function NavButton({ active, onClick, children, icon }: {
       onClick={onClick}
       className={`${
         active
-          ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50 hover:bg-cyan-500/30'
-          : 'text-gray-400 hover:text-cyan-400 hover:bg-cyan-500/10'
+          ? 'bg-emerald-600 text-white shadow hover:bg-emerald-500'
+          : 'text-gray-400 hover:text-white hover:bg-white/5'
       }`}
     >
       {icon}
@@ -365,19 +365,17 @@ function AuthView({ onLogin, loading, message }: {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md">
+    <div className="w-full max-w-md">
         {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 mb-4 bg-cyan-500/20 rounded-full border border-cyan-500/50 relative">
-            <PulseRing maxRings={3} color="#00f3ff" />
-            <Bitcoin className="w-10 h-10 text-cyan-400" />
+        <div className="text-center mb-8 space-y-2">
+          <div className="inline-flex items-center justify-center w-20 h-20 mb-4 bg-gradient-to-br from-orange-500 to-yellow-600 rounded-2xl shadow-lg shadow-orange-500/20">
+            <Bitcoin className="w-10 h-10 text-white" />
           </div>
-          <h1 className="text-4xl font-bold text-cyan-400 tracking-wider uppercase mb-2">
-            <GlitchText text="Bitcoin Flash" />
+          <h1 className="text-4xl font-bold text-white tracking-tight">
+            BitcoinFlash
           </h1>
-          <p className="text-gray-400 font-mono">
-            <TypingText text="Secure. Fast. Advanced." speed={80} />
+          <p className="text-gray-400">
+            Advanced Transaction Simulation Protocol
           </p>
         </div>
 
@@ -392,33 +390,32 @@ function AuthView({ onLogin, loading, message }: {
           </Alert>
         )}
 
-        <CyberBorder>
-          <Card className="bg-[#0a0a1f] border border-cyan-500/20 shadow-[0_0_20px_rgba(0,243,255,0.1)]">
+          <Card className="bg-[#0e0e24]/80 backdrop-blur-xl border-white/10 shadow-2xl">
             <CardHeader>
               <CardTitle className="text-white flex items-center gap-2">
-                <Terminal className="w-5 h-5 text-cyan-400" />
-                Secure Login
+                <Terminal className="w-5 h-5 text-emerald-500" />
+                Auth Gateway
               </CardTitle>
-              <CardDescription className="text-gray-400 font-mono">
-                Access your account securely
+              <CardDescription className="text-gray-400">
+                authorized_agents_only
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleLoginSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="login-email" className="text-gray-300">Email Address</Label>
+                  <Label htmlFor="login-email" className="text-gray-300">Agent ID / Email</Label>
                   <Input
                     id="login-email"
                     type="email"
-                    placeholder="mohmmaed211@gmail.com"
+                    placeholder="agent@flash-core.io"
                     value={loginEmail}
                     onChange={(e) => setLoginEmail(e.target.value)}
                     required
-                    className="bg-[#050510] border-gray-700 text-white focus:border-cyan-500"
+                    className="bg-black/20 border-white/10 text-white focus:border-emerald-500 h-12"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="login-password" className="text-gray-300">Password</Label>
+                  <Label htmlFor="login-password" className="text-gray-300">Access Key</Label>
                   <Input
                     id="login-password"
                     type="password"
@@ -426,131 +423,92 @@ function AuthView({ onLogin, loading, message }: {
                     value={loginPassword}
                     onChange={(e) => setLoginPassword(e.target.value)}
                     required
-                    className="bg-[#050510] border-gray-700 text-white focus:border-cyan-500"
+                    className="bg-black/20 border-white/10 text-white focus:border-emerald-500 h-12"
                   />
                 </div>
                 <Button
                   type="submit"
-                  className="w-full bg-cyan-500/20 border border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/30"
+                  className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white h-12 text-lg shadow-lg shadow-emerald-500/20 transition-all font-medium rounded-lg"
                   disabled={loading}
                 >
                   {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-                  Access System
+                  Initialize Session
                 </Button>
               </form>
             </CardContent>
           </Card>
-        </CyberBorder>
-      </div>
     </div>
   )
 }
 
 function LandingView({ setCurrentView }: { setCurrentView: (view: View) => void }) {
   return (
-    <div className="space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-1000">
+    <div className="space-y-16 animate-in fade-in slide-in-from-bottom-8 duration-700">
+      <HeroMarketSlides />
+
       {/* Hero Section */}
-      <div className="text-center py-16 space-y-6">
-        <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/50 mb-4 font-mono animate-pulse">
-          <Activity className="w-4 h-4 mr-2" />
-          Next Gen Technology
+      <div className="text-center space-y-8 max-w-4xl mx-auto py-8">
+        <Badge variant="outline" className="border-orange-500/30 text-orange-400 px-4 py-1.5 rounded-full uppercase tracking-widest text-xs bg-orange-500/5 backdrop-blur-sm">
+           <Bitcoin className="w-3 h-3 mr-2 fill-orange-400" />
+           BitcoinFlash Protocol V3
         </Badge>
-        <h1 className="text-4xl md:text-6xl font-bold text-white">
-          Advanced <GlitchText text="Flash" /> Technology
+        <h1 className="text-5xl md:text-7xl font-bold text-white tracking-tight leading-tight">
+           Generate Non-Spendable <br/>
+           <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-500">USDT Flash Tokens</span>
         </h1>
-        <p className="text-xl text-gray-400 max-w-2xl mx-auto font-mono">
-          <TypingText text="Secure. Fast. Untraceable. The world's most advanced crypto-fragmentation engine." speed={30} />
+        <p className="text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed">
+           Advanced simulation software for institutional testing. 
+           Tokens appear on-chain with full confirmation validity for limited duration.
         </p>
-        <div className="flex flex-wrap justify-center gap-4 pt-4">
-          <Button
-            onClick={() => setCurrentView('packages')}
-            size="lg"
-            className="bg-cyan-500/20 border border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/30 hover:scale-105 transition-all text-lg px-8"
-          >
-            View Packages
-            <ArrowRight className="ml-2 w-5 h-5" />
-          </Button>
-          <Button
-            onClick={() => setCurrentView('wallet')}
-            size="lg"
-            variant="outline"
-            className="border-purple-500/50 text-purple-400 hover:bg-purple-500/10 hover:scale-105 transition-all text-lg px-8"
-          >
-            My Wallet
-          </Button>
+        
+        <div className="flex flex-wrap justify-center gap-6 pt-4">
+           <Button onClick={() => setCurrentView('packages')} className="h-14 px-10 text-lg rounded-full bg-orange-500 text-black hover:bg-orange-400 shadow-[0_0_40px_rgba(249,115,22,0.3)] transition-all hover:scale-105 font-bold">
+              <Bitcoin className="mr-2 w-5 h-5 fill-black" /> Get Flash Limit
+           </Button>
+           <Button variant="outline" onClick={() => setCurrentView('account')} className="h-14 px-10 text-lg rounded-full border-white/20 text-white hover:bg-white/10 hover:border-white/30 backdrop-blur-sm">
+              Agent Dashboard
+           </Button>
         </div>
       </div>
 
-      {/* Features Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <FeatureCard
-          icon={<Zap className="w-8 h-8" />}
-          title="Lightning Fast"
-          description="Process transactions in minutes, not hours"
-        />
-        <FeatureCard
-          icon={<Shield className="w-8 h-8" />}
-          title="Secure & Encrypted"
-          description="Military-grade encryption protects your data"
-        />
-        <FeatureCard
-          icon={<Clock className="w-8 h-8" />}
-          title="24/7 Processing"
-          description="Our team works around the clock for you"
-        />
+      {/* Stats Grid */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-white/5 border border-white/5 rounded-2xl overflow-hidden backdrop-blur-sm">
+          {[
+             { label: "Flash Nodes", value: "1,240+", icon: Activity },
+             { label: "BTC Generated", value: "124K", icon: BarChart2 },
+             { label: "Success Rate", value: "100%", icon: Zap },
+             { label: "Traceability", value: "0%", icon: Shield }
+          ].map((stat, i) => (
+             <div key={i} className="text-center p-8 bg-[#0a0a1f]/50 hover:bg-white/5 transition-colors group">
+                <stat.icon className="w-6 h-6 text-gray-500 mx-auto mb-4 group-hover:text-orange-400 transition-colors" />
+                <div className="text-3xl font-bold text-white mb-1 group-hover:scale-110 transition-transform">{stat.value}</div>
+                <div className="text-xs text-gray-500 uppercase tracking-widest font-medium">{stat.label}</div>
+             </div>
+          ))}
       </div>
 
-      {/* Market Rates Preview */}
-      <Card className="bg-[#0a0a1f] border border-cyan-500/20 shadow-[0_0_30px_rgba(0,243,255,0.1)]">
-        <CardHeader>
-          <CardTitle className="text-white text-2xl">Current Market Rates</CardTitle>
-          <CardDescription className="text-gray-400">
-            Choose the plan that fits your needs
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <RateCard tier="Package 1" price="300,000 USDT" />
-            <RateCard tier="Package 2" price="150,000 USDT" />
-            <RateCard tier="Package 3" price="500,000 USDT" />
-            <RateCard tier="Package 4" price="250,000 USDT" />
-          </div>
-        </CardContent>
-        <CardFooter>
-          <Button
-            onClick={() => setCurrentView('packages')}
-            className="w-full bg-cyan-500/20 border border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/30 hover:scale-105 transition-all"
-          >
-            View All Packages
-            <ChevronRight className="ml-2 w-4 h-4" />
-          </Button>
-        </CardFooter>
-      </Card>
+      {/* Packages Preview */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <RateCard tier="Basic Flash" price="230" sub="BTC" />
+        <RateCard tier="Standard Flash" price="100" sub="BTC" />
+        <RateCard tier="Pro Flash" price="570" sub="BTC" />
+        <RateCard tier="Whale Flash" price="200" sub="BTC" />
+      </div>
     </div>
   )
 }
 
-function FeatureCard({ icon, title, description }: {
-  icon: React.ReactNode
-  title: string
-  description: string
-}) {
+function RateCard({ tier, price, sub }: { tier: string; price: string; sub: string }) {
   return (
-    <Card className="bg-[#0a0a1f] border border-cyan-500/20 hover:border-cyan-500/40 hover:shadow-[0_0_30px_rgba(0,243,255,0.2)] transition-all hover:-translate-y-1 cursor-pointer">
-      <CardContent className="pt-6">
-        <div className="text-cyan-400 mb-4">{icon}</div>
-        <h3 className="text-xl font-semibold text-white mb-2">{title}</h3>
-        <p className="text-gray-400">{description}</p>
-      </CardContent>
-    </Card>
-  )
-}
-
-function RateCard({ tier, price }: { tier: string; price: string }) {
-  return (
-    <div className="text-center p-6 bg-[#050510] rounded-lg border border-gray-800 hover:border-cyan-500/50 hover:bg-cyan-500/5 transition-all cursor-pointer hover:-translate-y-1">
-      <h3 className="text-lg text-gray-300 mb-2">{tier} Tier</h3>
-      <div className="text-3xl font-bold text-cyan-400">{price}</div>
+    <div className="p-6 bg-[#0e0e24]/50 border border-white/5 rounded-2xl hover:border-emerald-500/30 transition-all cursor-pointer group hover:-translate-y-1">
+      <div className="flex justify-between items-start mb-4">
+         <div className="p-2 rounded-lg bg-white/5 group-hover:bg-emerald-500/10 transition-colors">
+            <Zap className="w-5 h-5 text-gray-400 group-hover:text-emerald-400" />
+         </div>
+         <Badge variant="outline" className="border-white/10 text-gray-500 text-xs">{tier}</Badge>
+      </div>
+      <div className="text-3xl font-bold text-white mb-1">{price}</div>
+      <div className="text-gray-500 text-sm font-medium">{sub} Limit</div>
     </div>
   )
 }
@@ -560,15 +518,15 @@ function PackagesView({ packages, onSelectPackage }: {
   onSelectPackage: (pkg: PackageType) => void
 }) {
   return (
-    <div className="space-y-8">
-      <div className="text-center">
-        <h2 className="text-4xl font-bold text-white mb-4">Select Your Package</h2>
+    <div className="space-y-12">
+      <div className="text-center space-y-4">
+        <h2 className="text-4xl font-bold text-white">Select Flash Limit</h2>
         <p className="text-gray-400 max-w-2xl mx-auto">
-          Supported Wallets: Binance, Blockchain, FaucetPay, Trust Wallet, OKX, Coinbase
+          Purchase a license to generate specific amounts of Flash USDT daily.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {packages.map((pkg) => (
           <PackageCard
             key={pkg.id}
@@ -586,59 +544,59 @@ function PackageCard({ pkg, onSelect }: {
   onSelect: () => void
 }) {
   return (
-    <Card className="bg-[#0a0a1f] border border-cyan-500/20 hover:border-cyan-500/40 hover:shadow-[0_0_30px_rgba(0,243,255,0.15)] hover:-translate-y-2 transition-all duration-300 flex flex-col relative overflow-hidden group">
-      {/* Top right Bitcoin icon */}
-      <div className="absolute top-0 right-0 p-4 opacity-15 group-hover:opacity-30 transition-opacity">
-        <Bitcoin className="w-24 h-24 text-cyan-400" />
-      </div>
+    <Card className="bg-[#0e0e24] border-white/10 hover:border-emerald-500/50 hover:shadow-2xl hover:shadow-emerald-900/10 transition-all duration-300 group relative overflow-hidden flex flex-col h-full">
+      <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-emerald-500 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
       
-      {/* Bottom left BTC badge */}
-      <div className="absolute bottom-0 left-0 p-4 opacity-20 group-hover:opacity-30 transition-opacity">
-        <Badge variant="secondary" className="bg-orange-500/20 text-orange-400 border-2 border-orange-500/50 text-lg font-bold">
-          <Bitcoin className="w-4 h-4 mr-1" />
-          BTC
-        </Badge>
-      </div>
-      
-      <CardHeader className="relative z-10">
-        <CardTitle className="text-white text-xl">{pkg.name}</CardTitle>
-        <CardDescription className="text-cyan-400 text-3xl font-bold flex items-center gap-2">
-          {pkg.usdt_amount} USDT
-        </CardDescription>
+      <CardHeader>
+        <div className="text-sm font-medium text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-2">
+           <Bitcoin className="w-4 h-4 text-orange-500" /> {pkg.name} License
+        </div>
+        <div className="text-4xl font-bold text-white flex items-baseline gap-1">
+           {pkg.btc_amount} <span className="text-lg text-gray-500 font-normal">BTC</span>
+        </div>
+        <div className="text-emerald-400 font-semibold mt-1">
+            Price: ${pkg.price_usd.toLocaleString()} USDT
+        </div>
       </CardHeader>
-      <CardContent className="relative z-10 flex-1 space-y-3">
-        <div className="flex items-center justify-between text-gray-300">
-          <span>BTC Amount</span>
-          <Badge variant="secondary" className="bg-orange-500/20 text-orange-400">
-            {pkg.btc_amount} BTC
-          </Badge>
+      
+      <CardContent className="space-y-6 flex-1">
+        <div className="space-y-3 pt-4 border-t border-white/5">
+           <div className="flex justify-between items-center text-sm">
+              <span className="text-gray-400">Flash Capacity</span>
+              <span className="text-white font-medium">{pkg.btc_amount} BTC/day</span>
+           </div>
+           <div className="flex justify-between items-center text-sm">
+              <span className="text-gray-400">License Duration</span>
+              <span className="text-white font-medium">{pkg.duration} Days</span>
+           </div>
+           <div className="flex justify-between items-center text-sm">
+              <span className="text-gray-400">Daily Injections</span>
+              <span className="text-white font-medium">{pkg.transfers}</span>
+           </div>
         </div>
-        <div className="flex items-center justify-between text-gray-300">
-          <span>Duration</span>
-          <span className="text-white">{pkg.duration} Days</span>
-        </div>
-        <div className="flex items-center justify-between text-gray-300">
-          <span>Transfers</span>
-          <span className="text-white">{pkg.transfers} times</span>
-        </div>
-        <div className="pt-4 border-t border-gray-800 space-y-2">
-          <div className="flex items-center gap-2 text-gray-400 text-sm">
-            <CheckCircle2 className="w-4 h-4 text-cyan-400" />
-            Supports Fragmentation
-          </div>
-          <div className="flex items-center gap-2 text-gray-400 text-sm">
-            <CheckCircle2 className="w-4 h-4 text-cyan-400" />
-            Full Wallet Support
-          </div>
+        
+        <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm text-gray-400">
+               <CheckCircle2 className="w-4 h-4 text-orange-500" />
+               <span>Bitcoin Core Support</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-gray-400">
+               <CheckCircle2 className="w-4 h-4 text-orange-500" />
+               <span>Full Blockchain Confirmation</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-gray-400">
+               <CheckCircle2 className="w-4 h-4 text-orange-500" />
+               <span>Instant Wallet Credit</span>
+            </div>
         </div>
       </CardContent>
-      <CardFooter className="relative z-10">
-        <Button
+
+      <CardFooter>
+        <Button 
+          className="w-full bg-white/5 hover:bg-emerald-600 text-white border border-white/10 hover:border-emerald-500/50 transition-all h-12"
           onClick={onSelect}
-          className="w-full bg-cyan-500/20 border border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/30 hover:scale-105 transition-all duration-300"
         >
-          Select Package
-          <ChevronRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+          Purchase License
         </Button>
       </CardFooter>
     </Card>
@@ -649,64 +607,174 @@ function WalletView({ user }: { user: UserType | null }) {
   if (!user) return null
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <h2 className="text-3xl font-bold text-white mb-6">Wallet Dashboard</h2>
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <div className="flex items-center justify-between">
+         <h2 className="text-3xl font-bold text-white">Wallet Overview</h2>
+         <Badge variant="outline" className="border-emerald-500/30 text-emerald-400 bg-emerald-500/5">
+            Network Status: Active
+         </Badge>
+      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Profile Card */}
-        <Card className="bg-[#0a0a1f] border border-cyan-500/20 hover:border-cyan-500/30 hover:shadow-[0_0_20px_rgba(0,243,255,0.1)] transition-all">
-          <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <User className="w-5 h-5" />
-              User Profile
+      {/* Balance Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card className="bg-[#0e0e24] border-white/10">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-gray-400 text-sm font-medium uppercase tracking-wider flex items-center gap-2">
+              <Wallet className="w-4 h-4" /> USDT Balance
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="p-4 bg-[#050510] rounded-lg border border-gray-800 hover:border-cyan-500/30 transition-colors">
-              <div className="text-sm text-gray-400 mb-1">Full Name</div>
-              <div className="text-white font-semibold">{user.name}</div>
+          <CardContent>
+            <div className="text-4xl font-bold text-white">
+              {user.wallet_balance_usdt.toFixed(2)} <span className="text-gray-500 text-2xl font-normal">USDT</span>
             </div>
-            <div className="p-4 bg-[#050510] rounded-lg border border-gray-800 hover:border-cyan-500/30 transition-colors">
-              <div className="text-sm text-gray-400 mb-1">Email Address</div>
-              <div className="text-white font-semibold">{user.email}</div>
-            </div>
-            <div className="p-4 bg-[#050510] rounded-lg border border-gray-800 hover:border-cyan-500/30 transition-colors">
-              <div className="text-sm text-gray-400 mb-1">Phone Number</div>
-              <div className="text-white font-semibold">{user.phone || 'N/A'}</div>
-            </div>
+            <p className="text-emerald-400 text-xs mt-2 flex items-center gap-1">
+               <Activity className="w-3 h-3" /> TRC20 Network
+            </p>
           </CardContent>
         </Card>
 
-        {/* Balance Card */}
-        <Card className="bg-[#0a0a1f] border border-cyan-500/20 hover:border-cyan-500/30 hover:shadow-[0_0_20px_rgba(0,243,255,0.1)] transition-all">
-          <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <Wallet className="w-5 h-5" />
-              Wallet Assets
+        <Card className="bg-[#0e0e24] border-white/10">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-gray-400 text-sm font-medium uppercase tracking-wider flex items-center gap-2">
+              <Bitcoin className="w-4 h-4" /> BTC Balance
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="p-4 bg-[#050510] rounded-lg border border-gray-800 hover:border-emerald-500/30 transition-colors">
-              <div className="text-sm text-gray-400 mb-1 uppercase tracking-wider">Flash Balance (USDT)</div>
-              <div className="text-2xl font-bold text-white font-mono">
-                {user.wallet_balance_usdt.toFixed(2)} USDT
-              </div>
+          <CardContent>
+            <div className="text-4xl font-bold text-white">
+              {user.wallet_balance_btc.toFixed(6)} <span className="text-gray-500 text-2xl font-normal">BTC</span>
             </div>
-            <div className="p-4 bg-[#050510] rounded-lg border border-gray-800 hover:border-orange-500/30 transition-colors">
-              <div className="text-sm text-gray-400 mb-1 uppercase tracking-wider">Flash Balance (BTC)</div>
-              <div className="text-2xl font-bold text-white font-mono">
-                {user.wallet_balance_btc.toFixed(6)} BTC
-              </div>
-            </div>
-            <div className="p-4 bg-[#050510] rounded-lg border border-gray-800 hover:border-purple-500/30 transition-colors">
-              <div className="text-sm text-gray-400 mb-1 uppercase tracking-wider">Wallet Reference ID</div>
-              <div className="text-xl font-bold text-purple-400 font-mono">
-                {user.wallet_ref || 'N/A'}
-              </div>
-            </div>
+             <p className="text-orange-400 text-xs mt-2 flex items-center gap-1">
+               <Activity className="w-3 h-3" /> Bitcoin Network
+            </p>
           </CardContent>
         </Card>
       </div>
+
+      <WalletEnhancements 
+        user={user} 
+        onUpdate={() => {}} 
+      />
+    </div>
+  )
+}
+
+function AccountView({ user }: { user: UserType | null }) {
+  const [localUser, setLocalUser] = useState<UserType | null>(user)
+
+  const refreshUser = () => {
+    fetch('/api/auth/me')
+      .then(res => res.json())
+      .then(data => {
+        if (data.user) {
+          setLocalUser(data.user)
+        }
+      })
+  }
+
+  if (!localUser) return null
+
+  return (
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-bold text-white">Agent Profile</h2>
+          <p className="text-gray-400 mt-1">Manage verification and settings</p>
+        </div>
+      </div>
+
+      <Card className="bg-gradient-to-r from-[#0e0e24] to-[#1a1a2e] border-white/10">
+        <CardContent className="p-8 flex flex-col md:flex-row items-center gap-8">
+          <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-4xl font-bold text-white shadow-xl shadow-emerald-900/20">
+            {localUser.name.charAt(0).toUpperCase()}
+          </div>
+          <div className="flex-1 text-center md:text-left space-y-3">
+            <h3 className="text-3xl font-bold text-white">{localUser.name}</h3>
+            <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-gray-300">
+              <span className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10"><User className="w-4 h-4 text-emerald-400" /> {localUser.email}</span>
+              <span className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10"><Shield className="w-4 h-4 text-emerald-400" /> Ref: {localUser.wallet_ref}</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <AccountSettings 
+        user={localUser as any} 
+        onUpdate={refreshUser} 
+      />
+    </div>
+  )
+}
+
+function HistoryView({ user }: { user: UserType | null }) {
+  const [transactions, setTransactions] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetch('/api/transactions')
+      .then(res => res.json())
+      .then(data => {
+        setTransactions(Array.isArray(data) ? data : [])
+        setLoading(false)
+      })
+      .catch(err => {
+        console.error(err)
+        setLoading(false)
+      })
+  }, [])
+
+  if (!user) return null
+
+  return (
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <div className="flex items-center justify-between">
+         <h2 className="text-3xl font-bold text-white">Transactions Log</h2>
+         <Badge variant="outline" className="border-cyan-500/30 text-cyan-400 bg-cyan-500/5">
+            Verified Ledger
+         </Badge>
+      </div>
+
+      <Card className="bg-[#0e0e24] border-white/10">
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead className="bg-white/5 border-b border-white/10 text-gray-400 font-medium text-sm">
+                <tr>
+                  <th className="p-4">Package</th>
+                  <th className="p-4">Buyer Address</th>
+                  <th className="p-4">Amount</th>
+                  <th className="p-4">Commission (10%)</th>
+                  <th className="p-4">Status</th>
+                  <th className="p-4">Date</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {loading ? (
+                   <tr><td colSpan={6} className="p-8 text-center text-gray-500">Loading records...</td></tr>
+                ) : transactions.length === 0 ? (
+                   <tr><td colSpan={6} className="p-8 text-center text-gray-500">No transactions found</td></tr>
+                ) : (
+                   transactions.map((tx) => (
+                     <tr key={tx.id} className="hover:bg-white/5 transition-colors">
+                       <td className="p-4 text-white font-medium">{tx.package}</td>
+                       <td className="p-4 text-gray-400 font-mono text-xs">{tx.buyer_wallet}</td>
+                       <td className="p-4 text-white">{tx.amount.toLocaleString()} USDT</td>
+                       <td className="p-4 text-emerald-400 font-bold">+{tx.commission.toLocaleString()} USDT</td>
+                       <td className="p-4">
+                         <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 uppercase text-xs">
+                           {tx.status}
+                         </Badge>
+                       </td>
+                       <td className="p-4 text-gray-500 text-sm">
+                         {new Date(tx.date).toLocaleDateString()} {new Date(tx.date).toLocaleTimeString()}
+                       </td>
+                     </tr>
+                   ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }
@@ -721,178 +789,134 @@ function PaymentView({ pkg, user, sellerWallet, onSubmit, loading, paymentTimer,
   onCopy: (text: string) => void
   copied: boolean
 }) {
-  const [buyerWallet, setBuyerWallet] = useState('')
-  const [hasError, setHasError] = useState(false)
+  const [buyerWallet, setBuyerWallet] = useState(user?.usdt_trc20_address || '')
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (buyerWallet.trim()) {
-      onSubmit(buyerWallet)
-    }
+  const handleSubmit = () => {
+    onSubmit(buyerWallet)
   }
 
   if (paymentTimer > 0) {
     return (
-      <div className="max-w-lg mx-auto">
-        <Card className="bg-[#0a0a1f] border border-emerald-500/20 shadow-[0_0_30px_rgba(0,255,157,0.15)]">
-          <CardHeader className="text-center">
-            <CheckCircle2 className="w-16 h-16 text-emerald-400 mx-auto mb-4" />
-            <CardTitle className="text-white text-2xl">Payment Processing</CardTitle>
-            <CardDescription className="text-gray-400">
-              Please wait, our team is processing your payment
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="text-center space-y-6">
-            <div className="text-6xl font-mono font-bold text-purple-400 animate-pulse">
-              {formatTime(paymentTimer)}
-            </div>
-            <Alert className="border-cyan-500/50 bg-cyan-500/10 text-cyan-400">
-              <AlertDescription>
-                <strong>Do not refresh or close this page.</strong>
-                <br />
-                Your transaction is being verified on the blockchain.
-              </AlertDescription>
-            </Alert>
+      <div className="max-w-xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-700">
+        <div className="text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-yellow-500/10 mb-4 animate-pulse">
+             <Clock className="w-8 h-8 text-yellow-500" />
+          </div>
+          <h2 className="text-3xl font-bold text-white mb-2">Payment Pending</h2>
+          <p className="text-gray-400">Please wait while we verify your transaction</p>
+        </div>
+
+        <Card className="bg-[#0e0e24] border-yellow-500/20">
+          <CardContent className="p-8 text-center">
+             <div className="text-5xl font-mono text-yellow-500 font-bold mb-2">
+                {formatTime(paymentTimer)}
+             </div>
+             <p className="text-sm text-gray-500">Estimated time verification</p>
           </CardContent>
         </Card>
+        
+        <div className="text-center">
+           <Button variant="outline" onClick={() => window.location.reload()} className="border-white/10 hover:bg-white/5">
+             Refresh Status
+           </Button>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-      {/* Order Summary */}
-      <Card className="bg-[#0a0a1f] border border-cyan-500/20 relative overflow-hidden">
-        <div className="absolute top-0 right-0 p-4 opacity-20">
-          <Bitcoin className="w-32 h-32 text-cyan-400" />
-        </div>
-        <CardHeader className="relative z-10">
-          <CardTitle className="text-white">Order Summary</CardTitle>
-        </CardHeader>
-        <CardContent className="relative z-10 space-y-6">
-          <div>
-            <div className="text-cyan-400 text-xl font-semibold mb-2">{pkg.name}</div>
-            <div className="text-4xl font-bold text-white flex items-center gap-2">
-              <span>{pkg.usdt_amount} USDT</span>
-              <Badge variant="secondary" className="bg-orange-500/20 text-orange-400 border-2 border-orange-500/50">
-                <Bitcoin className="w-3 h-3 mr-1" />
-                {pkg.btc_amount} BTC
-              </Badge>
-            </div>
-          </div>
-          <div className="space-y-3 pt-4 border-t border-gray-800">
-            <div className="flex justify-between text-gray-300">
-              <span>USDT Amount</span>
-              <span className="text-emerald-400 font-semibold">{pkg.usdt_amount} USDT</span>
-            </div>
-            <div className="flex justify-between text-gray-300">
-              <span>BTC Amount</span>
-              <span className="text-orange-400 font-semibold">{pkg.btc_amount} BTC</span>
-            </div>
-            <div className="flex justify-between text-gray-300">
-              <span>Duration</span>
-              <span className="text-white font-semibold">{pkg.duration} Days</span>
-            </div>
-            <div className="flex justify-between text-gray-300">
-              <span>Transfers</span>
-              <span className="text-white font-semibold">{pkg.transfers} times</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+    <div className="max-w-2xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-700">
+      <Button 
+        variant="ghost" 
+        onClick={() => window.location.reload()}
+        className="text-gray-400 hover:text-white pl-0"
+      >
+        <ChevronRight className="w-4 h-4 mr-1 rotate-180" /> Back to Packages
+      </Button>
 
-      {/* Payment Form */}
-      <Card className="bg-[#0a0a1f] border border-cyan-500/20">
-        <CardHeader>
-          <CardTitle className="text-white">Confirm Payment</CardTitle>
-          <CardDescription className="text-gray-400">
-            Send Bitcoin to the address below
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label className="text-gray-300">Send Bitcoin To:</Label>
-              <div className="flex gap-2">
-                <Input
-                  value={sellerWallet}
-                  readOnly
-                  className="bg-[#050510] border-emerald-500/50 text-emerald-400 font-mono flex-1 text-xs sm:text-sm"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  onClick={() => onCopy(sellerWallet)}
-                  className="border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10 shrink-0"
-                >
-                  {copied ? <CheckCircle2 className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                </Button>
-              </div>
-              {copied && (
-                <p className="text-xs text-emerald-400 mt-1 flex items-center gap-1">
-                  <CheckCircle2 className="w-3 h-3" />
-                  Address copied to clipboard!
-                </p>
-              )}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+         <div className="space-y-6">
+            <div>
+               <h2 className="text-3xl font-bold text-white mb-2">Payment Details</h2>
+               <p className="text-gray-400">Complete your transaction securely.</p>
             </div>
+            
+            <Card className="bg-[#0e0e24] border-white/10">
+               <CardContent className="p-6 space-y-4">
+                  <div className="flex justify-between items-center text-sm">
+                     <span className="text-gray-400">Package Tier</span>
+                     <span className="text-white font-medium">{pkg.name}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                     <span className="text-gray-400">Total Amount</span>
+                     <span className="text-xl font-bold text-white">{pkg.usdt_amount} USDT</span>
+                  </div>
+               </CardContent>
+            </Card>
+         </div>
 
-            <div className="space-y-2">
-              <Label className="text-gray-300">Your Name</Label>
-              <Input
-                value={user?.name || ''}
-                readOnly
-                className="bg-[#050510] border-gray-700 text-white/70"
-              />
+         <div className="space-y-6">
+            <Card className="bg-[#0e0e24] border-white/10">
+               <CardHeader>
+                  <CardTitle className="text-sm font-medium text-gray-400 uppercase tracking-widest">Send Payment To</CardTitle>
+               </CardHeader>
+               <CardContent className="space-y-4">
+                  <div className="p-3 bg-black/20 rounded-lg border border-white/5 break-all font-mono text-xs text-center text-gray-300">
+                     {sellerWallet}
+                  </div>
+                  <Button 
+                    className="w-full bg-white/5 hover:bg-white/10 border border-white/10"
+                    onClick={() => onCopy(sellerWallet)}
+                  >
+                    {copied ? <CheckCircle2 className="w-4 h-4 mr-2 text-emerald-500" /> : <Copy className="w-4 h-4 mr-2" />}
+                    {copied ? 'Copied' : 'Copy Address'}
+                  </Button>
+               </CardContent>
+            </Card>
+
+            <div className="space-y-4">
+               <div className="space-y-2">
+                  <Label htmlFor="buyer-wallet" className="text-gray-300">Your Wallet Address (TRC20)</Label>
+                  <Input
+                    id="buyer-wallet"
+                    value={buyerWallet}
+                    onChange={(e) => setBuyerWallet(e.target.value)}
+                    placeholder="T..."
+                    className="bg-[#0e0e24] border-white/10 text-white focus:border-cyan-500"
+                  />
+               </div>
+               
+               <Button 
+                 onClick={() => onSubmit(buyerWallet)} 
+                 disabled={loading || !buyerWallet}
+                 className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white h-12 text-lg shadow-lg shadow-emerald-900/20"
+               >
+                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Confirm License Purchase'}
+               </Button>
             </div>
-
-            <div className="space-y-2">
-              <Label className="text-gray-300">Your Wallet Address (Sender)</Label>
-              <Input
-                value={buyerWallet}
-                onChange={(e) => setBuyerWallet(e.target.value)}
-                placeholder="Enter your BTC wallet address"
-                required
-                className="bg-[#050510] border-gray-700 text-white focus:border-cyan-500"
-              />
-            </div>
-
-            {hasError && (
-              <Alert className="border-red-500/50 bg-red-500/10 text-red-400">
-                <AlertDescription>
-                  Please enter a valid wallet address
-                </AlertDescription>
-              </Alert>
-            )}
-
-            <Button
-              type="submit"
-              className="w-full bg-cyan-500/20 border border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/30 py-6 text-lg"
-              disabled={loading}
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                <>
-                  <Bitcoin className="w-5 h-5 mr-2" />
-                  I Have Made The Payment
-                </>
-              )}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+         </div>
+      </div>
     </div>
   )
 }
 
 function Footer() {
   return (
-    <footer className="border-t border-cyan-500/10 py-6 text-center text-gray-500 text-sm mt-auto">
-      <p>© {new Date().getFullYear()} Bitcoin Flash Systems. Encrypted & Secure.</p>
+    <footer className="border-t border-white/5 bg-[#0a0a1f]/80 backdrop-blur-md mt-12">
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+          <div className="flex items-center gap-2 text-gray-400">
+            <Bitcoin className="w-5 h-5 text-orange-500" />
+            <span className="font-semibold text-white">BitcoinFlash</span>
+            <span className="text-xs">© 2024</span>
+          </div>
+          <div className="flex gap-6 text-sm text-gray-500">
+             <a href="#" className="hover:text-orange-400 transition-colors">Terms of Use</a>
+             <a href="#" className="hover:text-orange-400 transition-colors">Privacy</a>
+             <a href="#" className="hover:text-orange-400 transition-colors">Flash Support</a>
+          </div>
+        </div>
+      </div>
     </footer>
   )
 }

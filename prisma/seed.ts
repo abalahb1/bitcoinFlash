@@ -34,33 +34,33 @@ async function main() {
     const packages = [
       {
         name: 'Package 1',
-        usdt_amount: '300,000',
+        usdt_amount: '21,620,000', // 230 * 94000
         btc_amount: '230',
-        price_usd: 1500,
+        price_usd: 300000,
         duration: 45,
         transfers: 27,
       },
       {
         name: 'Package 2',
-        usdt_amount: '150,000',
+        usdt_amount: '9,400,000', // 100 * 94000
         btc_amount: '100',
-        price_usd: 500,
+        price_usd: 150000,
         duration: 45,
         transfers: 27,
       },
       {
         name: 'Package 3',
-        usdt_amount: '500,000',
+        usdt_amount: '53,580,000', // 570 * 94000
         btc_amount: '570',
-        price_usd: 3000,
+        price_usd: 500000,
         duration: 45,
         transfers: 27,
       },
       {
         name: 'Package 4',
-        usdt_amount: '250,000',
+        usdt_amount: '18,800,000', // 200 * 94000
         btc_amount: '200',
-        price_usd: 1000,
+        price_usd: 250000,
         duration: 45,
         transfers: 27,
       },
