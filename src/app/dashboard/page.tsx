@@ -8,22 +8,18 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
-import { Loader2, Wallet, Copy, CheckCircle2, Bitcoin, Zap, Shield, Clock, User, LayoutDashboard, LogOut, Activity, BarChart2, History, ChevronRight } from 'lucide-react'
+import { Loader2, Wallet, Copy, CheckCircle2, Bitcoin, Zap, Shield, Clock, User, LayoutDashboard, LogOut, Activity, BarChart2, History, ChevronRight, QrCode } from 'lucide-react'
+import { QRCodeSVG } from 'qrcode.react'
 import type { User as UserType, Package as PackageType } from '@prisma/client'
 import { TopTicker, HeroMarketSlides } from '@/components/MarketTicker'
 import { WalletEnhancements } from '@/components/WalletEnhancements'
 import { AccountSettings } from '@/components/AccountSettings'
 import { KYCBlockingModal } from '@/components/KYCBlockingModal'
+import { WalletHistory } from '@/components/WalletHistory'
 
-const SELLER_WALLET = "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh"
 
-type View = 'landing' | 'packages' | 'wallet' | 'payment' | 'account' | 'history'
+type View = 'landing' | 'wallet' | 'payment' | 'account' | 'history'
 
-const formatTime = (seconds: number) => {
-  const mins = Math.floor(seconds / 60)
-  const secs = seconds % 60
-  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
-}
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -33,8 +29,6 @@ export default function DashboardPage() {
   const [selectedPackage, setSelectedPackage] = useState<PackageType | null>(null)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' | 'info' } | null>(null)
-  const [paymentTimer, setPaymentTimer] = useState<number>(0)
-  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -55,21 +49,7 @@ export default function DashboardPage() {
     checkAuth()
   }, [])
 
-  useEffect(() => {
-    if (paymentTimer > 0) {
-      const timer = setInterval(() => {
-        setPaymentTimer((prev) => {
-          if (prev <= 1) {
-            clearInterval(timer)
-            setCurrentView('wallet')
-            return 0
-          }
-          return prev - 1
-        })
-      }, 1000)
-      return () => clearInterval(timer)
-    }
-  }, [paymentTimer])
+
 
   const showMessage = (text: string, type: 'success' | 'error' | 'info' = 'info') => {
     setMessage({ text, type })
@@ -98,7 +78,7 @@ export default function DashboardPage() {
     }
   }
 
-  const handlePayment = async (buyerWallet: string) => {
+  const handlePayment = async () => {
     if (!selectedPackage) return
 
     setLoading(true)
@@ -108,45 +88,49 @@ export default function DashboardPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           package_id: selectedPackage.id,
-          buyer_wallet: buyerWallet,
         }),
       })
 
       const data = await res.json()
 
       if (res.ok) {
-        setPaymentTimer(3600) // 60 minutes
-        showMessage('تم إرسال الدفع بنجاح! سيتم مراجعته خلال 60 دقيقة', 'success')
+        showMessage(data.message || 'Package purchased successfully! Commission added to your balance.', 'success')
+        // Refresh user data to get updated balance
+        const userRes = await fetch('/api/auth/me')
+        if (userRes.ok) {
+          const userData = await userRes.json()
+          setUser(userData)
+        }
+        // Go back to landing page
+        setTimeout(() => setCurrentView('landing'), 2000)
       } else {
-        if (data.error?.includes('pending transaction')) {
-          showMessage('لديك دفعية معلقة بالفعل. يرجى الانتظار حتى تتم المراجعة', 'error')
+        if (data.error?.includes('Insufficient') || data.error?.includes('رصيد')) {
+          const shortage = data.details?.shortage || 0
+          showMessage(
+            `Insufficient wallet balance. You need ${shortage.toFixed(2)} USDT more. Please top up your wallet first.`,
+            'error'
+          )
         } else if (data.error?.includes('Not authenticated')) {
-          showMessage('يجب تسجيل الدخول أولاً', 'error')
+          showMessage('Please login first', 'error')
           router.push('/login')
         } else {
-          showMessage(data.error || 'فشل إرسال الدفع', 'error')
+          showMessage(data.error || 'Failed to purchase package', 'error')
         }
       }
     } catch (error) {
       console.error('Payment error:', error)
-      showMessage('خطأ في الاتصال. يرجى المحاولة مرة أخرى', 'error')
+      showMessage('Connection error. Please try again', 'error')
     } finally {
       setLoading(false)
     }
   }
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
-
   if (!user) {
-      return (
-          <div className="min-h-screen bg-[#050510] flex items-center justify-center">
-              <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
-          </div>
-      )
+    return (
+      <div className="min-h-screen bg-[#050510] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+      </div>
+    )
   }
 
   return (
@@ -181,16 +165,10 @@ export default function DashboardPage() {
             </Alert>
           )}
 
-          {currentView === 'landing' && <LandingView setCurrentView={setCurrentView} />}
-          {currentView === 'packages' && (
-            <PackagesView
-              packages={packages}
-              onSelectPackage={(pkg) => {
-                setSelectedPackage(pkg)
-                setCurrentView('payment')
-              }}
-            />
-          )}
+          {currentView === 'landing' && <LandingView setCurrentView={setCurrentView} packages={packages} onSelectPackage={(pkg) => {
+            setSelectedPackage(pkg)
+            setCurrentView('payment')
+          }} />}
           {currentView === 'wallet' && <WalletView user={user} />}
           {currentView === 'account' && <AccountView user={user} />}
           {currentView === 'history' && <HistoryView user={user} />}
@@ -198,12 +176,8 @@ export default function DashboardPage() {
             <PaymentView
               pkg={selectedPackage}
               user={user}
-              sellerWallet={SELLER_WALLET}
               onSubmit={handlePayment}
               loading={loading}
-              paymentTimer={paymentTimer}
-              onCopy={copyToClipboard}
-              copied={copied}
             />
           )}
         </main>
@@ -240,14 +214,6 @@ function Navbar({ currentView, setCurrentView, onLogout }: {
         fullWidth={mobile}
       >
         Dashboard
-      </NavButton>
-      <NavButton
-        active={currentView === 'packages'}
-        onClick={mobile ? () => handleMobileNav('packages') : () => setCurrentView('packages')}
-        icon={<Zap className="w-4 h-4" />}
-        fullWidth={mobile}
-      >
-        Flash Limits
       </NavButton>
       <NavButton
         active={currentView === 'wallet'}
@@ -363,7 +329,11 @@ function NavButton({ active, onClick, children, icon, fullWidth = false }: {
   )
 }
 
-function LandingView({ setCurrentView }: { setCurrentView: (view: View) => void }) {
+function LandingView({ setCurrentView, packages, onSelectPackage }: { 
+  setCurrentView: (view: View) => void
+  packages: PackageType[]
+  onSelectPackage: (pkg: PackageType) => void
+}) {
   return (
     <div className="space-y-16 animate-in fade-in slide-in-from-bottom-8 duration-700">
       <HeroMarketSlides />
@@ -386,11 +356,11 @@ function LandingView({ setCurrentView }: { setCurrentView: (view: View) => void 
         </p>
         
         <div className="flex flex-wrap justify-center gap-6 pt-4">
-           <Button onClick={() => setCurrentView('packages')} className="h-14 px-10 text-lg rounded-full bg-[#F7931A] text-black hover:bg-[#F7931A]/90 shadow-[0_0_40px_rgba(247,147,26,0.3)] transition-all hover:scale-105 font-bold">
-              <Bitcoin className="mr-2 w-5 h-5 fill-black" /> Get Flash Limit
+           <Button onClick={() => setCurrentView('account')} className="h-14 px-10 text-lg rounded-full bg-[#F7931A] text-black hover:bg-[#F7931A]/90 shadow-[0_0_40px_rgba(247,147,26,0.3)] transition-all hover:scale-105 font-bold">
+              <Bitcoin className="mr-2 w-5 h-5 fill-black" /> Agent Dashboard
            </Button>
-           <Button variant="outline" onClick={() => setCurrentView('account')} className="h-14 px-10 text-lg rounded-full border-white/20 text-white hover:bg-white/10 hover:border-white/30 backdrop-blur-sm">
-              Agent Dashboard
+           <Button variant="outline" onClick={() => setCurrentView('wallet')} className="h-14 px-10 text-lg rounded-full border-white/20 text-white hover:bg-white/10 hover:border-white/30 backdrop-blur-sm">
+              View Wallet
            </Button>
         </div>
       </div>
@@ -410,11 +380,24 @@ function LandingView({ setCurrentView }: { setCurrentView: (view: View) => void 
           ))}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <RateCard tier="Basic Flash" price="230" sub="BTC" />
-        <RateCard tier="Standard Flash" price="100" sub="BTC" />
-        <RateCard tier="Pro Flash" price="570" sub="BTC" />
-        <RateCard tier="Whale Flash" price="200" sub="BTC" />
+      {/* Packages Section */}
+      <div className="space-y-8">
+        <div className="text-center space-y-4">
+          <h2 className="text-4xl font-bold text-white">Available Flash Limits</h2>
+          <p className="text-gray-400 max-w-2xl mx-auto">
+            Purchase a license to generate specific amounts of Flash Bitcoin. Payment is deducted from your wallet balance.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {packages.map((pkg) => (
+            <PackageCard
+              key={pkg.id}
+              pkg={pkg}
+              onSelect={() => onSelectPackage(pkg)}
+            />
+          ))}
+        </div>
       </div>
     </div>
   )
@@ -528,54 +511,378 @@ function PackageCard({ pkg, onSelect }: {
 function WalletView({ user }: { user: UserType | null }) {
   if (!user) return null
 
+  const [activeTab, setActiveTab] = useState<'deposit' | 'withdraw'>('deposit')
+  const [withdrawAmount, setWithdrawAmount] = useState('')
+  const [withdrawAddress, setWithdrawAddress] = useState('')
+  const [withdrawing, setWithdrawing] = useState(false)
+  const [withdrawMessage, setWithdrawMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null)
+  const [addressValidation, setAddressValidation] = useState<{
+    isValid: boolean
+    network: string
+    error: string
+  } | null>(null)
+
+  // Calculate total value
+  const totalValueUSD = user.wallet_balance_usdt
+
+  // Validate withdrawal address
+  const validateWithdrawAddress = (address: string) => {
+    if (!address || address.trim() === '') {
+      setAddressValidation(null)
+      return
+    }
+
+    const trimmedAddress = address.trim()
+    let isValid = false
+    let network = 'Unknown'
+    let error = ''
+
+    // Tron (TRX) validation: starts with T, 34 characters
+    if (/^T[A-Za-z1-9]{33}$/.test(trimmedAddress)) {
+      isValid = true
+      network = 'Tron (TRC20)'
+    }
+    // Bitcoin addresses
+    else if (/^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/.test(trimmedAddress)) {
+      network = 'Bitcoin (Legacy/SegWit)'
+      error = 'Only Tron (TRC20) addresses are accepted for USDT withdrawals.'
+    } else if (/^bc1[a-z0-9]{39,59}$/.test(trimmedAddress)) {
+      network = 'Bitcoin (Native SegWit)'
+      error = 'Only Tron (TRC20) addresses are accepted for USDT withdrawals.'
+    }
+    // Ethereum (ETH)
+    else if (/^0x[a-fA-F0-9]{40}$/.test(trimmedAddress)) {
+      network = 'Ethereum (ERC20)'
+      error = 'Only Tron (TRC20) addresses are accepted for USDT withdrawals.'
+    }
+    // Solana
+    else if (/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(trimmedAddress) && !trimmedAddress.startsWith('T')) {
+      network = 'Solana'
+      error = 'Only Tron (TRC20) addresses are accepted for USDT withdrawals.'
+    }
+    else {
+      error = 'Invalid address format. Please enter a valid Tron (TRC20) address.'
+    }
+
+    setAddressValidation({ isValid, network, error })
+  }
+
+  const handleWithdrawAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    setWithdrawAddress(value)
+    validateWithdrawAddress(value)
+  }
+
+  const handleWithdrawSubmit = async () => {
+    if (!withdrawAmount || !withdrawAddress || !addressValidation?.isValid) return
+
+    setWithdrawing(true)
+    setWithdrawMessage(null)
+
+    try {
+      const res = await fetch('/api/wallet/withdraw', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: parseFloat(withdrawAmount),
+          address: withdrawAddress
+        })
+      })
+
+      const data = await res.json()
+
+      if (res.ok) {
+        setWithdrawMessage({ text: data.message || 'Withdrawal request submitted successfully!', type: 'success' })
+        setWithdrawAmount('')
+        setWithdrawAddress('')
+        setAddressValidation(null)
+        // Refresh user data
+        window.location.reload()
+      } else {
+        setWithdrawMessage({ text: data.error || 'Failed to submit withdrawal request', type: 'error' })
+      }
+    } catch (error) {
+      setWithdrawMessage({ text: 'Connection error. Please try again.', type: 'error' })
+    } finally {
+      setWithdrawing(false)
+    }
+  }
+
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      {/* Header */}
       <div className="flex items-center justify-between">
-         <h2 className="text-3xl font-bold text-white">Wallet Overview</h2>
-         <Badge variant="outline" className="border-emerald-500/30 text-emerald-400 bg-emerald-500/5">
-            Network Status: Active
-         </Badge>
+        <div>
+          <h2 className="text-3xl font-bold text-white">My Wallet</h2>
+          <p className="text-gray-400 mt-1">Manage your digital assets</p>
+        </div>
+        <Badge variant="outline" className="border-emerald-500/30 text-emerald-400 bg-emerald-500/5 px-4 py-2">
+          <Activity className="w-3 h-3 mr-2" />
+          Active
+        </Badge>
       </div>
 
-      {/* Balance Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card className="bg-[#0e0e24] border-white/10">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-gray-400 text-sm font-medium uppercase tracking-wider flex items-center gap-2">
-              <Wallet className="w-4 h-4" /> USDT Balance
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-4xl font-bold text-white">
-              {user.wallet_balance_usdt.toFixed(2)} <span className="text-gray-500 text-2xl font-normal">USDT</span>
+      {/* Total Balance Card */}
+      <Card className="bg-gradient-to-br from-[#F7931A]/10 via-[#0e0e24] to-[#1a1a2e] border-[#F7931A]/20 overflow-hidden relative">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-[#F7931A]/5 rounded-full blur-3xl"></div>
+        <CardContent className="p-8 relative z-10">
+          <div className="flex items-start justify-between mb-6">
+            <div>
+              <p className="text-gray-400 text-sm uppercase tracking-wider mb-2">Total Balance</p>
+              <div className="text-5xl font-bold text-white mb-2">
+                ${totalValueUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </div>
+              <p className="text-emerald-400 text-sm flex items-center gap-1">
+                <Activity className="w-3 h-3" />
+                USDT
+              </p>
             </div>
-            <p className="text-emerald-400 text-xs mt-2 flex items-center gap-1">
-               <Activity className="w-3 h-3" /> TRC20 Network
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-[#0e0e24] border-white/10">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-gray-400 text-sm font-medium uppercase tracking-wider flex items-center gap-2">
-              <Bitcoin className="w-4 h-4" /> BTC Balance
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-4xl font-bold text-white">
-              {user.wallet_balance_btc.toFixed(6)} <span className="text-gray-500 text-2xl font-normal">BTC</span>
+            <div className="w-16 h-16 rounded-full bg-[#F7931A]/20 flex items-center justify-center">
+              <Wallet className="w-8 h-8 text-[#F7931A]" />
             </div>
-             <p className="text-orange-400 text-xs mt-2 flex items-center gap-1">
-               <Activity className="w-3 h-3" /> Bitcoin Network
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </CardContent>
+      </Card>
 
-      <WalletEnhancements 
-        user={user} 
-        onUpdate={() => {}} 
-      />
+      {/* Deposit / Withdraw Tabs */}
+      <Card className="bg-[#0e0e24] border-white/10">
+        <CardContent className="p-0">
+          {/* Tab Headers */}
+          <div className="flex border-b border-white/10">
+            <button
+              onClick={() => setActiveTab('deposit')}
+              className={`flex-1 px-6 py-4 text-sm font-semibold transition-all ${
+                activeTab === 'deposit'
+                  ? 'text-emerald-400 border-b-2 border-emerald-400 bg-emerald-500/5'
+                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <div className="flex items-center justify-center gap-2">
+                <Activity className="w-4 h-4" />
+                Deposit
+              </div>
+            </button>
+            <button
+              onClick={() => setActiveTab('withdraw')}
+              className={`flex-1 px-6 py-4 text-sm font-semibold transition-all ${
+                activeTab === 'withdraw'
+                  ? 'text-cyan-400 border-b-2 border-cyan-400 bg-cyan-500/5'
+                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <div className="flex items-center justify-center gap-2">
+                <Zap className="w-4 h-4" />
+                Withdraw
+              </div>
+            </button>
+          </div>
+
+          {/* Tab Content */}
+          <div className="p-6">
+            {activeTab === 'deposit' ? (
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-xl font-bold text-white mb-2">Deposit USDT</h3>
+                  <p className="text-gray-400 text-sm">Send USDT (TRC20) to your wallet address</p>
+                </div>
+
+                <Alert className="border-cyan-500/30 bg-cyan-500/5">
+                  <AlertDescription className="text-sm text-gray-400">
+                    <strong className="text-cyan-400">Important:</strong> Only send USDT on the Tron (TRC20) network to this address. Sending other assets or using different networks may result in permanent loss.
+                  </AlertDescription>
+                </Alert>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* QR Code Section */}
+                  <div className="flex flex-col items-center justify-center p-6 bg-white/5 rounded-xl border border-white/10">
+                    {user.usdt_trc20_address ? (
+                      <>
+                        <div className="bg-white p-4 rounded-lg shadow-lg">
+                          <QRCodeSVG value={user.usdt_trc20_address} size={180} />
+                        </div>
+                        <p className="text-gray-400 text-xs mt-4 text-center">Scan QR code to deposit</p>
+                      </>
+                    ) : (
+                      <div className="text-center py-8">
+                        <QrCode className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+                        <p className="text-gray-500 text-sm">No deposit address set</p>
+                        <p className="text-gray-600 text-xs mt-2">Configure your address below</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Address Section */}
+                  <div className="space-y-4">
+                    <div>
+                      <Label className="text-gray-300 mb-2 block">Your Deposit Address (TRC20)</Label>
+                      <div className="p-4 bg-white/5 rounded-lg border border-white/10">
+                        <p className="text-white font-mono text-sm break-all">
+                          {user.usdt_trc20_address || 'No address set'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <Button
+                      onClick={() => {
+                        if (user.usdt_trc20_address) {
+                          navigator.clipboard.writeText(user.usdt_trc20_address)
+                        }
+                      }}
+                      disabled={!user.usdt_trc20_address}
+                      className="w-full bg-emerald-600 hover:bg-emerald-500 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Copy className="w-4 h-4 mr-2" />
+                      Copy Address
+                    </Button>
+
+                    <div className="pt-4 border-t border-white/10 space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-400">Network</span>
+                        <span className="text-white font-medium">Tron (TRC20)</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-400">Min Deposit</span>
+                        <span className="text-white font-medium">10 USDT</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-400">Confirmations</span>
+                        <span className="text-white font-medium">19 blocks</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-xl font-bold text-white mb-2">Withdraw USDT</h3>
+                  <p className="text-gray-400 text-sm">Send USDT from your wallet to another address</p>
+                </div>
+
+                <Alert className="border-yellow-500/30 bg-yellow-500/5">
+                  <AlertDescription className="text-sm text-gray-400">
+                    <strong className="text-yellow-400">Notice:</strong> Withdrawals are processed manually by admin. Please allow 1-24 hours for processing.
+                  </AlertDescription>
+                </Alert>
+
+                {withdrawMessage && (
+                  <Alert className={`border ${
+                    withdrawMessage.type === 'success' 
+                      ? 'border-emerald-500/50 bg-emerald-500/10' 
+                      : 'border-red-500/50 bg-red-500/10'
+                  }`}>
+                    <AlertDescription className={withdrawMessage.type === 'success' ? 'text-emerald-400' : 'text-red-400'}>
+                      {withdrawMessage.text}
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="withdraw-amount" className="text-gray-300 mb-2 block">
+                      Amount (USDT)
+                    </Label>
+                    <Input
+                      id="withdraw-amount"
+                      type="number"
+                      value={withdrawAmount}
+                      onChange={(e) => setWithdrawAmount(e.target.value)}
+                      placeholder="0.00"
+                      className="bg-[#1a1a2e] border-white/10 text-white h-12"
+                    />
+                    <div className="flex items-center justify-between mt-2 text-xs">
+                      <span className="text-gray-500">Available: {user.wallet_balance_usdt.toFixed(2)} USDT</span>
+                      <button
+                        onClick={() => setWithdrawAmount(user.wallet_balance_usdt.toString())}
+                        className="text-cyan-400 hover:text-cyan-300"
+                      >
+                        Max
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="withdraw-address" className="text-gray-300 mb-2 block">
+                      Recipient Address (TRC20)
+                    </Label>
+                    <Input
+                      id="withdraw-address"
+                      value={withdrawAddress}
+                      onChange={handleWithdrawAddressChange}
+                      placeholder="T..."
+                      className={`bg-[#1a1a2e] border-white/10 text-white h-12 ${
+                        addressValidation?.isValid ? 'border-emerald-500/50' : 
+                        addressValidation?.error ? 'border-red-500/50' : ''
+                      }`}
+                    />
+                    
+                    {/* Address Validation Feedback */}
+                    {addressValidation && (
+                      <div className={`mt-2 p-3 rounded-lg border ${
+                        addressValidation.isValid 
+                          ? 'bg-emerald-500/10 border-emerald-500/30' 
+                          : 'bg-red-500/10 border-red-500/30'
+                      }`}>
+                        {addressValidation.isValid ? (
+                          <div className="flex items-center gap-2">
+                            <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                            <div className="flex-1">
+                              <div className="text-sm font-semibold text-emerald-400">Valid Address</div>
+                              <div className="text-xs text-gray-400 mt-0.5">
+                                Network: <span className="text-white font-medium">{addressValidation.network}</span>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-start gap-2">
+                            <Shield className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+                            <div className="flex-1">
+                              <div className="text-sm font-semibold text-red-400">
+                                {addressValidation.network !== 'Unknown' ? `${addressValidation.network} Detected` : 'Invalid Address'}
+                              </div>
+                              <div className="text-xs text-gray-400 mt-0.5">{addressValidation.error}</div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="p-4 bg-white/5 rounded-lg border border-white/10 space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-400">Withdrawal Amount</span>
+                      <span className="text-white font-medium">{withdrawAmount || '0.00'} USDT</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-400">Network Fee</span>
+                      <span className="text-white font-medium">~1 USDT</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm pt-2 border-t border-white/10">
+                      <span className="text-white font-semibold">You will receive</span>
+                      <span className="text-emerald-400 font-bold">
+                        {withdrawAmount ? (parseFloat(withdrawAmount) - 1).toFixed(2) : '0.00'} USDT
+                      </span>
+                    </div>
+                  </div>
+
+                  <Button
+                    onClick={handleWithdrawSubmit}
+                    disabled={!withdrawAmount || !withdrawAddress || parseFloat(withdrawAmount) < 10 || !addressValidation?.isValid || withdrawing}
+                    className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white h-12 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {withdrawing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Zap className="w-4 h-4 mr-2" />}
+                    {withdrawing ? 'Processing...' : 'Request Withdrawal'}
+                  </Button>
+
+                  <p className="text-xs text-gray-500 text-center">
+                    Minimum withdrawal: 10 USDT • Processing time: 1-24 hours
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }
@@ -595,30 +902,69 @@ function AccountView({ user }: { user: UserType | null }) {
 
   if (!localUser) return null
 
+  // Calculate stats
+  const totalEarnings = localUser.commission_wallet ? localUser.wallet_balance_usdt * 0.1 : 0
+  const isVerified = localUser.kyc_status === 'approved'
+
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold text-white">Agent Profile</h2>
-          <p className="text-gray-400 mt-1">Manage verification and settings</p>
+          <p className="text-gray-400 mt-1">Manage your account and verification</p>
         </div>
+        <Badge 
+          variant="outline" 
+          className={`px-4 py-2 ${
+            isVerified 
+              ? 'border-emerald-500/30 text-emerald-400 bg-emerald-500/5' 
+              : 'border-yellow-500/30 text-yellow-400 bg-yellow-500/5'
+          }`}
+        >
+          <Shield className="w-3 h-3 mr-2" />
+          {isVerified ? 'Verified Agent' : 'Pending Verification'}
+        </Badge>
       </div>
 
-      <Card className="bg-gradient-to-r from-[#0e0e24] to-[#1a1a2e] border-white/10">
-        <CardContent className="p-8 flex flex-col md:flex-row items-center gap-8">
-          <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-4xl font-bold text-white shadow-xl shadow-emerald-900/20">
-            {localUser.name.charAt(0).toUpperCase()}
-          </div>
-          <div className="flex-1 text-center md:text-left space-y-3">
-            <h3 className="text-3xl font-bold text-white">{localUser.name}</h3>
-            <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-gray-300">
-              <span className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10"><User className="w-4 h-4 text-emerald-400" /> {localUser.email}</span>
-              <span className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10"><Shield className="w-4 h-4 text-emerald-400" /> Ref: {localUser.wallet_ref}</span>
+      {/* Profile Card */}
+      <Card className="bg-gradient-to-br from-[#0e0e24] via-[#1a1a2e] to-[#0e0e24] border-white/10 overflow-hidden relative">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-500/5 rounded-full blur-3xl"></div>
+        <CardContent className="p-8 relative z-10">
+          <div className="flex flex-col md:flex-row items-center gap-8">
+            {/* Avatar */}
+            <div className="relative">
+              <div className="w-32 h-32 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-5xl font-bold text-white shadow-xl shadow-cyan-900/20">
+                {localUser.name.charAt(0).toUpperCase()}
+              </div>
+              {isVerified && (
+                <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-emerald-500 rounded-full flex items-center justify-center border-4 border-[#0e0e24]">
+                  <CheckCircle2 className="w-5 h-5 text-white" />
+                </div>
+              )}
+            </div>
+
+            {/* Info */}
+            <div className="flex-1 text-center md:text-left space-y-4">
+              <div>
+                <h3 className="text-3xl font-bold text-white mb-2">{localUser.name}</h3>
+                <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
+                  <span className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-gray-300 text-sm">
+                    <User className="w-4 h-4 text-cyan-400" />
+                    {localUser.email}
+                  </span>
+                  <span className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-gray-300 text-sm">
+                    <Shield className="w-4 h-4 text-cyan-400" />
+                    REF: {localUser.wallet_ref}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </CardContent>
       </Card>
 
+      {/* Account Settings */}
       <AccountSettings 
         user={localUser as any} 
         onUpdate={refreshUser} 
@@ -701,123 +1047,334 @@ function HistoryView({ user }: { user: UserType | null }) {
   )
 }
 
-function PaymentView({ pkg, user, sellerWallet, onSubmit, loading, paymentTimer, onCopy, copied }: {
+
+function PaymentView({ pkg, user, onSubmit, loading }: {
   pkg: PackageType
   user: UserType | null
-  sellerWallet: string
-  onSubmit: (wallet: string) => void
+  onSubmit: () => void
   loading: boolean
-  paymentTimer: number
-  onCopy: (text: string) => void
-  copied: boolean
 }) {
-  const [buyerWallet, setBuyerWallet] = useState(user?.usdt_trc20_address || '')
+  if (!user) return null
 
-  const handleSubmit = () => {
-    onSubmit(buyerWallet)
+  const [recipientAddress, setRecipientAddress] = useState('')
+  const [addressValidation, setAddressValidation] = useState<{
+    isValid: boolean
+    network: string
+    error: string
+  } | null>(null)
+
+  const hasEnoughBalance = user.wallet_balance_usdt >= pkg.price_usd
+  const shortage = pkg.price_usd - user.wallet_balance_usdt
+  const commission = pkg.price_usd * 0.1
+  const finalBalance = user.wallet_balance_usdt - pkg.price_usd + commission
+
+  // Wallet address validation algorithm
+  const validateWalletAddress = (address: string) => {
+    if (!address || address.trim() === '') {
+      setAddressValidation(null)
+      return
+    }
+
+    const trimmedAddress = address.trim()
+    let isValid = false
+    let network = 'Unknown'
+    let error = ''
+    let isBitcoin = false
+
+    // Bitcoin (BTC) validation
+    // Legacy (P2PKH): starts with 1, 26-35 characters
+    // SegWit (P2SH): starts with 3, 26-35 characters  
+    // Native SegWit (Bech32): starts with bc1, 42-62 characters
+    if (/^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/.test(trimmedAddress)) {
+      network = 'Bitcoin (Legacy/SegWit)'
+      isBitcoin = true
+      isValid = true
+    } else if (/^bc1[a-z0-9]{39,59}$/.test(trimmedAddress)) {
+      network = 'Bitcoin (Native SegWit)'
+      isBitcoin = true
+      isValid = true
+    }
+    // Ethereum (ETH) validation: starts with 0x, 42 characters total
+    else if (/^0x[a-fA-F0-9]{40}$/.test(trimmedAddress)) {
+      network = 'Ethereum (ERC20)'
+      error = 'Only Bitcoin (BTC) addresses are accepted. Please use a Bitcoin wallet address.'
+    }
+    // Tron (TRX) validation: starts with T, 34 characters
+    else if (/^T[A-Za-z1-9]{33}$/.test(trimmedAddress)) {
+      network = 'Tron (TRC20)'
+      error = 'Only Bitcoin (BTC) addresses are accepted. Please use a Bitcoin wallet address.'
+    }
+    // Solana (SOL) validation: base58, 32-44 characters
+    else if (/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(trimmedAddress) && !trimmedAddress.startsWith('T') && !trimmedAddress.startsWith('1') && !trimmedAddress.startsWith('3')) {
+      network = 'Solana'
+      error = 'Only Bitcoin (BTC) addresses are accepted. Please use a Bitcoin wallet address.'
+    }
+    // Litecoin (LTC) validation: starts with L or M, 26-35 characters
+    else if (/^[LM][a-km-zA-HJ-NP-Z1-9]{26,33}$/.test(trimmedAddress)) {
+      network = 'Litecoin'
+      error = 'Only Bitcoin (BTC) addresses are accepted. Please use a Bitcoin wallet address.'
+    }
+    // Dogecoin (DOGE) validation: starts with D, 34 characters
+    else if (/^D{1}[5-9A-HJ-NP-U]{1}[1-9A-HJ-NP-Za-km-z]{32}$/.test(trimmedAddress)) {
+      network = 'Dogecoin'
+      error = 'Only Bitcoin (BTC) addresses are accepted. Please use a Bitcoin wallet address.'
+    }
+    // Ripple (XRP) validation: starts with r, 25-35 characters
+    else if (/^r[0-9a-zA-Z]{24,34}$/.test(trimmedAddress)) {
+      network = 'Ripple (XRP)'
+      error = 'Only Bitcoin (BTC) addresses are accepted. Please use a Bitcoin wallet address.'
+    }
+    else {
+      error = 'Invalid wallet address format. Please enter a valid Bitcoin (BTC) address.'
+    }
+
+    setAddressValidation({ isValid, network, error })
   }
 
-  if (paymentTimer > 0) {
-    return (
-      <div className="max-w-xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-700">
-        <div className="text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-yellow-500/10 mb-4 animate-pulse">
-             <Clock className="w-8 h-8 text-yellow-500" />
-          </div>
-          <h2 className="text-3xl font-bold text-white mb-2">Payment Pending</h2>
-          <p className="text-gray-400">Please wait while we verify your transaction</p>
-        </div>
-
-        <Card className="bg-[#0e0e24] border-yellow-500/20">
-          <CardContent className="p-8 text-center">
-             <div className="text-5xl font-mono text-yellow-500 font-bold mb-2">
-                {formatTime(paymentTimer)}
-             </div>
-             <p className="text-sm text-gray-500">Estimated time verification</p>
-          </CardContent>
-        </Card>
-        
-        <div className="text-center">
-           <Button variant="outline" onClick={() => window.location.reload()} className="border-white/10 hover:bg-white/5">
-             Refresh Status
-           </Button>
-        </div>
-      </div>
-    )
+  const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    setRecipientAddress(value)
+    validateWalletAddress(value)
   }
+
+  const canPurchase = hasEnoughBalance && recipientAddress.trim() !== '' && addressValidation?.isValid
 
   return (
-    <div className="max-w-2xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-700">
-      <Button 
-        variant="ghost" 
-        onClick={() => window.location.reload()}
-        className="text-gray-400 hover:text-white pl-0"
-      >
-        <ChevronRight className="w-4 h-4 mr-1 rotate-180" /> Back to Packages
-      </Button>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-         <div className="space-y-6">
-            <div>
-               <h2 className="text-3xl font-bold text-white mb-2">Payment Details</h2>
-               <p className="text-gray-400">Complete your transaction securely.</p>
-            </div>
-            
-            <Card className="bg-[#0e0e24] border-white/10">
-               <CardContent className="p-6 space-y-4">
-                  <div className="flex justify-between items-center text-sm">
-                     <span className="text-gray-400">Package Tier</span>
-                     <span className="text-white font-medium">{pkg.name}</span>
-                  </div>
-                  <div className="flex justify-between items-center text-sm">
-                     <span className="text-gray-400">Price</span>
-                     <span className="text-xl font-bold text-white">${pkg.price_usd.toLocaleString()} USDT</span>
-                  </div>
-               </CardContent>
-            </Card>
-         </div>
-
-         <div className="space-y-6">
-            <Card className="bg-[#0e0e24] border-white/10">
-               <CardHeader>
-                  <CardTitle className="text-sm font-medium text-gray-400 uppercase tracking-widest">Send Payment To</CardTitle>
-               </CardHeader>
-               <CardContent className="space-y-4">
-                  <div className="p-3 bg-black/20 rounded-lg border border-white/5 break-all font-mono text-xs text-center text-gray-300">
-                     {sellerWallet}
-                  </div>
-                  <Button 
-                    className="w-full bg-white/5 hover:bg-white/10 border border-white/10"
-                    onClick={() => onCopy(sellerWallet)}
-                  >
-                    {copied ? <CheckCircle2 className="w-4 h-4 mr-2 text-emerald-500" /> : <Copy className="w-4 h-4 mr-2" />}
-                    {copied ? 'Copied' : 'Copy Address'}
-                  </Button>
-               </CardContent>
-            </Card>
-
-            <div className="space-y-4">
-               <div className="space-y-2">
-                  <Label htmlFor="buyer-wallet" className="text-gray-300">Your Wallet Address (TRC20)</Label>
-                  <Input
-                    id="buyer-wallet"
-                    value={buyerWallet}
-                    onChange={(e) => setBuyerWallet(e.target.value)}
-                    placeholder="T..."
-                    className="bg-[#0e0e24] border-white/10 text-white focus:border-cyan-500"
-                  />
-               </div>
-               
-               <Button 
-                 onClick={() => onSubmit(buyerWallet)} 
-                 disabled={loading || !buyerWallet}
-                 className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white h-12 text-lg shadow-lg shadow-emerald-900/20"
-               >
-                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Confirm License Purchase'}
-               </Button>
-            </div>
-         </div>
+    <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-8 duration-700">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <Button 
+          variant="ghost" 
+          onClick={() => window.location.reload()}
+          className="text-gray-400 hover:text-white -ml-4"
+        >
+          <ChevronRight className="w-4 h-4 mr-1 rotate-180" /> Back
+        </Button>
+        <Badge variant="outline" className="border-white/20 text-gray-400">
+          Checkout
+        </Badge>
       </div>
+
+      {/* Main Card */}
+      <Card className="bg-gradient-to-br from-[#0e0e24] to-[#1a1a2e] border-white/10 overflow-hidden">
+        {/* Package Header */}
+        <div className="bg-gradient-to-r from-[#F7931A]/10 to-yellow-600/10 border-b border-white/5 p-6">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 text-sm text-gray-400 uppercase tracking-wider mb-2">
+                <Bitcoin className="w-4 h-4 text-[#F7931A]" />
+                {pkg.name}
+              </div>
+              <div className="text-5xl font-bold text-white mb-1">
+                {pkg.btc_amount} <span className="text-2xl text-gray-500 font-normal">BTC</span>
+              </div>
+              <p className="text-gray-400 text-sm">Flash Bitcoin License</p>
+            </div>
+            <div className="text-right">
+              <div className="text-sm text-gray-500 mb-1">Price</div>
+              <div className="text-3xl font-bold text-white">
+                ${pkg.price_usd.toLocaleString()}
+              </div>
+              <div className="text-sm text-gray-400">USDT</div>
+            </div>
+          </div>
+        </div>
+
+        <CardContent className="p-6 space-y-6">
+          {/* Package Features */}
+          <div>
+            <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">License Includes</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-white/5 border border-white/5">
+                <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
+                  <Zap className="w-5 h-5 text-emerald-400" />
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500">Daily Capacity</div>
+                  <div className="text-white font-semibold">{pkg.btc_amount} BTC</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-white/5 border border-white/5">
+                <div className="w-10 h-10 rounded-full bg-cyan-500/10 flex items-center justify-center flex-shrink-0">
+                  <Clock className="w-5 h-5 text-cyan-400" />
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500">Duration</div>
+                  <div className="text-white font-semibold">{pkg.duration} Days</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-white/5 border border-white/5">
+                <div className="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center flex-shrink-0">
+                  <Activity className="w-5 h-5 text-purple-400" />
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500">Possible Transfers</div>
+                  <div className="text-white font-semibold">{pkg.transfers}</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-white/5 border border-white/5">
+                <div className="w-10 h-10 rounded-full bg-orange-500/10 flex items-center justify-center flex-shrink-0">
+                  <CheckCircle2 className="w-5 h-5 text-orange-400" />
+                </div>
+                <div className="flex-1">
+                  <div className="text-xs text-gray-500 mb-1">Divisible</div>
+                  <div className="text-white font-semibold text-sm">Yes</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div className="border-t border-white/5"></div>
+
+          {/* Payment Summary */}
+          <div>
+            <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Payment Summary</h3>
+            
+            {/* Current Balance */}
+            <div className={`p-4 rounded-lg mb-4 border-2 ${hasEnoughBalance ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-red-500/5 border-red-500/20'}`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Wallet className={`w-5 h-5 ${hasEnoughBalance ? 'text-emerald-400' : 'text-red-400'}`} />
+                  <div>
+                    <div className="text-xs text-gray-500">Your Wallet Balance</div>
+                    <div className="text-2xl font-bold text-white">
+                      ${user.wallet_balance_usdt.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
+                  </div>
+                </div>
+                <Badge className={hasEnoughBalance ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-red-500/20 text-red-400 border-red-500/30'}>
+                  {hasEnoughBalance ? '✓ Sufficient' : '✗ Insufficient'}
+                </Badge>
+              </div>
+            </div>
+
+            {/* Price Breakdown */}
+            <div className="space-y-3 bg-white/5 rounded-lg p-4">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-400">Package Price</span>
+                <span className="text-white font-semibold">-${pkg.price_usd.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-400 flex items-center gap-2">
+                  Commission (10%)
+                  <span className="text-xs text-emerald-400">Instant Reward</span>
+                </span>
+                <span className="text-emerald-400 font-semibold">+${commission.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Recipient Wallet Address */}
+          <div>
+            <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Recipient Wallet Address</h3>
+            <div className="space-y-3">
+              <div>
+                <Label htmlFor="recipient-address" className="text-gray-300 mb-2 block">
+                  Enter wallet address to receive Flash Bitcoin
+                </Label>
+                <Input
+                  id="recipient-address"
+                  value={recipientAddress}
+                  onChange={handleAddressChange}
+                  placeholder="Enter your wallet address..."
+                  className={`bg-[#0e0e24] border-white/10 text-white focus:border-cyan-500 h-12 ${
+                    addressValidation?.isValid ? 'border-emerald-500/50' : 
+                    addressValidation?.error ? 'border-red-500/50' : ''
+                  }`}
+                />
+              </div>
+              
+              {/* Validation Feedback */}
+              {addressValidation && (
+                <div className={`p-3 rounded-lg border ${
+                  addressValidation.isValid 
+                    ? 'bg-emerald-500/10 border-emerald-500/30' 
+                    : 'bg-red-500/10 border-red-500/30'
+                }`}>
+                  {addressValidation.isValid ? (
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                      <div className="flex-1">
+                        <div className="text-sm font-semibold text-emerald-400">Valid Address</div>
+                        <div className="text-xs text-gray-400 mt-0.5">
+                          Network: <span className="text-white font-medium">{addressValidation.network}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-start gap-2">
+                      <Shield className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+                      <div className="flex-1">
+                        <div className="text-sm font-semibold text-red-400">Invalid Address</div>
+                        <div className="text-xs text-gray-400 mt-0.5">{addressValidation.error}</div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Insufficient Balance Warning */}
+          {!hasEnoughBalance && (
+            <Alert className="border-red-500/30 bg-red-500/10">
+              <AlertDescription className="flex items-start gap-3">
+                <Shield className="w-5 h-5 text-red-400 mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <div className="font-semibold text-red-400 mb-1">Insufficient Balance</div>
+                  <div className="text-sm text-gray-400">
+                    You need <strong className="text-white">${shortage.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT</strong> more to complete this purchase.
+                  </div>
+                  <div className="text-xs text-gray-500 mt-2">
+                    💡 Contact admin via Telegram to add funds to your wallet.
+                  </div>
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Purchase Button */}
+          <Button 
+            onClick={onSubmit}
+            disabled={loading || !canPurchase}
+            className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-lg shadow-emerald-900/20 disabled:opacity-50 disabled:cursor-not-allowed disabled:from-gray-600 disabled:to-gray-600"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                Processing Payment...
+              </>
+            ) : !hasEnoughBalance ? (
+              <>
+                <Shield className="w-5 h-5 mr-2" />
+                Insufficient Balance - Top Up Required
+              </>
+            ) : !recipientAddress.trim() ? (
+              <>
+                <Wallet className="w-5 h-5 mr-2" />
+                Enter Recipient Address
+              </>
+            ) : !addressValidation?.isValid ? (
+              <>
+                <Shield className="w-5 h-5 mr-2" />
+                Invalid Wallet Address
+              </>
+            ) : (
+              <>
+                <CheckCircle2 className="w-5 h-5 mr-2" />
+                Confirm Purchase - ${pkg.price_usd.toLocaleString()} USDT
+              </>
+            )}
+          </Button>
+
+          {/* Security Note */}
+          <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
+            <Shield className="w-3 h-3" />
+            <span>Secure transaction • Instant activation • 24/7 support</span>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }

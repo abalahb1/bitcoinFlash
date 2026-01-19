@@ -8,7 +8,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key'
 export async function GET() {
   try {
     const cookieStore = await cookies()
-    const token = cookieStore.get('token')
+    const token = cookieStore.get('auth-token')
 
     if (!token) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })

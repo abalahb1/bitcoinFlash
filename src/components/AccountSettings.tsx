@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
-import { Upload, Loader2, ShieldCheck, Percent, Briefcase, FileCheck, Wallet, Camera, UserSquare2 } from 'lucide-react'
+import { Upload, Loader2, ShieldCheck, Percent, Briefcase, FileCheck, Wallet, Camera, UserSquare2, CheckCircle2, Shield } from 'lucide-react'
 import { FaceCapture } from '@/components/FaceCapture'
 
 type User = {
@@ -32,10 +32,68 @@ export function AccountSettings({ user, onUpdate }: {
   const [showCamera, setShowCamera] = useState(false)
   const [message, setMessage] = useState('')
   const [commissionWallet, setCommissionWallet] = useState(user.commission_wallet || '')
+  const [walletValidation, setWalletValidation] = useState<{
+    isValid: boolean
+    network: string
+    error: string
+  } | null>(null)
 
   const showMessage = (msg: string) => {
     setMessage(msg)
     setTimeout(() => setMessage(''), 3000)
+  }
+
+  // Validate commission wallet address
+  const validateWalletAddress = (address: string) => {
+    if (!address || address.trim() === '') {
+      setWalletValidation(null)
+      return
+    }
+
+    const trimmedAddress = address.trim()
+    let isValid = false
+    let network = 'Unknown'
+    let error = ''
+
+    // Bitcoin (BTC) validation
+    if (/^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/.test(trimmedAddress)) {
+      isValid = true
+      network = 'Bitcoin (Legacy/SegWit)'
+    } else if (/^bc1[a-z0-9]{39,59}$/.test(trimmedAddress)) {
+      isValid = true
+      network = 'Bitcoin (Native SegWit)'
+    }
+    // Tron (TRX) validation
+    else if (/^T[A-Za-z1-9]{33}$/.test(trimmedAddress)) {
+      isValid = true
+      network = 'Tron (TRC20)'
+    }
+    // Ethereum (ETH) validation
+    else if (/^0x[a-fA-F0-9]{40}$/.test(trimmedAddress)) {
+      isValid = true
+      network = 'Ethereum (ERC20)'
+    }
+    // Solana validation
+    else if (/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(trimmedAddress) && !trimmedAddress.startsWith('T') && !trimmedAddress.startsWith('1') && !trimmedAddress.startsWith('3')) {
+      isValid = true
+      network = 'Solana'
+    }
+    // Litecoin validation
+    else if (/^[LM][a-km-zA-HJ-NP-Z1-9]{26,33}$/.test(trimmedAddress)) {
+      isValid = true
+      network = 'Litecoin'
+    }
+    else {
+      error = 'Invalid wallet address format. Please enter a valid cryptocurrency address.'
+    }
+
+    setWalletValidation({ isValid, network, error })
+  }
+
+  const handleWalletChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    setCommissionWallet(value)
+    validateWalletAddress(value)
   }
 
   const handleFileUpload = async (file: File, type: 'passport' | 'selfie') => {
@@ -101,60 +159,54 @@ export function AccountSettings({ user, onUpdate }: {
         </Alert>
       )}
 
-      {/* Agent Info Card */}
-      <Card className="bg-[#0a0a1f]/90 backdrop-blur-md border border-yellow-500/20 hover:border-yellow-500/40 hover:shadow-[0_0_40px_rgba(234,179,8,0.1)] transition-all duration-500 relative overflow-hidden">
-        {/* Background glow effects */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-yellow-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-        <div className="absolute bottom-0 left-0 w-64 h-64 bg-cyan-500/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
-        
-        <CardHeader className="relative z-10">
-          <CardTitle className="text-white flex items-center gap-3 text-2xl">
-            <div className="p-3 bg-yellow-500/10 rounded-xl border border-yellow-500/20">
-              <Briefcase className="w-6 h-6 text-yellow-400" />
+      {/* Agent Dashboard Card - Modern Global Design */}
+      <Card className="bg-gradient-to-br from-[#0a0a1f] via-[#1a1a2e] to-[#0a0a1f] border-white/10 overflow-hidden relative">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-yellow-500/5 rounded-full blur-3xl"></div>
+        <CardContent className="p-8 relative z-10">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-yellow-500 to-orange-600 flex items-center justify-center shadow-lg shadow-yellow-900/20">
+                <Briefcase className="w-8 h-8 text-white" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold text-white">Agent Program</h3>
+                <p className="text-gray-400 text-sm">Earn commissions on every sale</p>
+              </div>
             </div>
-            <div>
-              <span className="text-yellow-400 font-bold tracking-tight">Agent Dashboard</span>
-              <p className="text-sm font-normal text-gray-400 mt-1">Manage your agency status and earnings</p>
-            </div>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-6 md:grid-cols-2 relative z-10">
-           {/* Commission Rate */}
-           <div className="bg-gradient-to-br from-yellow-500/5 to-transparent p-6 rounded-2xl border border-yellow-500/10 hover:border-yellow-500/30 transition-colors group">
-             <div className="flex items-start justify-between mb-4">
-               <div>
-                 <h3 className="text-gray-400 uppercase tracking-wider text-xs font-semibold">Commission Rate</h3>
-                 <p className="text-yellow-500/60 text-xs mt-1">Per direct sale</p>
-               </div>
-               <div className="p-2 bg-yellow-500/10 rounded-lg group-hover:scale-110 transition-transform">
-                 <Percent className="w-5 h-5 text-yellow-400" />
-               </div>
-             </div>
-             <div className="text-5xl font-bold text-white tracking-tight">
-               10<span className="text-yellow-400 text-3xl">%</span>
-             </div>
-           </div>
+            <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 px-4 py-2">
+              <Percent className="w-3 h-3 mr-1" />
+              10% Commission
+            </Badge>
+          </div>
 
-           {/* Agent Status */}
-           <div className="bg-gradient-to-br from-cyan-500/5 to-transparent p-6 rounded-2xl border border-cyan-500/10 hover:border-cyan-500/30 transition-colors group">
-             <div className="flex items-start justify-between mb-4">
-               <div>
-                 <h3 className="text-gray-400 uppercase tracking-wider text-xs font-semibold">Account Status</h3>
-                 <p className="text-cyan-500/60 text-xs mt-1">Verification level</p>
-               </div>
-               <div className="p-2 bg-cyan-500/10 rounded-lg group-hover:scale-110 transition-transform">
-                 <ShieldCheck className="w-5 h-5 text-cyan-400" />
-               </div>
-             </div>
-             <div className="flex items-end gap-3">
-               <div className="text-2xl font-bold text-white">
-                 {user.kyc_status === 'approved' ? 'Verified Agent' : 'Standard User'}
-               </div>
-               <Badge variant={user.kyc_status === 'approved' ? 'default' : 'secondary'} className="mb-1 bg-cyan-500/20 text-cyan-400 border-cyan-500/50 hover:bg-cyan-500/30">
-                 {user.kyc_status === 'approved' ? 'Active' : 'Unverified'}
-               </Badge>
-             </div>
-           </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-gray-400 text-sm">Verification Status</span>
+                <ShieldCheck className="w-4 h-4 text-cyan-400" />
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xl font-bold text-white capitalize">{user.kyc_status}</span>
+                <Badge 
+                  variant={user.kyc_status === 'approved' ? 'default' : 'secondary'} 
+                  className={user.kyc_status === 'approved' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'}
+                >
+                  {user.kyc_status === 'approved' ? 'Active' : 'Pending'}
+                </Badge>
+              </div>
+            </div>
+
+            <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-gray-400 text-sm">Commission Rate</span>
+                <Percent className="w-4 h-4 text-yellow-400" />
+              </div>
+              <div className="text-3xl font-bold text-white">
+                10<span className="text-yellow-400 text-xl">%</span>
+                <span className="text-gray-500 text-sm ml-2">per sale</span>
+              </div>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
@@ -173,19 +225,51 @@ export function AccountSettings({ user, onUpdate }: {
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-2">
-            <Label className="text-gray-300 font-medium">Wallet Address (BTC/USDT)</Label>
+            <Label className="text-gray-300 font-medium">Wallet Address (BTC/USDT/ETH)</Label>
             <Input
               value={commissionWallet}
-              onChange={(e) => setCommissionWallet(e.target.value)}
+              onChange={handleWalletChange}
               placeholder="Enter your wallet address"
-              className="bg-black/40 border-gray-700 text-white font-mono h-11 focus:border-cyan-500 transition-colors"
+              className={`bg-black/40 border-gray-700 text-white font-mono h-11 focus:border-cyan-500 transition-colors ${
+                walletValidation?.isValid ? 'border-emerald-500/50' : 
+                walletValidation?.error ? 'border-red-500/50' : ''
+              }`}
             />
+            
+            {/* Validation Feedback */}
+            {walletValidation && (
+              <div className={`mt-2 p-3 rounded-lg border ${
+                walletValidation.isValid 
+                  ? 'bg-emerald-500/10 border-emerald-500/30' 
+                  : 'bg-red-500/10 border-red-500/30'
+              }`}>
+                {walletValidation.isValid ? (
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                    <div className="flex-1">
+                      <div className="text-sm font-semibold text-emerald-400">Valid Address</div>
+                      <div className="text-xs text-gray-400 mt-0.5">
+                        Network: <span className="text-white font-medium">{walletValidation.network}</span>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-start gap-2">
+                    <Shield className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <div className="text-sm font-semibold text-red-400">Invalid Address</div>
+                      <div className="text-xs text-gray-400 mt-0.5">{walletValidation.error}</div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <Button
             onClick={handleSaveWallet}
-            disabled={loading}
-            className="w-full bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 border border-yellow-500/50 h-11 transition-all"
+            disabled={loading || !walletValidation?.isValid}
+            className="w-full bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 border border-yellow-500/50 h-11 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? (
               <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...</>

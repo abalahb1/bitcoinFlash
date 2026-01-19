@@ -35,6 +35,8 @@ model User {
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
   payments            Payment[]
+  withdrawalRequests  WithdrawalRequest[]
+  deposits            DepositNotification[]
 }
 
 model Package {
@@ -61,4 +63,40 @@ model Payment {
 
   user    User    @relation(fields: [user_id], references: [id], onDelete: Cascade)
   package Package @relation(fields: [package_id], references: [id], onDelete: Cascade)
+}
+
+model WithdrawalRequest {
+  id              String   @id @default(uuid())
+  user_id         String
+  amount          Float
+  address         String   // TRC20 address
+  network         String   @default("TRC20")
+  status          String   @default("pending") // pending, approved, rejected, completed
+  rejection_reason String?
+  admin_notes     String?
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+  processed_at    DateTime?
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@index([user_id])
+  @@index([status])
+}
+
+model DepositNotification {
+  id              String   @id @default(uuid())
+  user_id         String
+  amount          Float
+  tx_hash         String?  // Transaction hash (optional)
+  status          String   @default("pending") // pending, confirmed
+  confirmed_by    String?  // Admin email who confirmed
+  admin_notes     String?
+  created_at      DateTime @default(now())
+  confirmed_at    DateTime?
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@index([user_id])
+  @@index([status])
 }

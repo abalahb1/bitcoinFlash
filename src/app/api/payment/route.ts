@@ -27,17 +27,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const user = await db.user.findUnique({ where: { id: userId } })
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
-    }
-
     const body = await request.json()
-    const { package_id, buyer_wallet } = body
+    const { package_id } = body
 
-    if (!package_id || !buyer_wallet) {
+    if (!package_id) {
       return NextResponse.json(
-        { error: 'Package ID and wallet address are required' },
+        { error: 'Package ID is required' },
         { status: 400 }
       )
     }
@@ -54,55 +49,88 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check for recent pending payment (last 1 hour)
-    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000)
+    // Get user with current balance
+    const user = await db.user.findUnique({ where: { id: userId } })
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
 
-    const existingPayment = await db.payment.findFirst({
-      where: {
-        user_id: userId,
-        status: 'pending',
-        created_at: { gt: oneHourAgo }
-      }
-    })
-
-    if (existingPayment) {
+    // Check if user has sufficient balance
+    if (user.wallet_balance_usdt < pkg.price_usd) {
       return NextResponse.json(
-        { error: 'You already have a pending transaction' },
+        { 
+          error: 'Insufficient wallet balance',
+          details: {
+            current_balance: user.wallet_balance_usdt,
+            required: pkg.price_usd,
+            shortage: pkg.price_usd - user.wallet_balance_usdt
+          }
+        },
         { status: 400 }
       )
     }
 
-    // Parse amount from package (remove commas)
-    const amount = parseFloat(pkg.usdt_amount.replace(/,/g, ''))
-    const commission = amount * 0.10 // 10% commission
+    // Calculate commission (10%)
+    const commission = pkg.price_usd * 0.10
 
-    // Create payment
-    const payment = await db.payment.create({
-      data: {
-        user_id: userId,
-        package_id,
-        buyer_wallet,
-        amount: amount,
-        commission: commission,
-        status: 'pending',
-        // created_at is default now() handled by Prisma default
-      }
+    // Process payment in a transaction
+    const result = await db.$transaction(async (tx) => {
+      // Deduct amount from user balance
+      await tx.user.update({
+        where: { id: userId },
+        data: {
+          wallet_balance_usdt: {
+            decrement: pkg.price_usd
+          }
+        }
+      })
+
+      // Create payment record with completed status
+      const payment = await tx.payment.create({
+        data: {
+          user_id: userId,
+          package_id,
+          buyer_wallet: user.usdt_trc20_address || 'N/A',
+          amount: pkg.price_usd,
+          commission: commission,
+          status: 'completed'
+        }
+      })
+
+      // Add commission to user balance
+      await tx.user.update({
+        where: { id: userId },
+        data: {
+          wallet_balance_usdt: {
+            increment: commission
+          }
+        }
+      })
+
+      return payment
     })
 
     // Notify Admin via Telegram
     await sendTelegramMessage(
-      `💰 *New Payment Request*\n` +
-      `User: ${user.name}\n` +
-      `Amount: ${pkg.usdt_amount} USDT\n` +
-      `Package: ${pkg.name}\n` +
-      `Action: Check bot menu /payments to confirm.`
+      `✅ *Package Purchased*\\n` +
+      `User: ${user.name} (${user.email})\\n` +
+      `Package: ${pkg.name}\\n` +
+      `Amount: $${pkg.price_usd} USDT\\n` +
+      `Commission: $${commission.toFixed(2)} USDT\\n` +
+      `New Balance: $${(user.wallet_balance_usdt - pkg.price_usd + commission).toFixed(2)} USDT`
     )
 
-    return NextResponse.json({ success: true, paymentId: payment.id })
+    return NextResponse.json({ 
+      success: true, 
+      paymentId: result.id,
+      message: 'Package purchased successfully! Commission added to your balance.',
+      commission: commission,
+      new_balance: user.wallet_balance_usdt - pkg.price_usd + commission
+    })
   } catch (error) {
     console.error('Payment error:', error)
     return NextResponse.json(
-      { error: 'Payment processing failed' },
+      { error: 'Failed to process payment. Please try again.' },
       { status: 500 }
     )
   }
