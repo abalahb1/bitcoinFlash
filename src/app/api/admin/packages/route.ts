@@ -88,9 +88,18 @@ export async function PUT(request: NextRequest) {
       )
     }
 
+    // Parse updates to correct types
+    const parsedUpdates: any = {}
+    if (updates.name) parsedUpdates.name = updates.name
+    if (updates.usdt_amount) parsedUpdates.usdt_amount = updates.usdt_amount
+    if (updates.btc_amount) parsedUpdates.btc_amount = updates.btc_amount
+    if (updates.price_usd) parsedUpdates.price_usd = parseFloat(updates.price_usd)
+    if (updates.duration) parsedUpdates.duration = parseInt(updates.duration?.toString() || '45')
+    if (updates.transfers) parsedUpdates.transfers = parseInt(updates.transfers?.toString() || '27')
+
     const pkg = await db.package.update({
       where: { id: packageId },
-      data: updates
+      data: parsedUpdates
     })
 
     return NextResponse.json({ 

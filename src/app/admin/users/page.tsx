@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
+import { TierBadge } from '@/components/TierBadge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { 
   Users as UsersIcon, Loader2, Search, Edit, Trash2, CheckCircle2, 
@@ -25,6 +26,7 @@ type User = {
   kyc_status: string
   is_verified: boolean
   commission_wallet: string | null
+  account_tier: 'bronze' | 'silver' | 'gold'
   createdAt: string
   updatedAt: string
   _count: {
@@ -273,6 +275,7 @@ export default function AdminUsersPage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-2">
                           <h3 className="text-white font-semibold truncate">{user.name}</h3>
+                          <TierBadge tier={user.account_tier} size="sm" />
                           {user.is_verified && (
                             <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30">
                               <CheckCircle2 className="w-3 h-3 mr-1" />

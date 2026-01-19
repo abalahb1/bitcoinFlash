@@ -1,6 +1,7 @@
 // Tier configuration
-export const TIER_CONFIG = {
+export const TIERS = {
   bronze: {
+    tier: 'bronze' as const,
     name: 'Bronze',
     commissionRate: 0.05, // 5%
     color: '#CD7F32',
@@ -13,6 +14,7 @@ export const TIER_CONFIG = {
     ]
   },
   silver: {
+    tier: 'silver' as const,
     name: 'Silver',
     commissionRate: 0.07, // 7%
     color: '#C0C0C0',
@@ -26,25 +28,29 @@ export const TIER_CONFIG = {
     ]
   },
   gold: {
+    tier: 'gold' as const,
     name: 'Gold',
     commissionRate: 0.10, // 10%
     color: '#FFD700',
     icon: '🥇',
     features: [
-      'VIP support',
+      'VIP support 24/7',
       '10% commission on sales',
-      'Express processing time',
-      'Access to exclusive packages',
+      'Instant processing',
+      'Access to all packages',
+      'Real-time analytics',
       'Dedicated account manager',
-      'Early access to new features'
+      'Custom commission structures'
     ]
   }
 } as const
 
-export type TierType = keyof typeof TIER_CONFIG
+export type TierType = 'bronze' | 'silver' | 'gold'
 
-export function getTierConfig(tier: string) {
-  return TIER_CONFIG[tier as TierType] || TIER_CONFIG.bronze
+export function getTierConfig(tier: string | null | undefined) {
+  if (!tier) return TIERS.bronze
+  const normalizedTier = tier.toLowerCase() as TierType
+  return TIERS[normalizedTier] || TIERS.bronze
 }
 
 export function calculateCommission(amount: number, tier: string): number {

@@ -215,7 +215,7 @@ export default function AdminPackagesPage() {
                     />
                   </div>
                   <div>
-                    <Label className="text-gray-300 mb-2 block">USDT Amount</Label>
+                    <Label className="text-gray-300 mb-2 block">BTC Price (per unit)</Label>
                     <Input
                       value={formData.usdt_amount}
                       onChange={(e) => setFormData({...formData, usdt_amount: e.target.value})}
@@ -290,8 +290,8 @@ export default function AdminPackagesPage() {
                     <span className="text-white font-semibold">{pkg.btc_amount} BTC</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-400">USDT Amount:</span>
-                    <span className="text-white font-semibold">{pkg.usdt_amount} USDT</span>
+                    <span className="text-gray-400">BTC Price:</span>
+                    <span className="text-white font-semibold">${pkg.price_usd.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">Duration:</span>

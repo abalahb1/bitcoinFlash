@@ -16,15 +16,18 @@ import { WalletEnhancements } from '@/components/WalletEnhancements'
 import { AccountSettings } from '@/components/AccountSettings'
 import { KYCBlockingModal } from '@/components/KYCBlockingModal'
 import { WalletHistory } from '@/components/WalletHistory'
+import { TierBadge } from '@/components/TierBadge'
 
 
 type View = 'landing' | 'wallet' | 'payment' | 'account' | 'history'
 
+// Extend UserType to include account_tier
+type ExtendedUserType = UserType & { account_tier?: string }
 
 export default function DashboardPage() {
   const router = useRouter()
   const [currentView, setCurrentView] = useState<View>('landing')
-  const [user, setUser] = useState<UserType | null>(null)
+  const [user, setUser] = useState<ExtendedUserType | null>(null)
   const [packages, setPackages] = useState<PackageType[]>([])
   const [selectedPackage, setSelectedPackage] = useState<PackageType | null>(null)
   const [loading, setLoading] = useState(false)
@@ -612,10 +615,13 @@ function WalletView({ user }: { user: UserType | null }) {
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold text-white">My Wallet</h2>
-          <p className="text-gray-400 mt-1">Manage your digital assets</p>
-        </div>
+              <div>
+                <div className="flex items-center gap-3">
+                  <h1 className="text-3xl font-bold text-white">Welcome back, {user?.name}</h1>
+                  {user?.account_tier && <TierBadge tier={user.account_tier} size="md" />}
+                </div>
+                <p className="text-gray-400 mt-1">Manage your flash transactions and wallet</p>
+              </div>
         <Badge variant="outline" className="border-emerald-500/30 text-emerald-400 bg-emerald-500/5 px-4 py-2">
           <Activity className="w-3 h-3 mr-2" />
           Active
