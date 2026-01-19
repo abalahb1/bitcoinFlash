@@ -524,6 +524,12 @@ function WalletView({ user }: { user: UserType | null }) {
     network: string
     error: string
   } | null>(null)
+  
+  // Deposit notification states
+  const [depositAmount, setDepositAmount] = useState('')
+  const [depositTxHash, setDepositTxHash] = useState('')
+  const [notifying, setNotifying] = useState(false)
+  const [depositMessage, setDepositMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null)
 
   // Calculate total value
   const totalValueUSD = user.wallet_balance_usdt
@@ -755,6 +761,109 @@ function WalletView({ user }: { user: UserType | null }) {
                         <span className="text-white font-medium">19 blocks</span>
                       </div>
                     </div>
+                  </div>
+                </div>
+
+                {/* Deposit Notification Section */}
+                <div className="mt-8 p-6 bg-gradient-to-br from-blue-500/5 to-cyan-500/5 rounded-xl border border-blue-500/20">
+                  <div className="flex items-start gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+                      <Activity className="w-5 h-5 text-blue-400" />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="text-white font-semibold text-lg mb-1">Already Deposited?</h4>
+                      <p className="text-gray-400 text-sm">
+                        If you've already sent USDT to your address, notify admin to confirm your deposit.
+                      </p>
+                    </div>
+                  </div>
+
+                  {depositMessage && (
+                    <Alert className={`mb-4 border ${
+                      depositMessage.type === 'success' 
+                        ? 'border-emerald-500/50 bg-emerald-500/10' 
+                        : 'border-red-500/50 bg-red-500/10'
+                    }`}>
+                      <AlertDescription className={depositMessage.type === 'success' ? 'text-emerald-400' : 'text-red-400'}>
+                        {depositMessage.text}
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="deposit-amount" className="text-gray-300 mb-2 block">
+                        Amount Deposited (USDT)
+                      </Label>
+                      <Input
+                        id="deposit-amount"
+                        type="number"
+                        value={depositAmount}
+                        onChange={(e) => setDepositAmount(e.target.value)}
+                        placeholder="0.00"
+                        className="bg-[#1a1a2e] border-white/10 text-white h-12"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Minimum: 10 USDT</p>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="deposit-tx" className="text-gray-300 mb-2 block">
+                        Transaction Hash (Optional)
+                      </Label>
+                      <Input
+                        id="deposit-tx"
+                        value={depositTxHash}
+                        onChange={(e) => setDepositTxHash(e.target.value)}
+                        placeholder="Enter transaction hash if available"
+                        className="bg-[#1a1a2e] border-white/10 text-white h-12"
+                      />
+                    </div>
+
+                    <Button
+                      onClick={async () => {
+                        if (!depositAmount || parseFloat(depositAmount) < 10) {
+                          setDepositMessage({ text: 'Please enter a valid amount (minimum 10 USDT)', type: 'error' })
+                          return
+                        }
+
+                        setNotifying(true)
+                        setDepositMessage(null)
+
+                        try {
+                          const res = await fetch('/api/wallet/notify', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              amount: parseFloat(depositAmount),
+                              tx_hash: depositTxHash || null
+                            })
+                          })
+
+                          const data = await res.json()
+
+                          if (res.ok) {
+                            setDepositMessage({ text: data.message, type: 'success' })
+                            setDepositAmount('')
+                            setDepositTxHash('')
+                          } else {
+                            setDepositMessage({ text: data.error, type: 'error' })
+                          }
+                        } catch (error) {
+                          setDepositMessage({ text: 'Connection error. Please try again.', type: 'error' })
+                        } finally {
+                          setNotifying(false)
+                        }
+                      }}
+                      disabled={!depositAmount || parseFloat(depositAmount) < 10 || notifying}
+                      className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white h-12 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {notifying ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Activity className="w-4 h-4 mr-2" />}
+                      {notifying ? 'Sending...' : 'Notify Admin'}
+                    </Button>
+
+                    <p className="text-xs text-gray-500 text-center">
+                      Admin will review and confirm your deposit within 1-24 hours
+                    </p>
                   </div>
                 </div>
               </div>
@@ -1016,6 +1125,7 @@ function HistoryView({ user }: { user: UserType | null }) {
                   <th className="p-4">Package</th>
                   <th className="p-4">Buyer Address</th>
                   <th className="p-4">Amount</th>
+                  <th className="p-4">BTC Amount</th>
                   <th className="p-4">Commission (10%)</th>
                   <th className="p-4">Status</th>
                   <th className="p-4">Date</th>
@@ -1023,15 +1133,16 @@ function HistoryView({ user }: { user: UserType | null }) {
               </thead>
               <tbody className="divide-y divide-white/5">
                 {loading ? (
-                   <tr><td colSpan={6} className="p-8 text-center text-gray-500">Loading records...</td></tr>
+                   <tr><td colSpan={7} className="p-8 text-center text-gray-500">Loading records...</td></tr>
                 ) : transactions.length === 0 ? (
-                   <tr><td colSpan={6} className="p-8 text-center text-gray-500">No transactions found</td></tr>
+                   <tr><td colSpan={7} className="p-8 text-center text-gray-500">No transactions found</td></tr>
                 ) : (
                    transactions.map((tx) => (
                      <tr key={tx.id} className="hover:bg-white/5 transition-colors">
                        <td className="p-4 text-white font-medium">{tx.package}</td>
                        <td className="p-4 text-gray-400 font-mono text-xs">{tx.buyer_wallet}</td>
                        <td className="p-4 text-white">{tx.amount.toLocaleString()} USDT</td>
+                       <td className="p-4 text-orange-400 font-bold">{tx.btc_amount || 'N/A'}</td>
                        <td className="p-4 text-emerald-400 font-bold">+{tx.commission.toLocaleString()} USDT</td>
                        <td className="p-4">
                          <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 uppercase text-xs">

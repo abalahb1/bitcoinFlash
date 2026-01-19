@@ -154,6 +154,12 @@ export default function AdminDashboard() {
               <span className="text-xs">Deposits</span>
             </Button>
           </Link>
+          <Link href="/admin/deposit-notifications">
+            <Button variant="outline" className="w-full h-20 flex-col gap-2 border-white/10 hover:border-white/30 text-gray-300">
+              <Activity className="w-5 h-5" />
+              <span className="text-xs">Deposit Notif.</span>
+            </Button>
+          </Link>
           <Link href="/admin/packages">
             <Button variant="outline" className="w-full h-20 flex-col gap-2 border-white/10 hover:border-white/30 text-gray-300">
               <Package className="w-5 h-5" />
