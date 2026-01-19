@@ -280,7 +280,8 @@ export function AccountSettings({ user, onUpdate }: {
         </CardContent>
       </Card>
 
-      {/* KYC Upload */}
+      {/* KYC Upload - Only show if not approved */}
+      {user.kyc_status !== 'approved' && (
       <Card className="bg-[#0a0a1f]/80 backdrop-blur-sm border border-cyan-500/20">
         <CardHeader>
           <CardTitle className="text-white flex items-center gap-2">
@@ -408,6 +409,7 @@ export function AccountSettings({ user, onUpdate }: {
           </div>
         </CardContent>
       </Card>
+      )}
     </div>
   )
 }

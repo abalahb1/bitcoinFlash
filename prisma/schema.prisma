@@ -31,6 +31,7 @@ model User {
   kyc_status          String    @default("none") // none, pending, approved, rejected
   is_verified         Boolean   @default(false)  // Admin-controlled verification status
   commission_wallet   String?   // عنوان محفظة العمولات
+  account_tier        String    @default("bronze") // bronze, silver, gold
   
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { jwtVerify } from 'jose'
+import { calculateCommission } from '@/lib/tiers'
 import { sendTelegramMessage } from '@/lib/telegram'
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'your-secret-key-change-in-production')
@@ -70,8 +71,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Calculate commission (10%)
-    const commission = pkg.price_usd * 0.10
+    // Calculate commission based on user tier
+    const commission = calculateCommission(pkg.price_usd, user.account_tier)
 
     // Process payment in a transaction
     const result = await db.$transaction(async (tx) => {

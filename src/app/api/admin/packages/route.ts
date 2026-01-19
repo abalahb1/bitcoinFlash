@@ -52,8 +52,8 @@ export async function POST(request: NextRequest) {
         usdt_amount,
         btc_amount,
         price_usd: parseFloat(price_usd),
-        duration: duration || 45,
-        transfers: transfers || 27
+        duration: parseInt(duration?.toString() || '45'),
+        transfers: parseInt(transfers?.toString() || '27')
       }
     })
 

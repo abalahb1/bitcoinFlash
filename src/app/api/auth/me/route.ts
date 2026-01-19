@@ -39,6 +39,7 @@ export async function GET(request: NextRequest) {
         kyc_status: true,
         is_verified: true,
         commission_wallet: true,
+        account_tier: true,
         createdAt: true,
         updatedAt: true,
       }
