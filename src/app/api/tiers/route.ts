@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { TIER_CONFIG } from '@/lib/tiers'
+import { TIERS } from '@/lib/tiers'
 
 export async function GET(request: NextRequest) {
   try {
     // Return all tier configurations
-    const tiers = Object.entries(TIER_CONFIG).map(([key, config]) => ({
+    const tiers = Object.entries(TIERS).map(([key, config]) => ({
       id: key,
       ...config
     }))
