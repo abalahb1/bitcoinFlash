@@ -1005,7 +1005,7 @@ function HistoryView({ user }: { user: UserType | null }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch('/api/transactions')
+    fetch('/api/transactions', { cache: 'no-store' })
       .then(res => res.json())
       .then(data => {
         setTransactions(Array.isArray(data) ? data : [])
@@ -1041,7 +1041,7 @@ function HistoryView({ user }: { user: UserType | null }) {
                  <div key={tx.id} className="bg-secondary/30 rounded-lg p-4 border border-border space-y-3">
                    <div className="flex justify-between items-start">
                      <div>
-                       <div className="font-bold text-foreground">{tx.package}</div>
+                       <div className="font-bold text-foreground">{String(tx.package || 'Unknown Package')}</div>
                        <div className="text-xs text-muted-foreground font-mono mt-1 w-32 truncate">{tx.buyer_wallet}</div>
                      </div>
                      <Badge variant="outline" className={`
@@ -1099,7 +1099,7 @@ function HistoryView({ user }: { user: UserType | null }) {
                 ) : (
                    transactions.map((tx) => (
                      <tr key={tx.id} className="hover:bg-secondary/50 transition-colors">
-                       <td className="p-4 text-foreground font-medium">{tx.package}</td>
+                       <td className="p-4 text-foreground font-medium">{String(tx.package || 'Unknown Package')}</td>
                        <td className="p-4 text-muted-foreground font-mono text-xs max-w-[150px] truncate" title={tx.buyer_wallet}>{tx.buyer_wallet}</td>
                        <td className="p-4 text-foreground">{Number(tx.amount).toLocaleString()} USDT</td>
                        <td className="p-4 text-primary font-bold">{tx.btc_amount || 'N/A'}</td>
@@ -1526,14 +1526,19 @@ function CommissionHistoryView({ user }: { user: UserType }) {
 
   const fetchTransactions = async () => {
     try {
-      const res = await fetch(`/api/transactions?userId=${user.id}`)
+      const res = await fetch(`/api/transactions?userId=${user.id}`, { cache: 'no-store' })
       if (res.ok) {
         const data = await res.json()
-        // Filter for transactions that have commission > 0
-        setTransactions(data.filter((t: any) => Number(t.commission) > 0))
+        if (Array.isArray(data)) {
+          // Filter for transactions that have commission > 0
+          setTransactions(data.filter((t: any) => Number(t.commission) > 0))
+        } else {
+          setTransactions([])
+        }
       }
     } catch (error) {
       console.error('Failed to fetch transactions', error)
+      setTransactions([])
     } finally {
       setLoading(false)
     }
@@ -1587,7 +1592,7 @@ function CommissionHistoryView({ user }: { user: UserType }) {
                  <div key={tx.id} className="bg-secondary/30 rounded-lg p-4 border border-border space-y-3">
                    <div className="flex justify-between items-start">
                      <div>
-                       <div className="font-bold text-foreground">{tx.package?.name || 'Unknown Package'}</div>
+                       <div className="font-bold text-foreground">{String(tx.package || 'Unknown Package')}</div>
                        <div className="text-xs text-muted-foreground font-mono mt-1 w-32 truncate">{tx.buyer_wallet}</div>
                      </div>
                      <Badge variant="outline" className="border-emerald-500/30 text-emerald-500 bg-emerald-500/10 uppercase text-[10px]">
@@ -1635,7 +1640,7 @@ function CommissionHistoryView({ user }: { user: UserType }) {
                 ) : (
                    transactions.map((tx) => (
                      <tr key={tx.id} className="hover:bg-secondary/50 transition-colors">
-                       <td className="p-4 text-foreground font-medium">{tx.package?.name || tx.package || 'Standard License'}</td>
+                       <td className="p-4 text-foreground font-medium">{String(tx.package || 'Unknown Package')}</td>
                        <td className="p-4 text-muted-foreground font-mono text-xs max-w-[150px] truncate" title={tx.buyer_wallet}>{tx.buyer_wallet}</td>
                        <td className="p-4 text-foreground">{Number(tx.amount).toLocaleString()} USDT</td>
                        <td className="p-4 text-emerald-500 font-bold">+{Number(tx.commission).toLocaleString()} USDT</td>
