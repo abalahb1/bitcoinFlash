@@ -24,7 +24,7 @@ export async function GET() {
     const transactions = await db.payment.findMany({
       where: {
         user_id: userId,
-        status: 'completed'
+        // Show all statuses (pending, completed, failed)
       },
       include: {
         package: true

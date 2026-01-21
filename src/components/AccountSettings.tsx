@@ -160,20 +160,19 @@ export function AccountSettings({ user, onUpdate }: {
       )}
 
       {/* Agent Dashboard Card - Modern Global Design */}
-      <Card className="bg-gradient-to-br from-[#0a0a1f] via-[#1a1a2e] to-[#0a0a1f] border-white/10 overflow-hidden relative">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-yellow-500/5 rounded-full blur-3xl"></div>
+      <Card className="bg-card border-border overflow-hidden relative shadow-md">
         <CardContent className="p-8 relative z-10">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-yellow-500 to-orange-600 flex items-center justify-center shadow-lg shadow-yellow-900/20">
-                <Briefcase className="w-8 h-8 text-white" />
+              <div className="w-16 h-16 rounded-2xl bg-secondary flex items-center justify-center border border-border">
+                <Briefcase className="w-8 h-8 text-primary" />
               </div>
               <div>
-                <h3 className="text-2xl font-bold text-white">Agent Program</h3>
-                <p className="text-gray-400 text-sm">Earn commissions on every sale</p>
+                <h3 className="text-2xl font-bold text-foreground">Agent Program</h3>
+                <p className="text-muted-foreground text-sm">Earn commissions on every sale</p>
               </div>
             </div>
-            <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 px-4 py-2">
+            <Badge variant="outline" className="border-primary/50 text-primary bg-primary/10 px-4 py-2">
               <Percent className="w-3 h-3 mr-1" />
               10% Commission
             </Badge>
@@ -211,15 +210,15 @@ export function AccountSettings({ user, onUpdate }: {
       </Card>
 
       {/* Commission Wallet */}
-      <Card className="bg-[#0a0a1f]/80 backdrop-blur-sm border border-cyan-500/20">
+      <Card className="bg-card border-border shadow-sm">
         <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
-            <div className="p-2 bg-cyan-500/10 rounded-lg">
-              <Wallet className="w-5 h-5 text-cyan-400" />
+          <CardTitle className="text-foreground flex items-center gap-2">
+            <div className="p-2 bg-secondary rounded-lg">
+              <Wallet className="w-5 h-5 text-primary" />
             </div>
             Commission Wallet
           </CardTitle>
-          <CardDescription className="text-gray-400">
+          <CardDescription className="text-muted-foreground">
             Destination address for your automated commission payouts
           </CardDescription>
         </CardHeader>
@@ -282,15 +281,15 @@ export function AccountSettings({ user, onUpdate }: {
 
       {/* KYC Upload - Only show if not approved */}
       {user.kyc_status !== 'approved' && (
-      <Card className="bg-[#0a0a1f]/80 backdrop-blur-sm border border-cyan-500/20">
+      <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
-             <div className="p-2 bg-cyan-500/10 rounded-lg">
-              <FileCheck className="w-5 h-5 text-cyan-400" />
+          <CardTitle className="text-foreground flex items-center gap-2">
+             <div className="p-2 bg-secondary rounded-lg">
+              <FileCheck className="w-5 h-5 text-primary" />
             </div>
             Identity Verification (KYC)
           </CardTitle>
-          <CardDescription className="text-gray-400">
+          <CardDescription className="text-muted-foreground">
             Required to activate your agent status and withdraw commissions
           </CardDescription>
         </CardHeader>
@@ -376,14 +375,14 @@ export function AccountSettings({ user, onUpdate }: {
                         <div className="flex flex-col gap-3">
                              <Button
                                 onClick={() => setShowCamera(true)}
-                                className="h-32 bg-gradient-to-br from-cyan-500/20 to-blue-600/20 border border-cyan-500/50 hover:border-cyan-400 hover:shadow-[0_0_20px_rgba(0,243,255,0.2)] transition-all group flex flex-col gap-3"
+                                className="h-32 bg-secondary hover:bg-secondary/80 border border-primary/20 hover:border-primary hover:shadow-md transition-all group flex flex-col gap-3"
                              >
-                                <div className="p-3 bg-cyan-500/20 rounded-full group-hover:scale-110 transition-transform">
-                                   <Camera className="w-8 h-8 text-cyan-400" />
+                                <div className="p-3 bg-primary/10 rounded-full group-hover:scale-110 transition-transform">
+                                   <Camera className="w-8 h-8 text-primary" />
                                 </div>
                                 <div className="text-center">
-                                    <span className="text-cyan-100 font-medium block">Start Face Scan</span>
-                                    <span className="text-cyan-400/60 text-xs">Professional Verification</span>
+                                    <span className="text-foreground font-medium block">Start Face Scan</span>
+                                    <span className="text-muted-foreground text-xs">Professional Verification</span>
                                 </div>
                              </Button>
 

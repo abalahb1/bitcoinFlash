@@ -8,6 +8,14 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 import { Loader2, Wallet, Copy, CheckCircle2, Bitcoin, Zap, Shield, Clock, User, LayoutDashboard, LogOut, Activity, BarChart2, History, ChevronRight, QrCode } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
 import type { User as UserType, Package as PackageType } from '@prisma/client'
@@ -19,7 +27,7 @@ import { WalletHistory } from '@/components/WalletHistory'
 import { TierBadge } from '@/components/TierBadge'
 
 
-type View = 'landing' | 'wallet' | 'payment' | 'account' | 'history'
+type View = 'landing' | 'wallet' | 'payment' | 'account' | 'history' | 'commissions'
 
 // Extend UserType to include account_tier
 type ExtendedUserType = UserType & { account_tier?: string }
@@ -58,6 +66,9 @@ export default function DashboardPage() {
     setMessage({ text, type })
     setTimeout(() => setMessage(null), 5000)
   }
+
+  // Mobile text size utility
+  const mobileTextBase = "text-base md:text-sm lg:text-base"
 
   const fetchPackages = async () => {
     try {
@@ -137,10 +148,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-[#050510] via-[#0a0a1f] to-[#050510] relative overflow-hidden">
-      {/* Background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#02020a] to-[#0a0a1f] z-0 pointer-events-none" />
-      <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 z-0 mix-blend-soft-light pointer-events-none" />
+    <div className="min-h-screen flex flex-col bg-background relative overflow-hidden font-sans text-foreground">
       
       <div className="relative z-10">
         <TopTicker />
@@ -160,9 +168,9 @@ export default function DashboardPage() {
         <main className="flex-1 container mx-auto px-4 py-8">
           {message && (
             <Alert className={`mb-6 border ${
-              message.type === 'success' ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-400' :
-              message.type === 'error' ? 'border-red-500/50 bg-red-500/10 text-red-400' :
-              'border-cyan-500/50 bg-cyan-500/10 text-cyan-400'
+              message.type === 'success' ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-500' :
+              message.type === 'error' ? 'border-red-500/50 bg-red-500/10 text-red-500' :
+              'border-blue-500/50 bg-blue-500/10 text-blue-500'
             }`}>
               <AlertDescription>{message.text}</AlertDescription>
             </Alert>
@@ -175,6 +183,7 @@ export default function DashboardPage() {
           {currentView === 'wallet' && <WalletView user={user} />}
           {currentView === 'account' && <AccountView user={user} />}
           {currentView === 'history' && <HistoryView user={user} />}
+          {currentView === 'commissions' && <CommissionHistoryView user={user} />}
           {currentView === 'payment' && selectedPackage && (
             <PaymentView
               pkg={selectedPackage}
@@ -242,11 +251,19 @@ function Navbar({ currentView, setCurrentView, onLogout }: {
       >
         Log
       </NavButton>
+      <NavButton
+        active={currentView === 'commissions'}
+        onClick={mobile ? () => handleMobileNav('commissions') : () => setCurrentView('commissions')}
+        icon={<BarChart2 className="w-4 h-4" />}
+        fullWidth={mobile}
+      >
+        Commissions
+      </NavButton>
     </>
   )
 
   return (
-    <nav className="sticky top-0 z-40 border-b border-white/5 bg-[#0a0a1f]/80 backdrop-blur-md">
+    <nav className="sticky top-0 z-40 border-b border-border bg-background">
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           <button
@@ -322,8 +339,8 @@ function NavButton({ active, onClick, children, icon, fullWidth = false }: {
       onClick={onClick}
       className={`${
         active
-          ? 'bg-emerald-600 text-white shadow hover:bg-emerald-500'
-          : 'text-gray-400 hover:text-white hover:bg-white/5'
+          ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/20 hover:bg-emerald-500'
+          : 'text-muted-foreground hover:text-white hover:bg-white/5'
       } ${fullWidth ? 'w-full justify-start text-lg h-12' : ''}`}
     >
       {icon}
@@ -452,26 +469,26 @@ function PackageCard({ pkg, onSelect }: {
   onSelect: () => void
 }) {
   return (
-    <Card className="bg-[#0e0e24] border-white/10 hover:border-emerald-500/50 hover:shadow-2xl hover:shadow-emerald-900/10 transition-all duration-300 group relative overflow-hidden flex flex-col h-full">
+    <Card className="bg-card border-border hover:border-primary transition-all duration-300 group relative overflow-hidden flex flex-col h-full shadow-none hover:shadow-md">
       <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-emerald-500 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
       
       <CardHeader>
-        <div className="text-sm font-medium text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-2">
-           <Bitcoin className="w-4 h-4 text-orange-500" /> {pkg.name} License
+        <div className="text-sm font-medium text-muted-foreground uppercase tracking-widest mb-2 flex items-center gap-2">
+           <Bitcoin className="w-4 h-4 text-primary" /> {pkg.name} License
         </div>
-        <div className="text-4xl font-bold text-white flex items-baseline gap-1">
+        <div className="text-4xl font-bold text-foreground flex items-baseline gap-1">
            {pkg.btc_amount} <span className="text-lg text-gray-500 font-normal">BTC</span>
         </div>
-        <div className="text-emerald-400 font-semibold mt-1">
+        <div className="text-primary font-semibold mt-1">
             Price: ${pkg.price_usd.toLocaleString()} USDT
         </div>
       </CardHeader>
       
       <CardContent className="space-y-6 flex-1">
-        <div className="space-y-3 pt-4 border-t border-white/5">
+        <div className="space-y-3 pt-4 border-t border-border">
            <div className="flex justify-between items-center text-sm">
-              <span className="text-gray-400">Flash Capacity</span>
-              <span className="text-white font-medium">{pkg.btc_amount} BTC/day</span>
+              <span className="text-muted-foreground">Unit Price</span>
+              <span className="text-foreground font-medium">${(pkg.price_usd / Number(pkg.btc_amount)).toFixed(2)}/BTC</span>
            </div>
            <div className="flex justify-between items-center text-sm">
               <span className="text-gray-400">License Duration</span>
@@ -501,7 +518,7 @@ function PackageCard({ pkg, onSelect }: {
 
       <CardFooter>
         <Button 
-          className="w-full bg-white/5 hover:bg-emerald-600 text-white border border-white/10 hover:border-emerald-500/50 transition-all h-12"
+          className="w-full bg-secondary hover:bg-primary hover:text-primary-foreground text-foreground border border-border hover:border-primary transition-all h-12"
           onClick={onSelect}
         >
           Purchase License
@@ -525,11 +542,7 @@ function WalletView({ user }: { user: UserType | null }) {
     error: string
   } | null>(null)
   
-  // Deposit notification states
-  const [depositAmount, setDepositAmount] = useState('')
-  const [depositTxHash, setDepositTxHash] = useState('')
-  const [notifying, setNotifying] = useState(false)
-  const [depositMessage, setDepositMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null)
+
 
   // Calculate total value
   const totalValueUSD = user.wallet_balance_usdt
@@ -626,17 +639,16 @@ function WalletView({ user }: { user: UserType | null }) {
                   <h1 className="text-3xl font-bold text-white">Welcome back, {user?.name}</h1>
                   {user?.account_tier && <TierBadge tier={user.account_tier} size="md" />}
                 </div>
-                <p className="text-gray-400 mt-1">Manage your flash transactions and wallet</p>
+                <p className="text-muted-foreground mt-1">Manage your flash transactions and wallet</p>
               </div>
-        <Badge variant="outline" className="border-emerald-500/30 text-emerald-400 bg-emerald-500/5 px-4 py-2">
+        <Badge variant="outline" className="border-primary/50 text-primary bg-primary/10 px-4 py-2">
           <Activity className="w-3 h-3 mr-2" />
           Active
         </Badge>
       </div>
 
       {/* Total Balance Card */}
-      <Card className="bg-gradient-to-br from-[#F7931A]/10 via-[#0e0e24] to-[#1a1a2e] border-[#F7931A]/20 overflow-hidden relative">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-[#F7931A]/5 rounded-full blur-3xl"></div>
+      <Card className="bg-card border-border overflow-hidden relative">
         <CardContent className="p-8 relative z-10">
           <div className="flex items-start justify-between mb-6">
             <div>
@@ -657,7 +669,7 @@ function WalletView({ user }: { user: UserType | null }) {
       </Card>
 
       {/* Deposit / Withdraw Tabs */}
-      <Card className="bg-[#0e0e24] border-white/10">
+      <Card className="bg-card border-border">
         <CardContent className="p-0">
           {/* Tab Headers */}
           <div className="flex border-b border-white/10">
@@ -665,8 +677,8 @@ function WalletView({ user }: { user: UserType | null }) {
               onClick={() => setActiveTab('deposit')}
               className={`flex-1 px-6 py-4 text-sm font-semibold transition-all ${
                 activeTab === 'deposit'
-                  ? 'text-emerald-400 border-b-2 border-emerald-400 bg-emerald-500/5'
-                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  ? 'text-primary border-b-2 border-primary bg-primary/5'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
               }`}
             >
               <div className="flex items-center justify-center gap-2">
@@ -678,8 +690,8 @@ function WalletView({ user }: { user: UserType | null }) {
               onClick={() => setActiveTab('withdraw')}
               className={`flex-1 px-6 py-4 text-sm font-semibold transition-all ${
                 activeTab === 'withdraw'
-                  ? 'text-cyan-400 border-b-2 border-cyan-400 bg-cyan-500/5'
-                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  ? 'text-blue-500 border-b-2 border-blue-500 bg-blue-500/5'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
               }`}
             >
               <div className="flex items-center justify-center gap-2">
@@ -706,19 +718,19 @@ function WalletView({ user }: { user: UserType | null }) {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* QR Code Section */}
-                  <div className="flex flex-col items-center justify-center p-6 bg-white/5 rounded-xl border border-white/10">
+                  <div className="flex flex-col items-center justify-center p-6 bg-secondary border border-border">
                     {user.usdt_trc20_address ? (
                       <>
-                        <div className="bg-white p-4 rounded-lg shadow-lg">
+                        <div className="bg-white p-4 shadow-none">
                           <QRCodeSVG value={user.usdt_trc20_address} size={180} />
                         </div>
-                        <p className="text-gray-400 text-xs mt-4 text-center">Scan QR code to deposit</p>
+                        <p className="text-muted-foreground text-xs mt-4 text-center">Scan QR code to deposit</p>
                       </>
                     ) : (
                       <div className="text-center py-8">
-                        <QrCode className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-                        <p className="text-gray-500 text-sm">No deposit address set</p>
-                        <p className="text-gray-600 text-xs mt-2">Configure your address below</p>
+                        <QrCode className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                        <p className="text-muted-foreground text-sm">No deposit address set</p>
+                        <p className="text-muted-foreground text-xs mt-2">Configure your address below</p>
                       </div>
                     )}
                   </div>
@@ -726,9 +738,9 @@ function WalletView({ user }: { user: UserType | null }) {
                   {/* Address Section */}
                   <div className="space-y-4">
                     <div>
-                      <Label className="text-gray-300 mb-2 block">Your Deposit Address (TRC20)</Label>
-                      <div className="p-4 bg-white/5 rounded-lg border border-white/10">
-                        <p className="text-white font-mono text-sm break-all">
+                      <Label className="text-muted-foreground mb-2 block">Your Deposit Address (TRC20)</Label>
+                      <div className="p-4 bg-secondary border border-border">
+                        <p className="text-foreground font-mono text-sm break-all">
                           {user.usdt_trc20_address || 'No address set'}
                         </p>
                       </div>
@@ -747,10 +759,10 @@ function WalletView({ user }: { user: UserType | null }) {
                       Copy Address
                     </Button>
 
-                    <div className="pt-4 border-t border-white/10 space-y-2">
+                    <div className="pt-4 border-t border-border space-y-2">
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-400">Network</span>
-                        <span className="text-white font-medium">Tron (TRC20)</span>
+                        <span className="text-muted-foreground">Network</span>
+                        <span className="text-foreground font-medium">Tron (TRC20)</span>
                       </div>
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-gray-400">Min Deposit</span>
@@ -764,108 +776,6 @@ function WalletView({ user }: { user: UserType | null }) {
                   </div>
                 </div>
 
-                {/* Deposit Notification Section */}
-                <div className="mt-8 p-6 bg-gradient-to-br from-blue-500/5 to-cyan-500/5 rounded-xl border border-blue-500/20">
-                  <div className="flex items-start gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center flex-shrink-0">
-                      <Activity className="w-5 h-5 text-blue-400" />
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="text-white font-semibold text-lg mb-1">Already Deposited?</h4>
-                      <p className="text-gray-400 text-sm">
-                        If you've already sent USDT to your address, notify admin to confirm your deposit.
-                      </p>
-                    </div>
-                  </div>
-
-                  {depositMessage && (
-                    <Alert className={`mb-4 border ${
-                      depositMessage.type === 'success' 
-                        ? 'border-emerald-500/50 bg-emerald-500/10' 
-                        : 'border-red-500/50 bg-red-500/10'
-                    }`}>
-                      <AlertDescription className={depositMessage.type === 'success' ? 'text-emerald-400' : 'text-red-400'}>
-                        {depositMessage.text}
-                      </AlertDescription>
-                    </Alert>
-                  )}
-
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="deposit-amount" className="text-gray-300 mb-2 block">
-                        Amount Deposited (USDT)
-                      </Label>
-                      <Input
-                        id="deposit-amount"
-                        type="number"
-                        value={depositAmount}
-                        onChange={(e) => setDepositAmount(e.target.value)}
-                        placeholder="0.00"
-                        className="bg-[#1a1a2e] border-white/10 text-white h-12"
-                      />
-                      <p className="text-xs text-gray-500 mt-1">Minimum: 10 USDT</p>
-                    </div>
-
-                    <div>
-                      <Label htmlFor="deposit-tx" className="text-gray-300 mb-2 block">
-                        Transaction Hash (Optional)
-                      </Label>
-                      <Input
-                        id="deposit-tx"
-                        value={depositTxHash}
-                        onChange={(e) => setDepositTxHash(e.target.value)}
-                        placeholder="Enter transaction hash if available"
-                        className="bg-[#1a1a2e] border-white/10 text-white h-12"
-                      />
-                    </div>
-
-                    <Button
-                      onClick={async () => {
-                        if (!depositAmount || parseFloat(depositAmount) < 10) {
-                          setDepositMessage({ text: 'Please enter a valid amount (minimum 10 USDT)', type: 'error' })
-                          return
-                        }
-
-                        setNotifying(true)
-                        setDepositMessage(null)
-
-                        try {
-                          const res = await fetch('/api/wallet/notify', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                              amount: parseFloat(depositAmount),
-                              tx_hash: depositTxHash || null
-                            })
-                          })
-
-                          const data = await res.json()
-
-                          if (res.ok) {
-                            setDepositMessage({ text: data.message, type: 'success' })
-                            setDepositAmount('')
-                            setDepositTxHash('')
-                          } else {
-                            setDepositMessage({ text: data.error, type: 'error' })
-                          }
-                        } catch (error) {
-                          setDepositMessage({ text: 'Connection error. Please try again.', type: 'error' })
-                        } finally {
-                          setNotifying(false)
-                        }
-                      }}
-                      disabled={!depositAmount || parseFloat(depositAmount) < 10 || notifying}
-                      className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white h-12 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {notifying ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Activity className="w-4 h-4 mr-2" />}
-                      {notifying ? 'Sending...' : 'Notify Admin'}
-                    </Button>
-
-                    <p className="text-xs text-gray-500 text-center">
-                      Admin will review and confirm your deposit within 1-24 hours
-                    </p>
-                  </div>
-                </div>
               </div>
             ) : (
               <div className="space-y-6">
@@ -1111,46 +1021,99 @@ function HistoryView({ user }: { user: UserType | null }) {
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="flex items-center justify-between">
          <h2 className="text-3xl font-bold text-white">Transactions Log</h2>
-         <Badge variant="outline" className="border-cyan-500/30 text-cyan-400 bg-cyan-500/5">
+         <Badge variant="outline" className="border-primary/30 text-primary bg-primary/5">
             Verified Ledger
          </Badge>
       </div>
 
-      <Card className="bg-[#0e0e24] border-white/10">
+      <Card className="bg-card border-border">
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
+          {/* Mobile View (Cards) */}
+          <div className="md:hidden space-y-4 p-4">
+            {loading ? (
+               <div className="text-center text-muted-foreground py-8">Loading records...</div>
+            ) : transactions.length === 0 ? (
+               <div className="text-center text-muted-foreground py-8">No transactions found</div>
+            ) : (
+               transactions.map((tx) => (
+                 <div key={tx.id} className="bg-secondary/30 rounded-lg p-4 border border-border space-y-3">
+                   <div className="flex justify-between items-start">
+                     <div>
+                       <div className="font-bold text-foreground">{tx.package}</div>
+                       <div className="text-xs text-muted-foreground font-mono mt-1 w-32 truncate">{tx.buyer_wallet}</div>
+                     </div>
+                     <Badge variant="outline" className={`
+                       ${tx.status === 'completed' ? 'border-emerald-500/30 text-emerald-500 bg-emerald-500/10' : ''}
+                       ${tx.status === 'pending' ? 'border-yellow-500/30 text-yellow-500 bg-yellow-500/10' : ''}
+                       ${tx.status === 'failed' ? 'border-red-500/30 text-red-500 bg-red-500/10' : ''}
+                       uppercase text-[10px]
+                     `}>
+                       {tx.status}
+                     </Badge>
+                   </div>
+                   
+                   <div className="grid grid-cols-2 gap-2 text-sm pt-2 border-t border-border/50">
+                     <div>
+                       <div className="text-muted-foreground text-xs">Amount</div>
+                       <div className="text-foreground font-medium">{tx.amount.toLocaleString()} USDT</div>
+                     </div>
+                     <div className="text-right">
+                       <div className="text-muted-foreground text-xs">Commission</div>
+                       <div className="text-emerald-500 font-medium">+{tx.commission.toLocaleString()} USDT</div>
+                     </div>
+                     <div>
+                       <div className="text-muted-foreground text-xs">BTC Amount</div>
+                       <div className="text-orange-500 font-medium">{tx.btc_amount || 'N/A'}</div>
+                     </div>
+                     <div className="text-right">
+                       <div className="text-muted-foreground text-xs">Date</div>
+                       <div className="text-muted-foreground">{new Date(tx.date).toLocaleDateString()}</div>
+                     </div>
+                   </div>
+                 </div>
+               ))
+            )}
+          </div>
+
+          {/* Desktop View (Table) */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left">
-              <thead className="bg-white/5 border-b border-white/10 text-gray-400 font-medium text-sm">
+              <thead className="bg-secondary/50 border-b border-border text-muted-foreground font-medium text-sm">
                 <tr>
                   <th className="p-4">Package</th>
-                  <th className="p-4">Buyer Address</th>
+                  <th className="p-4">Recipient Wallet</th>
                   <th className="p-4">Amount</th>
                   <th className="p-4">BTC Amount</th>
-                  <th className="p-4">Commission (10%)</th>
+                  <th className="p-4">Commission</th>
                   <th className="p-4">Status</th>
                   <th className="p-4">Date</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/5">
+              <tbody className="divide-y divide-border">
                 {loading ? (
-                   <tr><td colSpan={7} className="p-8 text-center text-gray-500">Loading records...</td></tr>
+                   <tr><td colSpan={7} className="p-8 text-center text-muted-foreground">Loading records...</td></tr>
                 ) : transactions.length === 0 ? (
-                   <tr><td colSpan={7} className="p-8 text-center text-gray-500">No transactions found</td></tr>
+                   <tr><td colSpan={7} className="p-8 text-center text-muted-foreground">No transactions found</td></tr>
                 ) : (
                    transactions.map((tx) => (
-                     <tr key={tx.id} className="hover:bg-white/5 transition-colors">
-                       <td className="p-4 text-white font-medium">{tx.package}</td>
-                       <td className="p-4 text-gray-400 font-mono text-xs">{tx.buyer_wallet}</td>
-                       <td className="p-4 text-white">{tx.amount.toLocaleString()} USDT</td>
-                       <td className="p-4 text-orange-400 font-bold">{tx.btc_amount || 'N/A'}</td>
-                       <td className="p-4 text-emerald-400 font-bold">+{tx.commission.toLocaleString()} USDT</td>
+                     <tr key={tx.id} className="hover:bg-secondary/50 transition-colors">
+                       <td className="p-4 text-foreground font-medium">{tx.package}</td>
+                       <td className="p-4 text-muted-foreground font-mono text-xs max-w-[150px] truncate" title={tx.buyer_wallet}>{tx.buyer_wallet}</td>
+                       <td className="p-4 text-foreground">{tx.amount.toLocaleString()} USDT</td>
+                       <td className="p-4 text-primary font-bold">{tx.btc_amount || 'N/A'}</td>
+                       <td className="p-4 text-emerald-500 font-bold">+{tx.commission.toLocaleString()} USDT</td>
                        <td className="p-4">
-                         <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 uppercase text-xs">
+                         <Badge variant="outline" className={`
+                           ${tx.status === 'completed' ? 'border-emerald-500/30 text-emerald-500 bg-emerald-500/10' : ''}
+                           ${tx.status === 'pending' ? 'border-yellow-500/30 text-yellow-500 bg-yellow-500/10' : ''}
+                           ${tx.status === 'failed' ? 'border-red-500/30 text-red-500 bg-red-500/10' : ''}
+                           uppercase text-xs
+                         `}>
                            {tx.status}
                          </Badge>
                        </td>
-                       <td className="p-4 text-gray-500 text-sm">
-                         {new Date(tx.date).toLocaleDateString()} {new Date(tx.date).toLocaleTimeString()}
+                       <td className="p-4 text-muted-foreground text-sm">
+                         {new Date(tx.date).toLocaleDateString()}
                        </td>
                      </tr>
                    ))
@@ -1273,9 +1236,9 @@ function PaymentView({ pkg, user, onSubmit, loading }: {
       </div>
 
       {/* Main Card */}
-      <Card className="bg-gradient-to-br from-[#0e0e24] to-[#1a1a2e] border-white/10 overflow-hidden">
+      <Card className="bg-card border-border overflow-hidden shadow-none">
         {/* Package Header */}
-        <div className="bg-gradient-to-r from-[#F7931A]/10 to-yellow-600/10 border-b border-white/5 p-6">
+        <div className="bg-secondary/50 border-b border-border p-6">
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <div className="flex items-center gap-2 text-sm text-gray-400 uppercase tracking-wider mb-2">
@@ -1299,45 +1262,99 @@ function PaymentView({ pkg, user, onSubmit, loading }: {
 
         <CardContent className="p-6 space-y-6">
           {/* Package Features */}
+          {/* Package Features */}
           <div>
             <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">License Includes</h3>
             <div className="grid grid-cols-2 gap-4">
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-white/5 border border-white/5">
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary border border-border">
                 <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
-                  <Zap className="w-5 h-5 text-emerald-400" />
+                  <Zap className="w-5 h-5 text-emerald-500" />
                 </div>
                 <div>
-                  <div className="text-xs text-gray-500">Daily Capacity</div>
-                  <div className="text-white font-semibold">{pkg.btc_amount} BTC</div>
+                  <div className="text-xs text-muted-foreground">Daily Capacity</div>
+                  <div className="text-foreground font-semibold">{pkg.btc_amount} BTC</div>
                 </div>
               </div>
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-white/5 border border-white/5">
-                <div className="w-10 h-10 rounded-full bg-cyan-500/10 flex items-center justify-center flex-shrink-0">
-                  <Clock className="w-5 h-5 text-cyan-400" />
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary border border-border">
+                <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center flex-shrink-0">
+                  <Clock className="w-5 h-5 text-blue-500" />
                 </div>
                 <div>
-                  <div className="text-xs text-gray-500">Duration</div>
-                  <div className="text-white font-semibold">{pkg.duration} Days</div>
+                  <div className="text-xs text-muted-foreground">Duration</div>
+                  <div className="text-foreground font-semibold">{pkg.duration} Days</div>
                 </div>
               </div>
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-white/5 border border-white/5">
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary border border-border">
                 <div className="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center flex-shrink-0">
-                  <Activity className="w-5 h-5 text-purple-400" />
+                  <Activity className="w-5 h-5 text-purple-500" />
                 </div>
                 <div>
-                  <div className="text-xs text-gray-500">Possible Transfers</div>
-                  <div className="text-white font-semibold">{pkg.transfers}</div>
+                  <div className="text-xs text-muted-foreground">Transfers</div>
+                  <div className="text-foreground font-semibold">{pkg.transfers}</div>
                 </div>
               </div>
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-white/5 border border-white/5">
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary border border-border">
                 <div className="w-10 h-10 rounded-full bg-orange-500/10 flex items-center justify-center flex-shrink-0">
-                  <CheckCircle2 className="w-5 h-5 text-orange-400" />
+                  <CheckCircle2 className="w-5 h-5 text-primary" />
                 </div>
                 <div className="flex-1">
-                  <div className="text-xs text-gray-500 mb-1">Divisible</div>
-                  <div className="text-white font-semibold text-sm">Yes</div>
+                  <div className="text-xs text-muted-foreground mb-1">Divisible</div>
+                  <div className="text-foreground font-semibold text-sm">Yes</div>
                 </div>
               </div>
+            </div>
+            
+            <div className="mt-6">
+              <Dialog>
+                <DialogTrigger className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border shadow-xs h-9 px-4 py-2 w-full border-primary/20 text-primary hover:bg-primary/10 bg-background">
+                  <Wallet className="w-4 h-4 mr-2" />
+                  Recommended Wallets to Use
+                </DialogTrigger>
+                <DialogContent className="bg-card border-border text-foreground sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle className="text-xl font-bold flex items-center gap-2">
+                       <Bitcoin className="w-6 h-6 text-primary" />
+                       Bitcoin Flash Supported Wallets
+                    </DialogTitle>
+                    <DialogDescription className="text-muted-foreground">
+                      Our Flash protocol is fully compatible with these major providers.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-6 py-4">
+                     {/* Decentralized */}
+                     <div className="space-y-3">
+                       <div className="flex items-center gap-2 pb-2 border-b border-border/50">
+                         <Shield className="w-4 h-4 text-emerald-500" />
+                         <span className="font-semibold text-sm uppercase tracking-wider text-muted-foreground">Decentralized (Web3)</span>
+                       </div>
+                       <div className="grid grid-cols-2 gap-3">
+                         {['Trust Wallet', 'Exodus', 'BlueWallet', 'Atomic', 'Trezor', 'Ledger', 'MetaMask', 'Phantom'].map(wallet => (
+                            <div key={wallet} className="flex items-center gap-2 p-2 rounded-md bg-secondary/50 border border-border/50 hover:border-primary/30 transition-colors">
+                              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
+                              <span className="text-sm font-medium">{wallet}</span>
+                            </div>
+                         ))}
+                       </div>
+                     </div>
+
+                     {/* Centralized */}
+                     <div className="space-y-3">
+                       <div className="flex items-center gap-2 pb-2 border-b border-border/50">
+                         <Wallet className="w-4 h-4 text-blue-500" />
+                         <span className="font-semibold text-sm uppercase tracking-wider text-muted-foreground">Centralized (Exchanges)</span>
+                       </div>
+                       <div className="grid grid-cols-2 gap-3">
+                         {['Binance', 'Coinbase', 'Bybit', 'KuCoin', 'OKX', 'Kraken', 'Bitget', 'Gate.io', 'HTX', 'MEXC'].map(wallet => (
+                            <div key={wallet} className="flex items-center gap-2 p-2 rounded-md bg-secondary/50 border border-border/50 hover:border-blue-500/30 transition-colors">
+                              <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div>
+                              <span className="text-sm font-medium">{wallet}</span>
+                            </div>
+                         ))}
+                       </div>
+                     </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
 
@@ -1489,6 +1506,149 @@ function PaymentView({ pkg, user, onSubmit, loading }: {
           <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
             <Shield className="w-3 h-3" />
             <span>Secure transaction • Instant activation • 24/7 support</span>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+function CommissionHistoryView({ user }: { user: UserType }) {
+  const [transactions, setTransactions] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchTransactions()
+  }, [])
+
+  const fetchTransactions = async () => {
+    try {
+      const res = await fetch(`/api/transactions?userId=${user.id}`)
+      if (res.ok) {
+        const data = await res.json()
+        // Filter for transactions that have commission > 0
+        setTransactions(data.filter((t: any) => t.commission > 0))
+      }
+    } catch (error) {
+      console.error('Failed to fetch transactions', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <div className="flex items-center justify-between">
+         <h2 className="text-3xl font-bold text-foreground">Agent Commissions</h2>
+         <Badge variant="outline" className="border-primary/30 text-primary bg-primary/5">
+            Revenue Log
+         </Badge>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="bg-card border-border">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Revenue</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-emerald-500">
+              ${transactions.reduce((acc, curr) => acc + (curr.commission || 0), 0).toLocaleString()} USDT
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Total commissions earned</p>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-card border-border">
+          <CardHeader className="pb-2">
+             <CardTitle className="text-sm font-medium text-muted-foreground">Sales Count</CardTitle>
+          </CardHeader>
+          <CardContent>
+             <div className="text-2xl font-bold text-primary">
+                {transactions.length}
+             </div>
+             <p className="text-xs text-muted-foreground mt-1">Total packages sold</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card className="bg-card border-border">
+        <CardContent className="p-0">
+          {/* Mobile View (Cards) */}
+          <div className="md:hidden space-y-4 p-4">
+            {loading ? (
+               <div className="text-center text-muted-foreground py-8">Loading records...</div>
+            ) : transactions.length === 0 ? (
+               <div className="text-center text-muted-foreground py-8">No commissions found</div>
+            ) : (
+               transactions.map((tx) => (
+                 <div key={tx.id} className="bg-secondary/30 rounded-lg p-4 border border-border space-y-3">
+                   <div className="flex justify-between items-start">
+                     <div>
+                       <div className="font-bold text-foreground">{tx.package?.name || 'Unknown Package'}</div>
+                       <div className="text-xs text-muted-foreground font-mono mt-1 w-32 truncate">{tx.buyer_wallet}</div>
+                     </div>
+                     <Badge variant="outline" className="border-emerald-500/30 text-emerald-500 bg-emerald-500/10 uppercase text-[10px]">
+                       Earned
+                     </Badge>
+                   </div>
+                   
+                   <div className="grid grid-cols-2 gap-2 text-sm pt-2 border-t border-border/50">
+                     <div>
+                       <div className="text-muted-foreground text-xs">Sale Amount</div>
+                       <div className="text-foreground font-medium">{tx.amount.toLocaleString()} USDT</div>
+                     </div>
+                     <div className="text-right">
+                       <div className="text-muted-foreground text-xs">Your Commission</div>
+                       <div className="text-emerald-500 font-bold">+{tx.commission.toLocaleString()} USDT</div>
+                     </div>
+                     <div className="col-span-2 text-right">
+                       <div className="text-muted-foreground text-xs">Date</div>
+                       <div className="text-muted-foreground">{new Date(tx.date).toLocaleDateString()}</div>
+                     </div>
+                   </div>
+                 </div>
+               ))
+            )}
+          </div>
+
+          {/* Desktop View (Table) */}
+          <div className="hidden md:block overflow-x-auto">
+            <table className="w-full text-left">
+              <thead className="bg-secondary/50 border-b border-border text-muted-foreground font-medium text-sm">
+                <tr>
+                  <th className="p-4">Package</th>
+                  <th className="p-4">Recipient Wallet</th>
+                  <th className="p-4">Sale Amount</th>
+                  <th className="p-4">Commission Earned</th>
+                  <th className="p-4">Status</th>
+                  <th className="p-4">Date</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {loading ? (
+                   <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">Loading records...</td></tr>
+                ) : transactions.length === 0 ? (
+                   <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">No commissions found</td></tr>
+                ) : (
+                   transactions.map((tx) => (
+                     <tr key={tx.id} className="hover:bg-secondary/50 transition-colors">
+                       <td className="p-4 text-foreground font-medium">{tx.package?.name || tx.package || 'Standard License'}</td>
+                       <td className="p-4 text-muted-foreground font-mono text-xs max-w-[150px] truncate" title={tx.buyer_wallet}>{tx.buyer_wallet}</td>
+                       <td className="p-4 text-foreground">{tx.amount.toLocaleString()} USDT</td>
+                       <td className="p-4 text-emerald-500 font-bold">+{tx.commission.toLocaleString()} USDT</td>
+                       <td className="p-4">
+                         <Badge variant="outline" className="border-emerald-500/30 text-emerald-500 bg-emerald-500/10 uppercase text-xs">
+                           Paid
+                         </Badge>
+                       </td>
+                       <td className="p-4 text-muted-foreground text-sm">
+                         {new Date(tx.date).toLocaleDateString()}
+                       </td>
+                     </tr>
+                   ))
+                )}
+              </tbody>
+            </table>
           </div>
         </CardContent>
       </Card>

@@ -54,12 +54,12 @@ export function TopTicker() {
   }, [])
 
   return (
-    <div className="w-full bg-[#050510] border-b border-white/5 h-10 flex items-center overflow-hidden relative z-50">
+    <div className="w-full bg-background border-b border-white/5 h-10 flex items-center overflow-hidden relative z-50">
       <div className="flex animate-ticker whitespace-nowrap">
         {[...marketData, ...marketData, ...marketData].map((coin, i) => (
-          <div key={i} className="flex items-center gap-4 px-6 border-r border-white/5 text-xs font-mono">
-            <span className="text-gray-400 font-bold">{coin.symbol}</span>
-            <span className="text-white font-medium">{coin.price}</span>
+          <div key={i} className="flex items-center gap-4 px-6 border-r border-border text-xs font-mono">
+            <span className="text-muted-foreground font-bold">{coin.symbol}</span>
+            <span className="text-foreground font-medium">{coin.price}</span>
             <span className={`flex items-center gap-1 ${coin.change >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
               {coin.change >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
               {Math.abs(coin.change).toFixed(1)}%
@@ -67,8 +67,8 @@ export function TopTicker() {
           </div>
         ))}
       </div>
-      <div className="absolute top-0 right-0 h-full w-24 bg-gradient-to-l from-[#050510] to-transparent pointer-events-none" />
-      <div className="absolute top-0 left-0 h-full w-24 bg-gradient-to-r from-[#050510] to-transparent pointer-events-none" />
+      <div className="absolute top-0 right-0 h-full w-24 bg-gradient-to-l from-background to-transparent pointer-events-none" />
+      <div className="absolute top-0 left-0 h-full w-24 bg-gradient-to-r from-background to-transparent pointer-events-none" />
     </div>
   )
 }
@@ -115,7 +115,7 @@ export function HeroMarketSlides() {
   }, [marketData.length])
 
   return (
-    <div className="w-full py-4 bg-gradient-to-r from-[#050510]/80 via-[#0a0a1f]/80 to-[#050510]/80 backdrop-blur-sm border-y border-white/5">
+    <div className="w-full py-4 bg-background border-y border-border">
       <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-6">
         
         {/* Market Status Summary */}
@@ -155,7 +155,7 @@ export function HeroMarketSlides() {
                    </div>
                 </div>
                 <div className="text-right">
-                   <div className="text-white font-mono font-bold text-lg">{marketData[currentIndex].price}</div>
+                   <div className="text-foreground font-mono font-bold text-lg">{marketData[currentIndex].price}</div>
                    <div className={`text-xs font-medium ${marketData[currentIndex].change >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
                       {marketData[currentIndex].change > 0 ? '+' : ''}{marketData[currentIndex].change.toFixed(1)}%
                    </div>

@@ -74,36 +74,36 @@ export function WalletEnhancements({ user, onUpdate }: {
 
       <div className="grid md:grid-cols-2 gap-6">
         {/* USDT TRC20 Address Configuration */}
-        <Card className="bg-[#0a0a1f]/80 backdrop-blur-sm border border-cyan-500/20 hover:border-cyan-500/40 transition-all duration-300">
+        <Card className="bg-card border-border hover:border-primary transition-all duration-300 shadow-sm hover:shadow-md">
           <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2 text-lg">
-              <div className="p-2 bg-cyan-500/10 rounded-lg">
-                <Wallet className="w-5 h-5 text-cyan-400" />
+            <CardTitle className="text-foreground flex items-center gap-2 text-lg">
+              <div className="p-2 bg-secondary rounded-lg">
+                <Wallet className="w-5 h-5 text-primary" />
               </div>
               Deposit Settings
             </CardTitle>
-            <CardDescription className="text-gray-400">
+            <CardDescription className="text-muted-foreground">
               Configure your wallet for receiving funds
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-2">
-              <Label className="text-gray-300 font-medium">USDT TRC20 Address</Label>
+              <Label className="text-muted-foreground font-medium">USDT TRC20 Address</Label>
               <div className="relative group">
                 <Input
                   value={trc20Address}
                   onChange={(e) => setTrc20Address(e.target.value)}
                   placeholder="TVxxxxxxxxxxxxxxxxxxxxx"
-                  className="bg-black/40 border-gray-700 text-white font-mono pl-10 focus:border-cyan-500 transition-colors h-11"
+                  className="bg-secondary border-input text-foreground font-mono pl-10 focus:border-primary transition-colors h-11"
                 />
-                <Wallet className="w-4 h-4 text-gray-500 absolute left-3 top-3.5 group-hover:text-cyan-500 transition-colors" />
+                <Wallet className="w-4 h-4 text-muted-foreground absolute left-3 top-3.5 group-hover:text-primary transition-colors" />
               </div>
             </div>
             
             <Button
               onClick={handleSaveWallet}
               disabled={loading}
-              className="w-full bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/50 h-11 transition-all hover:scale-[1.02]"
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground border border-primary h-11 transition-all"
             >
               {loading ? (
                 <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...</>
@@ -116,15 +116,15 @@ export function WalletEnhancements({ user, onUpdate }: {
 
         {/* Receive QR COde */}
         {user.usdt_trc20_address && (
-          <Card className="bg-[#0a0a1f]/80 backdrop-blur-sm border border-emerald-500/20 hover:border-emerald-500/40 transition-all duration-300">
+          <Card className="bg-card border-border hover:border-primary transition-all duration-300 shadow-sm hover:shadow-md">
              <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2 text-lg">
-                <div className="p-2 bg-emerald-500/10 rounded-lg">
-                  <ArrowRightLeft className="w-5 h-5 text-emerald-400" />
+              <CardTitle className="text-foreground flex items-center gap-2 text-lg">
+                <div className="p-2 bg-secondary rounded-lg">
+                  <ArrowRightLeft className="w-5 h-5 text-emerald-500" />
                 </div>
                 Receive Funds
               </CardTitle>
-              <CardDescription className="text-gray-400">Scan to deposit USDT</CardDescription>
+              <CardDescription className="text-muted-foreground">Scan to deposit USDT</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col items-center justify-center space-y-6">
               <div className="bg-white p-4 rounded-xl shadow-[0_0_20px_rgba(16,185,129,0.2)]">
@@ -151,15 +151,15 @@ export function WalletEnhancements({ user, onUpdate }: {
 
       {/* Wallet References with QR */}
       {user.wallet_ref && (
-        <Card className="bg-[#0a0a1f]/80 backdrop-blur-sm border border-purple-500/20 hover:border-purple-500/40 transition-all duration-300">
+        <Card className="bg-card border-border hover:border-primary transition-all duration-300 shadow-sm hover:shadow-md">
           <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2 text-lg">
-              <div className="p-2 bg-purple-500/10 rounded-lg">
-                <QrCode className="w-5 h-5 text-purple-400" />
+            <CardTitle className="text-foreground flex items-center gap-2 text-lg">
+              <div className="p-2 bg-secondary rounded-lg">
+                <QrCode className="w-5 h-5 text-purple-500" />
               </div>
               System Reference
             </CardTitle>
-            <CardDescription className="text-gray-400">
+            <CardDescription className="text-muted-foreground">
               Use this code for internal transfers and system identification
             </CardDescription>
           </CardHeader>
