@@ -298,9 +298,9 @@ function Navbar({ currentView, setCurrentView, onLogout }: {
                   <Menu className="w-6 h-6" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="bg-[#0a0a1f] border-white/10 w-[80%]">
+              <SheetContent side="right" className="bg-background border-border w-[80%]">
                  <SheetHeader className="mb-6 text-left">
-                    <SheetTitle className="text-white flex items-center gap-2">
+                    <SheetTitle className="text-foreground flex items-center gap-2">
                        <Bitcoin className="w-6 h-6 text-[#F7931A]" />
                        Bitcoin Flash
                     </SheetTitle>
@@ -633,18 +633,20 @@ function WalletView({ user }: { user: UserType | null }) {
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
       {/* Header */}
-      <div className="flex items-center justify-between">
-              <div>
-                <div className="flex items-center gap-3">
-                  <h1 className="text-3xl font-bold text-white">Welcome back, {user?.name}</h1>
-                  {user?.account_tier && <TierBadge tier={user.account_tier} size="md" />}
-                </div>
-                <p className="text-muted-foreground mt-1">Manage your flash transactions and wallet</p>
-              </div>
-        <Badge variant="outline" className="border-primary/50 text-primary bg-primary/10 px-4 py-2">
-          <Activity className="w-3 h-3 mr-2" />
-          Active
-        </Badge>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-2xl md:text-3xl font-bold text-white">Welcome back, {user?.name}</h1>
+            {user?.account_tier && <TierBadge tier={user.account_tier} size="md" />}
+          </div>
+          <p className="text-muted-foreground mt-1 text-sm md:text-base">Manage your flash transactions and wallet</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="border-primary/50 text-primary bg-primary/10 px-4 py-2 self-start md:self-auto">
+            <Activity className="w-3 h-3 mr-2" />
+            Active
+          </Badge>
+        </div>
       </div>
 
       {/* Total Balance Card */}
@@ -953,33 +955,33 @@ function AccountView({ user }: { user: UserType | null }) {
       </div>
 
       {/* Profile Card */}
-      <Card className="bg-gradient-to-br from-[#0e0e24] via-[#1a1a2e] to-[#0e0e24] border-white/10 overflow-hidden relative">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-500/5 rounded-full blur-3xl"></div>
-        <CardContent className="p-8 relative z-10">
-          <div className="flex flex-col md:flex-row items-center gap-8">
+      <Card className="bg-card border-border overflow-hidden relative shadow-xs">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+        <CardContent className="p-6 md:p-8 relative z-10">
+          <div className="flex flex-col md:flex-row items-center gap-6 md:gap-8">
             {/* Avatar */}
-            <div className="relative">
-              <div className="w-32 h-32 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-5xl font-bold text-white shadow-xl shadow-cyan-900/20">
+            <div className="relative shrink-0">
+              <div className="w-24 h-24 md:w-32 md:h-32 rounded-2xl bg-secondary border border-border flex items-center justify-center text-4xl md:text-5xl font-bold text-primary shadow-sm">
                 {localUser.name.charAt(0).toUpperCase()}
               </div>
               {isVerified && (
-                <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-emerald-500 rounded-full flex items-center justify-center border-4 border-[#0e0e24]">
-                  <CheckCircle2 className="w-5 h-5 text-white" />
+                <div className="absolute -bottom-2 -right-2 w-8 h-8 md:w-10 md:h-10 bg-emerald-500 rounded-full flex items-center justify-center border-4 border-card">
+                  <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-white" />
                 </div>
               )}
             </div>
 
             {/* Info */}
-            <div className="flex-1 text-center md:text-left space-y-4">
+            <div className="flex-1 text-center md:text-left space-y-4 w-full">
               <div>
-                <h3 className="text-3xl font-bold text-white mb-2">{localUser.name}</h3>
+                <h3 className="text-2xl md:text-3xl font-bold text-foreground mb-2 truncate">{localUser.name}</h3>
                 <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
-                  <span className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-gray-300 text-sm">
-                    <User className="w-4 h-4 text-cyan-400" />
-                    {localUser.email}
+                  <span className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/50 border border-border text-muted-foreground text-sm max-w-full truncate">
+                    <User className="w-4 h-4 text-primary" />
+                    <span className="truncate">{localUser.email}</span>
                   </span>
-                  <span className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-gray-300 text-sm">
-                    <Shield className="w-4 h-4 text-cyan-400" />
+                  <span className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/50 border border-border text-muted-foreground text-sm whitespace-nowrap">
+                    <Shield className="w-4 h-4 text-primary" />
                     REF: {localUser.wallet_ref}
                   </span>
                 </div>
@@ -1260,7 +1262,7 @@ function PaymentView({ pkg, user, onSubmit, loading }: {
           </div>
         </div>
 
-        <CardContent className="p-6 space-y-6">
+        <CardContent className="p-4 md:p-6 space-y-6">
           {/* Package Features */}
           {/* Package Features */}
           <div>
@@ -1472,32 +1474,33 @@ function PaymentView({ pkg, user, onSubmit, loading }: {
           <Button 
             onClick={onSubmit}
             disabled={loading || !canPurchase}
-            className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-lg shadow-emerald-900/20 disabled:opacity-50 disabled:cursor-not-allowed disabled:from-gray-600 disabled:to-gray-600"
+            className="w-full min-h-[3.5rem] h-auto py-3 text-base md:text-lg font-semibold bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-lg shadow-emerald-900/20 disabled:opacity-50 disabled:cursor-not-allowed disabled:from-gray-600 disabled:to-gray-600 whitespace-normal"
           >
             {loading ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                Processing Payment...
+                Processing...
               </>
             ) : !hasEnoughBalance ? (
               <>
-                <Shield className="w-5 h-5 mr-2" />
-                Insufficient Balance - Top Up Required
+                <Shield className="w-5 h-5 mr-2 shrink-0" />
+                <span className="md:hidden">Top Up Required</span>
+                <span className="hidden md:inline">Insufficient Balance - Top Up Required</span>
               </>
             ) : !recipientAddress.trim() ? (
               <>
-                <Wallet className="w-5 h-5 mr-2" />
+                <Wallet className="w-5 h-5 mr-2 shrink-0" />
                 Enter Recipient Address
               </>
             ) : !addressValidation?.isValid ? (
               <>
-                <Shield className="w-5 h-5 mr-2" />
+                <Shield className="w-5 h-5 mr-2 shrink-0" />
                 Invalid Wallet Address
               </>
             ) : (
               <>
-                <CheckCircle2 className="w-5 h-5 mr-2" />
-                Confirm Purchase - ${pkg.price_usd.toLocaleString()} USDT
+                <CheckCircle2 className="w-5 h-5 mr-2 shrink-0" />
+                Confirm - ${pkg.price_usd.toLocaleString()}
               </>
             )}
           </Button>
@@ -1658,18 +1661,18 @@ function CommissionHistoryView({ user }: { user: UserType }) {
 
 function Footer() {
   return (
-    <footer className="border-t border-white/5 bg-[#0a0a1f]/80 backdrop-blur-md mt-12">
-      <div className="container mx-auto px-4 py-8">
+    <footer className="border-t border-border bg-background py-8 mt-12">
+      <div className="container mx-auto px-4">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-          <div className="flex items-center gap-2 text-gray-400">
-            <Bitcoin className="w-5 h-5 text-orange-500" />
-            <span className="font-semibold text-white">BitcoinFlash</span>
-            <span className="text-xs">© 2024</span>
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Bitcoin className="w-5 h-5 text-[#F7931A]" />
+            <span className="font-semibold text-foreground">BitcoinFlash</span>
+            <span className="text-xs">© 2018</span>
           </div>
-          <div className="flex gap-6 text-sm text-gray-500">
-             <a href="#" className="hover:text-orange-400 transition-colors">Terms of Use</a>
-             <a href="#" className="hover:text-orange-400 transition-colors">Privacy</a>
-             <a href="#" className="hover:text-orange-400 transition-colors">Flash Support</a>
+          <div className="flex gap-6 text-sm text-muted-foreground">
+             <a href="#" className="hover:text-primary transition-colors">Terms of Use</a>
+             <a href="#" className="hover:text-primary transition-colors">Privacy</a>
+             <a href="#" className="hover:text-primary transition-colors">Flash Support</a>
           </div>
         </div>
       </div>
