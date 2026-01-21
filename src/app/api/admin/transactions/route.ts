@@ -34,18 +34,39 @@ export async function POST(request: NextRequest) {
     // Parse transaction date or use current date
     const createdAt = transactionDate ? new Date(transactionDate) : new Date()
 
-    // Create payment record
-    const payment = await db.payment.create({
-      data: {
-        user_id: userId,
-        package_id: packageId,
-        amount: parseFloat(amount),
-        buyer_wallet: user.usdt_trc20_address || 'Manual Entry',
-        commission: commission ? parseFloat(commission) : 0,
-        status: status || 'completed',
-        created_at: createdAt,
-        updated_at: createdAt
+    // Process in transaction
+    const payment = await db.$transaction(async (tx) => {
+      // Create payment record
+      const newPayment = await tx.payment.create({
+        data: {
+          user_id: userId,
+          package_id: packageId,
+          amount: parseFloat(amount),
+          buyer_wallet: user.usdt_trc20_address || 'Manual Entry',
+          commission: commission ? parseFloat(commission) : 0,
+          status: status || 'completed',
+          created_at: createdAt,
+          updated_at: createdAt
+        }
+      })
+
+      // Only adjust balance if status is 'completed'
+      if (status === 'completed') {
+        const cost = parseFloat(amount)
+        const comm = commission ? parseFloat(commission) : 0
+        
+        // Deduct cost and add commission (net effect)
+        await tx.user.update({
+          where: { id: userId },
+          data: {
+            wallet_balance_usdt: {
+              decrement: cost - comm
+            }
+          }
+        })
       }
+
+      return newPayment
     })
 
     return NextResponse.json({ 
@@ -119,8 +140,36 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    await db.payment.delete({
-      where: { id: paymentId }
+    await db.$transaction(async (tx) => {
+      // Get payment first to check details
+      const payment = await tx.payment.findUnique({
+        where: { id: paymentId }
+      })
+
+      if (!payment) {
+        throw new Error('Transaction not found')
+      }
+
+      // If completed, revert balance changes
+      if (payment.status === 'completed') {
+        const cost = payment.amount
+        const comm = payment.commission
+        
+        // Refund cost and remove commission (net effect)
+        await tx.user.update({
+          where: { id: payment.user_id },
+          data: {
+            wallet_balance_usdt: {
+              increment: cost - comm
+            }
+          }
+        })
+      }
+
+      // Delete the record
+      await tx.payment.delete({
+        where: { id: paymentId }
+      })
     })
 
     return NextResponse.json({ 

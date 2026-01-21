@@ -240,7 +240,91 @@ export default function AgentPage() {
             </AlertDescription>
           </Alert>
         )}
+
+        {/* Commission History Table */}
+        <CommissionHistoryTable userId={user.id} />
       </div>
     </div>
+  )
+}
+
+function CommissionHistoryTable({ userId }: { userId: string }) {
+  const [transactions, setTransactions] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchTransactions()
+  }, [])
+
+  const fetchTransactions = async () => {
+    try {
+      const res = await fetch(`/api/transactions?userId=${userId}&_t=${Date.now()}`)
+      if (res.ok) {
+        const data = await res.json()
+        if (Array.isArray(data)) {
+          // Filter for commissions > 0
+          setTransactions(data.filter((t: any) => Number(t.commission) > 0))
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch commission history:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <Card className="bg-[#0e0e24] border-white/10">
+      <CardHeader>
+        <CardTitle className="text-white flex items-center gap-2">
+          <Briefcase className="w-5 h-5 text-emerald-400" />
+          Commission History
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <p className="text-gray-400 text-center py-8">Loading history...</p>
+        ) : transactions.length === 0 ? (
+          <p className="text-gray-400 text-center py-8">No commission records found</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead className="bg-white/5 border-b border-white/10 text-gray-400 font-medium text-sm">
+                <tr>
+                  <th className="p-4">Date</th>
+                  <th className="p-4">Package</th>
+                  <th className="p-4">Purchase Amount</th>
+                  <th className="p-4">Commission</th>
+                  <th className="p-4">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {transactions.map((tx) => (
+                  <tr key={tx.id} className="hover:bg-white/5 transition-colors">
+                    <td className="p-4 text-gray-300 text-sm">
+                      {new Date(tx.date).toLocaleDateString()}
+                    </td>
+                    <td className="p-4 text-white font-medium">{tx.package}</td>
+                    <td className="p-4 text-gray-300">${Number(tx.amount).toLocaleString()}</td>
+                    <td className="p-4 text-emerald-400 font-bold">
+                      +${Number(tx.commission).toLocaleString()}
+                    </td>
+                    <td className="p-4">
+                      <Badge variant="outline" className={`text-xs ${
+                        tx.status === 'completed' ? 'border-emerald-500/50 text-emerald-300 bg-emerald-500/10' :
+                        tx.status === 'pending' ? 'border-yellow-500/50 text-yellow-300 bg-yellow-500/10' :
+                        'border-red-500/50 text-red-300 bg-red-500/10'
+                      }`}>
+                        {tx.status}
+                      </Badge>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   )
 }
