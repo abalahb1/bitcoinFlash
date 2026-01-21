@@ -4,8 +4,10 @@ import { PrismaClient } from '@prisma/client'
 const prisma = new PrismaClient()
 
 async function main() {
+  console.log('Listing ALL payments in DB (latest 20):')
+
   const payments = await prisma.payment.findMany({
-    take: 5,
+    take: 20,
     orderBy: {
       created_at: 'desc'
     },
@@ -25,7 +27,8 @@ async function main() {
     }
   })
 
-  console.log('Last 5 Payments:')
+  console.log(`Found ${payments.length} total payments in DB.`)
+  
   payments.forEach(p => {
     console.log(`ID: ${p.id}`)
     console.log(`User: ${p.user.email} (${p.user.account_tier})`)

@@ -37,9 +37,9 @@ export async function GET() {
     // Transform data for frontend
     const history = transactions.map(tx => ({
       id: tx.id,
-      package: tx.package.name,
+      package: tx.package?.name || 'Unknown Package',
       amount: tx.amount,
-      btc_amount: tx.package.btc_amount, // Add BTC amount from package
+      btc_amount: tx.package?.btc_amount || 'N/A', // Add BTC amount from package
       commission: Number(tx.commission), // Ensure it's a number
       buyer_wallet: tx.buyer_wallet,
       date: tx.created_at,
