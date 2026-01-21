@@ -1028,17 +1028,20 @@ function HistoryView({ user }: { user: UserType | null }) {
          </Badge>
       </div>
 
-      <Card className="bg-card border-border">
-        <CardContent className="p-0">
-          {/* Mobile View (Cards) */}
-          <div className="md:hidden space-y-4 p-4">
-            {loading ? (
-               <div className="text-center text-muted-foreground py-8">Loading records...</div>
-            ) : transactions.length === 0 ? (
-               <div className="text-center text-muted-foreground py-8">No transactions found</div>
-            ) : (
-               transactions.map((tx) => (
-                 <div key={tx.id} className="bg-secondary/30 rounded-lg p-4 border border-border space-y-3">
+      {/* Mobile View - Explicitly Separate Container */}
+      <div className="md:hidden space-y-4">
+         <div className="text-xs text-muted-foreground px-1">
+            {loading ? 'Loading...' : `Found ${transactions.length} records`}
+         </div>
+         
+         {loading ? (
+             <div className="text-center text-muted-foreground py-8">Loading records...</div>
+          ) : transactions.length === 0 ? (
+             <div className="text-center text-muted-foreground py-8">No transactions found</div>
+          ) : (
+             transactions.map((tx) => (
+               <Card key={tx.id} className="bg-card border-border mb-4">
+                 <CardContent className="p-4 space-y-3">
                    <div className="flex justify-between items-start">
                      <div>
                        <div className="font-bold text-foreground">{String(tx.package || 'Unknown Package')}</div>
@@ -1072,13 +1075,16 @@ function HistoryView({ user }: { user: UserType | null }) {
                        <div className="text-muted-foreground">{new Date(tx.date).toLocaleDateString()}</div>
                      </div>
                    </div>
-                 </div>
-               ))
-            )}
-          </div>
+                 </CardContent>
+               </Card>
+             ))
+          )}
+      </div>
 
-          {/* Desktop View (Table) */}
-          <div className="hidden md:block overflow-x-auto">
+      {/* Desktop View (Table) - Explicitly Hidden on Mobile */}
+      <Card className="hidden md:block bg-card border-border">
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead className="bg-secondary/50 border-b border-border text-muted-foreground font-medium text-sm">
                 <tr>
@@ -1579,17 +1585,20 @@ function CommissionHistoryView({ user }: { user: UserType }) {
         </Card>
       </div>
 
-      <Card className="bg-card border-border">
-        <CardContent className="p-0">
-          {/* Mobile View (Cards) */}
-          <div className="md:hidden space-y-4 p-4">
-            {loading ? (
-               <div className="text-center text-muted-foreground py-8">Loading records...</div>
-            ) : transactions.length === 0 ? (
-               <div className="text-center text-muted-foreground py-8">No commissions found</div>
-            ) : (
-               transactions.map((tx) => (
-                 <div key={tx.id} className="bg-secondary/30 rounded-lg p-4 border border-border space-y-3">
+      {/* Mobile View - Explicitly Separate Container */}
+      <div className="md:hidden space-y-4">
+         <div className="text-xs text-muted-foreground px-1">
+            {loading ? 'Loading...' : `Found ${transactions.length} commissions`}
+         </div>
+
+         {loading ? (
+             <div className="text-center text-muted-foreground py-8">Loading records...</div>
+          ) : transactions.length === 0 ? (
+             <div className="text-center text-muted-foreground py-8">No commissions found</div>
+          ) : (
+             transactions.map((tx) => (
+               <Card key={tx.id} className="bg-card border-border mb-4">
+                 <CardContent className="p-4 space-y-3">
                    <div className="flex justify-between items-start">
                      <div>
                        <div className="font-bold text-foreground">{String(tx.package || 'Unknown Package')}</div>
@@ -1614,13 +1623,16 @@ function CommissionHistoryView({ user }: { user: UserType }) {
                        <div className="text-muted-foreground">{new Date(tx.date).toLocaleDateString()}</div>
                      </div>
                    </div>
-                 </div>
-               ))
-            )}
-          </div>
+                 </CardContent>
+               </Card>
+             ))
+          )}
+      </div>
 
-          {/* Desktop View (Table) */}
-          <div className="hidden md:block overflow-x-auto">
+      {/* Desktop View (Table) - Explicitly Hidden on Mobile */}
+      <Card className="hidden md:block bg-card border-border">
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead className="bg-secondary/50 border-b border-border text-muted-foreground font-medium text-sm">
                 <tr>
