@@ -5,19 +5,32 @@ import { jwtVerify } from 'jose'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key'
 
-export async function GET() {
+import { NextRequest } from 'next/server'
+
+export async function GET(request: NextRequest) {
   try {
+    console.log('[API] Transactions fetch started')
     const cookieStore = await cookies()
     const token = cookieStore.get('auth-token')
 
     if (!token) {
+      console.log('[API] No token found')
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
     const secret = new TextEncoder().encode(JWT_SECRET)
-    const { payload } = await jwtVerify(token.value, secret)
-    const userId = payload.userId as string
+    let payload;
+    try {
+      const verified = await jwtVerify(token.value, secret)
+      payload = verified.payload
+    } catch (e) {
+      console.error('[API] Token verification failed:', e)
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
+    }
 
+    const userId = payload.userId as string
+    console.log('[API] Fetching for user:', userId)
+    
     // Fetch payments for this user that are completed
     // In a real scenario, an "Agent" might want to see THEIR sales.
     // Assuming the user is the agent.
@@ -34,6 +47,8 @@ export async function GET() {
       }
     })
 
+    console.log(`[API] Found ${transactions.length} transactions`)
+
     // Transform data for frontend
     const history = transactions.map(tx => ({
       id: tx.id,
@@ -49,7 +64,10 @@ export async function GET() {
     return NextResponse.json(history)
 
   } catch (error) {
-    console.error('Transactions fetch error:', error)
-    return NextResponse.json({ error: 'Failed to fetch history' }, { status: 500 })
+    console.error('Transactions fetch error stack:', error)
+    return NextResponse.json({ 
+      error: 'Failed to fetch history',
+      details: error instanceof Error ? error.message : String(error)
+    }, { status: 500 })
   }
 }
