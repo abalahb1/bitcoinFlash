@@ -1005,7 +1005,7 @@ function HistoryView({ user }: { user: UserType | null }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch('/api/transactions', { cache: 'no-store' })
+    fetch(`/api/transactions?_t=${Date.now()}`, { cache: 'no-store' })
       .then(res => res.json())
       .then(data => {
         setTransactions(Array.isArray(data) ? data : [])
@@ -1526,7 +1526,7 @@ function CommissionHistoryView({ user }: { user: UserType }) {
 
   const fetchTransactions = async () => {
     try {
-      const res = await fetch(`/api/transactions?userId=${user.id}`, { cache: 'no-store' })
+      const res = await fetch(`/api/transactions?userId=${user.id}&_t=${Date.now()}`, { cache: 'no-store' })
       if (res.ok) {
         const data = await res.json()
         if (Array.isArray(data)) {
