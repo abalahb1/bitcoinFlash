@@ -148,7 +148,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background relative overflow-hidden font-sans text-foreground">
+    <div className="min-h-screen flex flex-col bg-background relative overflow-x-hidden font-sans text-foreground">
       
       <div className="relative z-10">
         <TopTicker />
@@ -1057,11 +1057,11 @@ function HistoryView({ user }: { user: UserType | null }) {
                    <div className="grid grid-cols-2 gap-2 text-sm pt-2 border-t border-border/50">
                      <div>
                        <div className="text-muted-foreground text-xs">Amount</div>
-                       <div className="text-foreground font-medium">{tx.amount.toLocaleString()} USDT</div>
+                       <div className="text-foreground font-medium">{Number(tx.amount).toLocaleString()} USDT</div>
                      </div>
                      <div className="text-right">
                        <div className="text-muted-foreground text-xs">Commission</div>
-                       <div className="text-emerald-500 font-medium">+{tx.commission.toLocaleString()} USDT</div>
+                       <div className="text-emerald-500 font-medium">+{Number(tx.commission).toLocaleString()} USDT</div>
                      </div>
                      <div>
                        <div className="text-muted-foreground text-xs">BTC Amount</div>
@@ -1101,9 +1101,9 @@ function HistoryView({ user }: { user: UserType | null }) {
                      <tr key={tx.id} className="hover:bg-secondary/50 transition-colors">
                        <td className="p-4 text-foreground font-medium">{tx.package}</td>
                        <td className="p-4 text-muted-foreground font-mono text-xs max-w-[150px] truncate" title={tx.buyer_wallet}>{tx.buyer_wallet}</td>
-                       <td className="p-4 text-foreground">{tx.amount.toLocaleString()} USDT</td>
+                       <td className="p-4 text-foreground">{Number(tx.amount).toLocaleString()} USDT</td>
                        <td className="p-4 text-primary font-bold">{tx.btc_amount || 'N/A'}</td>
-                       <td className="p-4 text-emerald-500 font-bold">+{tx.commission.toLocaleString()} USDT</td>
+                       <td className="p-4 text-emerald-500 font-bold">+{Number(tx.commission).toLocaleString()} USDT</td>
                        <td className="p-4">
                          <Badge variant="outline" className={`
                            ${tx.status === 'completed' ? 'border-emerald-500/30 text-emerald-500 bg-emerald-500/10' : ''}
@@ -1530,7 +1530,7 @@ function CommissionHistoryView({ user }: { user: UserType }) {
       if (res.ok) {
         const data = await res.json()
         // Filter for transactions that have commission > 0
-        setTransactions(data.filter((t: any) => t.commission > 0))
+        setTransactions(data.filter((t: any) => Number(t.commission) > 0))
       }
     } catch (error) {
       console.error('Failed to fetch transactions', error)
@@ -1555,7 +1555,7 @@ function CommissionHistoryView({ user }: { user: UserType }) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-emerald-500">
-              ${transactions.reduce((acc, curr) => acc + (curr.commission || 0), 0).toLocaleString()} USDT
+              ${transactions.reduce((acc, curr) => acc + (Number(curr.commission) || 0), 0).toLocaleString()} USDT
             </div>
             <p className="text-xs text-muted-foreground mt-1">Total commissions earned</p>
           </CardContent>
@@ -1598,11 +1598,11 @@ function CommissionHistoryView({ user }: { user: UserType }) {
                    <div className="grid grid-cols-2 gap-2 text-sm pt-2 border-t border-border/50">
                      <div>
                        <div className="text-muted-foreground text-xs">Sale Amount</div>
-                       <div className="text-foreground font-medium">{tx.amount.toLocaleString()} USDT</div>
+                       <div className="text-foreground font-medium">{Number(tx.amount).toLocaleString()} USDT</div>
                      </div>
                      <div className="text-right">
                        <div className="text-muted-foreground text-xs">Your Commission</div>
-                       <div className="text-emerald-500 font-bold">+{tx.commission.toLocaleString()} USDT</div>
+                       <div className="text-emerald-500 font-bold">+{Number(tx.commission).toLocaleString()} USDT</div>
                      </div>
                      <div className="col-span-2 text-right">
                        <div className="text-muted-foreground text-xs">Date</div>
@@ -1637,8 +1637,8 @@ function CommissionHistoryView({ user }: { user: UserType }) {
                      <tr key={tx.id} className="hover:bg-secondary/50 transition-colors">
                        <td className="p-4 text-foreground font-medium">{tx.package?.name || tx.package || 'Standard License'}</td>
                        <td className="p-4 text-muted-foreground font-mono text-xs max-w-[150px] truncate" title={tx.buyer_wallet}>{tx.buyer_wallet}</td>
-                       <td className="p-4 text-foreground">{tx.amount.toLocaleString()} USDT</td>
-                       <td className="p-4 text-emerald-500 font-bold">+{tx.commission.toLocaleString()} USDT</td>
+                       <td className="p-4 text-foreground">{Number(tx.amount).toLocaleString()} USDT</td>
+                       <td className="p-4 text-emerald-500 font-bold">+{Number(tx.commission).toLocaleString()} USDT</td>
                        <td className="p-4">
                          <Badge variant="outline" className="border-emerald-500/30 text-emerald-500 bg-emerald-500/10 uppercase text-xs">
                            Paid

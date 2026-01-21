@@ -40,7 +40,7 @@ export async function GET() {
       package: tx.package.name,
       amount: tx.amount,
       btc_amount: tx.package.btc_amount, // Add BTC amount from package
-      commission: tx.commission, // Using the stored commission
+      commission: Number(tx.commission), // Ensure it's a number
       buyer_wallet: tx.buyer_wallet,
       date: tx.created_at,
       status: tx.status
