@@ -3,7 +3,7 @@ import { db } from '@/lib/db'
 import { cookies } from 'next/headers'
 import { jwtVerify } from 'jose'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key'
+const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'your-secret-key-change-in-production')
 
 import { NextRequest } from 'next/server'
 
@@ -18,10 +18,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
-    const secret = new TextEncoder().encode(JWT_SECRET)
     let payload;
     try {
-      const verified = await jwtVerify(token.value, secret)
+      const verified = await jwtVerify(token.value, JWT_SECRET)
       payload = verified.payload
     } catch (e) {
       console.error('[API] Token verification failed:', e)
