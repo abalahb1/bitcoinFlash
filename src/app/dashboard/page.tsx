@@ -44,7 +44,7 @@ export default function DashboardPage() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const res = await fetch('/api/auth/me')
+        const res = await fetch('/api/auth/me', { credentials: 'include' })
         if (res.ok) {
           const userData = await res.json()
           setUser(userData)
@@ -1005,7 +1005,10 @@ function HistoryView({ user }: { user: UserType | null }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch(`/api/transactions?_t=${Date.now()}`, { cache: 'no-store' })
+    fetch(`/api/transactions?_t=${Date.now()}`, { 
+      cache: 'no-store', 
+      credentials: 'include' 
+    })
       .then(res => {
         if (res.status === 401) {
            window.location.href = '/login'
@@ -1538,7 +1541,10 @@ function CommissionHistoryView({ user }: { user: UserType }) {
 
   const fetchTransactions = async () => {
     try {
-      const res = await fetch(`/api/transactions?userId=${user.id}&_t=${Date.now()}`, { cache: 'no-store' })
+      const res = await fetch(`/api/transactions?userId=${user.id}&_t=${Date.now()}`, { 
+        cache: 'no-store',
+        credentials: 'include'
+      })
       
       if (res.status === 401) {
         window.location.href = '/login'
