@@ -1066,22 +1066,22 @@ function HistoryView({ user }: { user: UserType | null }) {
                      </Badge>
                    </div>
                    
-                   <div className="grid grid-cols-2 gap-2 text-sm pt-2 border-t border-border/50">
-                     <div>
-                       <div className="text-muted-foreground text-xs">Amount</div>
-                       <div className="text-foreground font-medium">{Number(tx.amount).toLocaleString()} USDT</div>
+                   <div className="grid grid-cols-2 gap-3 text-sm pt-2 border-t border-border/50">
+                     <div className="min-w-0">
+                       <div className="text-muted-foreground text-[10px] mb-0.5">Amount</div>
+                       <div className="text-foreground font-medium text-xs break-words">{Number(tx.amount).toLocaleString()} USDT</div>
                      </div>
-                     <div className="text-right">
-                       <div className="text-muted-foreground text-xs">Commission</div>
-                       <div className="text-emerald-500 font-medium">+{Number(tx.commission).toLocaleString()} USDT</div>
+                     <div className="text-right min-w-0">
+                       <div className="text-muted-foreground text-[10px] mb-0.5">Commission</div>
+                       <div className="text-emerald-500 font-medium text-xs break-words">+{Number(tx.commission).toLocaleString()} USDT</div>
                      </div>
-                     <div>
-                       <div className="text-muted-foreground text-xs">BTC Amount</div>
-                       <div className="text-orange-500 font-medium">{tx.btc_amount || 'N/A'}</div>
+                     <div className="min-w-0">
+                       <div className="text-muted-foreground text-[10px] mb-0.5">BTC Amount</div>
+                       <div className="text-orange-500 font-medium text-xs truncate">{tx.btc_amount || 'N/A'}</div>
                      </div>
-                     <div className="text-right">
-                       <div className="text-muted-foreground text-xs">Date</div>
-                       <div className="text-muted-foreground">{new Date(tx.date).toLocaleDateString()}</div>
+                     <div className="text-right min-w-0">
+                       <div className="text-muted-foreground text-[10px] mb-0.5">Date</div>
+                       <div className="text-muted-foreground text-xs">{new Date(tx.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
                      </div>
                    </div>
                  </CardContent>
