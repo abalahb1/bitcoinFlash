@@ -1444,7 +1444,7 @@ function PaymentView({ pkg, user, onSubmit, loading }: {
                     You need <strong className="text-white">${shortage.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT</strong> more to complete this purchase.
                   </div>
                   <div className="text-xs text-gray-500 mt-2">
-                    💡 Contact admin via Telegram to add funds to your wallet.
+                    💡 Please deposit funds to your wallet to complete this purchase.
                   </div>
                 </div>
               </AlertDescription>

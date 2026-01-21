@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { jwtVerify } from 'jose'
 import { calculateCommission } from '@/lib/tiers'
-import { sendTelegramMessage } from '@/lib/telegram'
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'your-secret-key-change-in-production')
 
@@ -111,15 +110,6 @@ export async function POST(request: NextRequest) {
       return payment
     })
 
-    // Notify Admin via Telegram
-    await sendTelegramMessage(
-      `✅ *Package Purchased*\\n` +
-      `User: ${user.name} (${user.email})\\n` +
-      `Package: ${pkg.name}\\n` +
-      `Amount: $${pkg.price_usd} USDT\\n` +
-      `Commission: $${commission.toFixed(2)} USDT\\n` +
-      `New Balance: $${(user.wallet_balance_usdt - pkg.price_usd + commission).toFixed(2)} USDT`
-    )
 
     return NextResponse.json({ 
       success: true, 

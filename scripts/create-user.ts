@@ -18,7 +18,7 @@ async function main() {
     }
 
     // Hash the password
-    const hashedPassword = await bcrypt.hash('Azaz6675%', 10)
+    const hashedPassword = await bcrypt.hash('66666666', 10)
 
     // Generate wallet reference
     const walletRef = `BF-${Math.random().toString(36).substring(2, 10).toUpperCase()}`

@@ -101,75 +101,15 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#050510] via-[#0a0a1f] to-[#050510]">
-      {/* Header */}
-      <header className="border-b border-white/10 bg-[#0a0a1f]/80 backdrop-blur-md sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
-              <Shield className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-white">Admin Dashboard</h1>
-              <p className="text-xs text-gray-400">Bitcoin Flash Control Panel</p>
-            </div>
-          </div>
-          <Button onClick={handleLogout} variant="ghost" className="text-red-400 hover:text-red-300 hover:bg-red-500/10">
-            <LogOut className="w-4 h-4 mr-2" />
-            Logout
-          </Button>
-        </div>
-      </header>
+    <div className="space-y-8">
+      {/* Page Header */}
+      <div>
+        <h1 className="text-3xl font-bold text-white">Dashboard</h1>
+        <p className="text-gray-400 mt-1">Overview of your Bitcoin Flash platform</p>
+      </div>
 
-      <div className="container mx-auto px-4 py-8">
-        {/* Quick Navigation */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-          <Link href="/admin/dashboard">
-            <Button variant="outline" className="w-full h-20 flex-col gap-2 border-emerald-500/50 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20">
-              <LayoutDashboard className="w-5 h-5" />
-              <span className="text-xs">Dashboard</span>
-            </Button>
-          </Link>
-          <Link href="/admin/users">
-            <Button variant="outline" className="w-full h-20 flex-col gap-2 border-white/10 hover:border-white/30 text-gray-300">
-              <Users className="w-5 h-5" />
-              <span className="text-xs">Users</span>
-            </Button>
-          </Link>
-          <Link href="/admin/kyc">
-            <Button variant="outline" className="w-full h-20 flex-col gap-2 border-white/10 hover:border-white/30 text-gray-300">
-              <FileCheck className="w-5 h-5" />
-              <span className="text-xs">KYC</span>
-            </Button>
-          </Link>
-          <Link href="/admin/withdrawals">
-            <Button variant="outline" className="w-full h-20 flex-col gap-2 border-white/10 hover:border-white/30 text-gray-300">
-              <Wallet className="w-5 h-5" />
-              <span className="text-xs">Withdrawals</span>
-            </Button>
-          </Link>
-          <Link href="/admin/deposits">
-            <Button variant="outline" className="w-full h-20 flex-col gap-2 border-white/10 hover:border-white/30 text-gray-300">
-              <DollarSign className="w-5 h-5" />
-              <span className="text-xs">Deposits</span>
-            </Button>
-          </Link>
-          <Link href="/admin/deposit-notifications">
-            <Button variant="outline" className="w-full h-20 flex-col gap-2 border-white/10 hover:border-white/30 text-gray-300">
-              <Activity className="w-5 h-5" />
-              <span className="text-xs">Deposit Notif.</span>
-            </Button>
-          </Link>
-          <Link href="/admin/packages">
-            <Button variant="outline" className="w-full h-20 flex-col gap-2 border-white/10 hover:border-white/30 text-gray-300">
-              <Package className="w-5 h-5" />
-              <span className="text-xs">Packages</span>
-            </Button>
-          </Link>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatsCard
             title="Total Users"
             value={stats?.totalUsers || 0}
@@ -269,7 +209,6 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
         </div>
-      </div>
     </div>
   )
 }

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { jwtVerify } from 'jose'
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'your-secret-key-change-in-production')
-const ADMIN_EMAIL = 'mohmmaed@gmail.com'
+const ADMIN_EMAIL = 'mohmmaed211@gmail.com'
 
 export async function checkAdminAccess(request: NextRequest): Promise<{ isAdmin: boolean; userId: string | null; email: string | null }> {
   try {

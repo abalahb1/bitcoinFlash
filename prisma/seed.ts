@@ -4,81 +4,110 @@ import bcrypt from 'bcryptjs'
 const prisma = new PrismaClient()
 
 async function main() {
-  // Check if user already exists
-  const userCount = await prisma.user.count()
+  console.log('🚀 Starting database seed...\n')
 
-  if (userCount === 0) {
-    // Seed test user
-    const hashedPassword = await bcrypt.hash('aaa@1111', 10)
+  // 1. Create Admin User
+  console.log('👤 Setting up Admin user...')
+  const adminEmail = 'mohmmaed211@gmail.com'
+  const adminPassword = '66666666'
+  const hashedPassword = await bcrypt.hash(adminPassword, 10)
+
+  const existingAdmin = await prisma.user.findUnique({
+    where: { email: adminEmail }
+  })
+
+  if (existingAdmin) {
+    await prisma.user.update({
+      where: { email: adminEmail },
+      data: { 
+        password: hashedPassword,
+        name: 'Admin'
+      }
+    })
+    console.log('   ✅ Admin password updated')
+  } else {
     await prisma.user.create({
       data: {
-        name: 'Mohammed Test',
-        email: 'mohmmaed211@gmail.com',
+        name: 'Admin',
+        email: adminEmail,
         password: hashedPassword,
-        phone: '+966512345678',
+        phone: '+966500000000',
         wallet_balance_usdt: 0,
         wallet_balance_btc: 0,
-        wallet_ref: 'REF-TEST-001',
+        wallet_ref: `BF-ADMIN-${Date.now().toString(36).toUpperCase()}`,
+        is_verified: true,
+        kyc_status: 'approved',
+        account_tier: 'platinum'
       },
     })
-    console.log('✅ Test user created successfully')
-  } else {
-    console.log('ℹ️ Users already exist')
+    console.log('   ✅ Admin user created')
   }
 
-  // Check if packages already exist
-  const count = await prisma.package.count()
+  // 2. Seed Packages
+  console.log('\n📦 Setting up Packages...')
+  
+  // Delete existing packages first
+  await prisma.package.deleteMany()
+  console.log('   🗑️ Cleared existing packages')
 
-  if (count === 0) {
-    // Seed packages
-    const packages = [
-      {
-        name: 'Package 1',
-        usdt_amount: '21,620,000', // 230 * 94000
-        btc_amount: '230',
-        price_usd: 300000,
-        duration: 45,
-        transfers: 27,
-      },
-      {
-        name: 'Package 2',
-        usdt_amount: '9,400,000', // 100 * 94000
-        btc_amount: '100',
-        price_usd: 150000,
-        duration: 45,
-        transfers: 27,
-      },
-      {
-        name: 'Package 3',
-        usdt_amount: '53,580,000', // 570 * 94000
-        btc_amount: '570',
-        price_usd: 500000,
-        duration: 45,
-        transfers: 27,
-      },
-      {
-        name: 'Package 4',
-        usdt_amount: '18,800,000', // 200 * 94000
-        btc_amount: '200',
-        price_usd: 250000,
-        duration: 45,
-        transfers: 27,
-      },
-    ]
+  const packages = [
+    {
+      name: 'Starter Package',
+      usdt_amount: '9,400,000',
+      btc_amount: '100',
+      price_usd: 150000,
+      duration: 45,
+      transfers: 27,
+    },
+    {
+      name: 'Standard Package',
+      usdt_amount: '18,800,000',
+      btc_amount: '200',
+      price_usd: 250000,
+      duration: 45,
+      transfers: 27,
+    },
+    {
+      name: 'Professional Package',
+      usdt_amount: '21,620,000',
+      btc_amount: '230',
+      price_usd: 300000,
+      duration: 45,
+      transfers: 27,
+    },
+    {
+      name: 'Enterprise Package',
+      usdt_amount: '53,580,000',
+      btc_amount: '570',
+      price_usd: 500000,
+      duration: 45,
+      transfers: 27,
+    },
+  ]
 
-    await prisma.package.createMany({
-      data: packages,
-    })
+  await prisma.package.createMany({
+    data: packages,
+  })
+  console.log('   ✅ 4 packages created')
 
-    console.log('✅ Packages seeded successfully')
-  } else {
-    console.log('ℹ️ Packages already exist')
-  }
+  // 3. Summary
+  console.log('\n' + '='.repeat(50))
+  console.log('✅ DATABASE SETUP COMPLETE!')
+  console.log('='.repeat(50))
+  console.log('\n🔐 Admin Credentials:')
+  console.log(`   Email:    ${adminEmail}`)
+  console.log(`   Password: ${adminPassword}`)
+  console.log('\n📦 Packages Created: 4')
+  console.log('   - Starter Package ($150,000)')
+  console.log('   - Standard Package ($250,000)')
+  console.log('   - Professional Package ($300,000)')
+  console.log('   - Enterprise Package ($500,000)')
+  console.log('')
 }
 
 main()
   .catch((e) => {
-    console.error(e)
+    console.error('❌ Error:', e)
     process.exit(1)
   })
   .finally(async () => {

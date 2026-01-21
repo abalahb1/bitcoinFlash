@@ -173,31 +173,20 @@ export default function AdminUsersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#050510] via-[#0a0a1f] to-[#050510]">
-      <header className="border-b border-white/10 bg-[#0a0a1f]/80 backdrop-blur-md sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex items-center gap-4">
-          <Link href="/admin/dashboard">
-            <Button variant="ghost" size="icon" className="hover:bg-white/10">
-              <ArrowLeft className="w-5 h-5 text-gray-300" />
-            </Button>
-          </Link>
-          <div className="flex items-center gap-3 flex-1">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center">
-              <UsersIcon className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-white">User Management</h1>
-              <p className="text-sm text-gray-300">Manage all registered users</p>
-            </div>
-          </div>
-          <Button onClick={() => setShowCreateModal(true)} className="bg-emerald-600 hover:bg-emerald-500 text-white">
-            <Plus className="w-4 h-4 mr-2" />
-            Create User
-          </Button>
+    <div className="space-y-6">
+      {/* Page Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-white">User Management</h1>
+          <p className="text-gray-400 mt-1">Manage all registered users</p>
         </div>
-      </header>
+        <Button onClick={() => setShowCreateModal(true)} className="bg-emerald-600 hover:bg-emerald-500 text-white">
+          <Plus className="w-4 h-4 mr-2" />
+          Create User
+        </Button>
+      </div>
 
-      <div className="container mx-auto px-4 py-8">
+      <div>
         {message && (
           <Alert className={`mb-6 border ${
             message.type === 'success' 

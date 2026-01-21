@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { jwtVerify } from 'jose'
-import { sendTelegramMessage } from '@/lib/telegram'
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'your-secret-key-change-in-production')
 
@@ -74,18 +73,7 @@ export async function POST(request: NextRequest) {
     // Check if both documents are uploaded
     const bothUploaded = user?.kyc_passport_url && user?.kyc_selfie_url
     
-    // Send Telegram notification ONLY when BOTH documents are uploaded
-    if (bothUploaded) {
-      await sendTelegramMessage(
-        `🔔 *New KYC Submission*\n\n` +
-        `👤 Name: ${user?.name || 'Unknown'}\n` +
-        `📧 Email: ${user?.email}\n` +
-        `📱 User ID: \`${userId}\`\n\n` +
-        `✅ Both documents uploaded\n` +
-        `⏳ Status: Pending Review\n\n` +
-        `Use /start in the bot to review and approve.`
-      )
-    }
+    // KYC submission logged - admin can view in dashboard
 
     return NextResponse.json({
       message: 'Document uploaded successfully',

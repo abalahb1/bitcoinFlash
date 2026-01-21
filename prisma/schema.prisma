@@ -1,11 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
@@ -15,89 +9,83 @@ datasource db {
 }
 
 model User {
-  id                  String    @id @default(cuid())
+  id                  String                @id @default(cuid())
   name                String
-  email               String    @unique
+  email               String                @unique
   phone               String?
   password            String
-  wallet_balance_usdt Float     @default(0.00)
-  wallet_balance_btc  Float     @default(0.00)
+  wallet_balance_usdt Float                 @default(0.00)
+  wallet_balance_btc  Float                 @default(0.00)
   wallet_ref          String?
-  
-  // New wallet & KYC fields
-  usdt_trc20_address  String?   // عنوان USDT TRC20
-  kyc_passport_url    String?   // مسار جواز السفر
-  kyc_selfie_url      String?   // مسار السيلفي
-  kyc_status          String    @default("none") // none, pending, approved, rejected
-  is_verified         Boolean   @default(false)  // Admin-controlled verification status
-  commission_wallet   String?   // عنوان محفظة العمولات
-  account_tier        String    @default("bronze") // bronze, silver, gold
-  
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
+  usdt_trc20_address  String?
+  kyc_passport_url    String?
+  kyc_selfie_url      String?
+  kyc_status          String                @default("none")
+  is_verified         Boolean               @default(false)
+  commission_wallet   String?
+  account_tier        String                @default("bronze")
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  deposits            DepositNotification[]
   payments            Payment[]
   withdrawalRequests  WithdrawalRequest[]
-  deposits            DepositNotification[]
 }
 
 model Package {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   name        String
   usdt_amount String
   btc_amount  String
   price_usd   Float
-  duration    Int      @default(45)
-  transfers   Int      @default(27)
+  duration    Int       @default(45)
+  transfers   Int       @default(27)
   payments    Payment[]
 }
 
 model Payment {
-  id             String   @id @default(uuid())
-  user_id        String
-  package_id     String
-  amount         Float
-  buyer_wallet   String
-  status         String   @default("pending") // pending, completed, failed
-  commission     Float    @default(0.0)
-  created_at     DateTime @default(now())
-  updated_at     DateTime @updatedAt
-
-  user    User    @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  package Package @relation(fields: [package_id], references: [id], onDelete: Cascade)
+  id           String   @id @default(uuid())
+  user_id      String
+  package_id   String
+  amount       Float
+  buyer_wallet String
+  status       String   @default("pending")
+  commission   Float    @default(0.0)
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+  package      Package  @relation(fields: [package_id], references: [id], onDelete: Cascade)
+  user         User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
 }
 
 model WithdrawalRequest {
-  id              String   @id @default(uuid())
-  user_id         String
-  amount          Float
-  address         String   // TRC20 address
-  network         String   @default("TRC20")
-  status          String   @default("pending") // pending, approved, rejected, completed
+  id               String    @id @default(uuid())
+  user_id          String
+  amount           Float
+  address          String
+  network          String    @default("TRC20")
+  status           String    @default("pending")
   rejection_reason String?
-  admin_notes     String?
-  created_at      DateTime @default(now())
-  updated_at      DateTime @updatedAt
-  processed_at    DateTime?
+  admin_notes      String?
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @updatedAt
+  processed_at     DateTime?
+  user             User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
-  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  
   @@index([user_id])
   @@index([status])
 }
 
 model DepositNotification {
-  id              String   @id @default(uuid())
-  user_id         String
-  amount          Float
-  tx_hash         String?  // Transaction hash (optional)
-  status          String   @default("pending") // pending, confirmed
-  confirmed_by    String?  // Admin email who confirmed
-  admin_notes     String?
-  created_at      DateTime @default(now())
-  confirmed_at    DateTime?
+  id           String    @id @default(uuid())
+  user_id      String
+  amount       Float
+  tx_hash      String?
+  status       String    @default("pending")
+  confirmed_by String?
+  admin_notes  String?
+  created_at   DateTime  @default(now())
+  confirmed_at DateTime?
+  user         User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
-  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  
   @@index([user_id])
   @@index([status])
 }
