@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
@@ -13,6 +13,203 @@ import { TopTicker } from '@/components/MarketTicker'
 
 // Types
 type Step = 'intro' | 'passport' | 'selfie' | 'review' | 'success'
+
+// Selfie Capture Component with Camera Support
+function SelfieCapture({ 
+  onCapture, 
+  preview, 
+  onReset 
+}: { 
+  onCapture: (file: File, preview: string) => void
+  preview: string | null
+  onReset: () => void
+}) {
+  const [cameraActive, setCameraActive] = useState(false)
+  const [stream, setStream] = useState<MediaStream | null>(null)
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+
+  const startCamera = async () => {
+    try {
+      const mediaStream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          facingMode: 'user',
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        } 
+      })
+      setStream(mediaStream)
+      if (videoRef.current) {
+        videoRef.current.srcObject = mediaStream
+      }
+      setCameraActive(true)
+    } catch (err) {
+      console.error('Camera access denied:', err)
+      alert('Unable to access camera. Please grant camera permissions or upload a photo instead.')
+    }
+  }
+
+  const stopCamera = () => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop())
+      setStream(null)
+    }
+    setCameraActive(false)
+  }
+
+  const capturePhoto = () => {
+    if (!videoRef.current || !canvasRef.current) return
+
+    const video = videoRef.current
+    const canvas = canvasRef.current
+    const context = canvas.getContext('2d')
+    
+    if (!context) return
+
+    // Set canvas size to match video
+    canvas.width = video.videoWidth
+    canvas.height = video.videoHeight
+
+    // Mirror the image horizontally to fix the flipped camera issue
+    context.translate(canvas.width, 0)
+    context.scale(-1, 1)
+    
+    // Draw the video frame to canvas
+    context.drawImage(video, 0, 0, canvas.width, canvas.height)
+
+    // Convert canvas to blob and create file
+    canvas.toBlob((blob) => {
+      if (!blob) return
+      
+      const file = new File([blob], 'selfie.jpg', { type: 'image/jpeg' })
+      const previewUrl = canvas.toDataURL('image/jpeg', 0.9)
+      
+      onCapture(file, previewUrl)
+      stopCamera()
+    }, 'image/jpeg', 0.9)
+  }
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (file.size > 3 * 1024 * 1024) {
+      alert('File size must be less than 3MB')
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      onCapture(file, reader.result as string)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  useEffect(() => {
+    return () => {
+      stopCamera()
+    }
+  }, [])
+
+  if (preview) {
+    return (
+      <div className="space-y-4">
+        <div className="relative w-64 h-64 mx-auto rounded-2xl overflow-hidden border-4 border-purple-500/30 shadow-xl">
+          <img src={preview} alt="Selfie Preview" className="w-full h-full object-cover" />
+        </div>
+        <Button 
+          onClick={onReset}
+          variant="outline"
+          className="w-full border-white/10 text-white hover:bg-white/5"
+        >
+          <Camera className="w-4 h-4 mr-2" />
+          Retake Photo
+        </Button>
+      </div>
+    )
+  }
+
+  if (cameraActive) {
+    return (
+      <div className="space-y-4">
+        <div className="relative w-full max-w-md mx-auto aspect-[3/4] rounded-2xl overflow-hidden border-4 border-purple-500/30 bg-black shadow-xl">
+          <video 
+            ref={videoRef}
+            autoPlay 
+            playsInline
+            muted
+            className="w-full h-full object-cover"
+            style={{ transform: 'scaleX(-1)' }} // Mirror the preview
+          />
+          <div className="absolute inset-0 pointer-events-none">
+            {/* Face guide overlay */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-48 h-64 border-4 border-purple-500/50 rounded-full"></div>
+            </div>
+          </div>
+        </div>
+        
+        <canvas ref={canvasRef} className="hidden" />
+        
+        <div className="flex gap-3">
+          <Button 
+            onClick={stopCamera}
+            variant="outline"
+            className="flex-1 border-white/10 text-white hover:bg-white/5"
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={capturePhoto}
+            className="flex-1 bg-purple-600 hover:bg-purple-500 text-white"
+          >
+            <Camera className="w-4 h-4 mr-2" />
+            Capture
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <button
+          onClick={startCamera}
+          className="p-8 rounded-2xl border-2 border-dashed border-purple-500/30 hover:border-purple-500/50 bg-purple-500/5 hover:bg-purple-500/10 transition-all group"
+        >
+          <div className="space-y-4">
+            <div className="w-16 h-16 rounded-full bg-purple-500/10 mx-auto flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Camera className="w-8 h-8 text-purple-400" />
+            </div>
+            <div>
+              <p className="text-white font-medium">Use Camera</p>
+              <p className="text-xs text-gray-500 mt-1">Take a live selfie</p>
+            </div>
+          </div>
+        </button>
+
+        <label className="p-8 rounded-2xl border-2 border-dashed border-white/10 hover:border-purple-500/50 bg-black/20 hover:bg-purple-500/5 transition-all cursor-pointer group">
+          <input 
+            type="file" 
+            accept="image/*"
+            onChange={handleFileUpload}
+            className="hidden"
+          />
+          <div className="space-y-4">
+            <div className="w-16 h-16 rounded-full bg-white/5 mx-auto flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Upload className="w-8 h-8 text-gray-400 group-hover:text-purple-400" />
+            </div>
+            <div>
+              <p className="text-white font-medium">Upload Photo</p>
+              <p className="text-xs text-gray-500 mt-1">Choose from gallery</p>
+            </div>
+          </div>
+        </label>
+      </div>
+    </div>
+  )
+}
 
 export default function KYCPage() {
   const router = useRouter()
@@ -278,35 +475,21 @@ export default function KYCPage() {
                     >
                       <div className="text-center space-y-2">
                         <h3 className="text-xl font-bold text-white">Take a Selfie</h3>
-                        <p className="text-gray-400 text-sm">Please provide a photo of your face to verify your identity.</p>
+                        <p className="text-gray-400 text-sm">Please provide a clear photo of your face to verify your identity.</p>
                       </div>
 
-                      <div className="border-2 border-dashed border-white/10 rounded-2xl p-8 text-center hover:border-purple-500/50 transition-colors bg-black/20 group relative">
-                        <input 
-                          type="file" 
-                          accept="image/*"
-                          onChange={(e) => handleFileChange(e, 'selfie')}
-                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                        />
-                        {selfiePreview ? (
-                          <div className="relative w-40 h-40 mx-auto rounded-full overflow-hidden border-4 border-white/10">
-                            <img src={selfiePreview} alt="Preview" className="w-full h-full object-cover" />
-                            <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                              <p className="text-white text-xs font-medium">Change</p>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="py-8 space-y-4 pointer-events-none">
-                            <div className="w-16 h-16 rounded-full bg-white/5 mx-auto flex items-center justify-center group-hover:scale-110 transition-transform">
-                              <Camera className="w-8 h-8 text-gray-400 group-hover:text-purple-400" />
-                            </div>
-                            <div>
-                              <p className="text-white font-medium">Upload Selfie</p>
-                              <p className="text-xs text-gray-500 mt-1">Make sure your face is clearly visible</p>
-                            </div>
-                          </div>
-                        )}
-                      </div>
+                      <SelfieCapture 
+                        onCapture={(file, preview) => {
+                          setSelfieFile(file)
+                          setSelfiePreview(preview)
+                          setError(null)
+                        }}
+                        preview={selfiePreview}
+                        onReset={() => {
+                          setSelfieFile(null)
+                          setSelfiePreview(null)
+                        }}
+                      />
 
                       {error && (
                         <p className="text-red-400 text-sm text-center bg-red-500/10 py-2 rounded-lg">{error}</p>

@@ -535,6 +535,7 @@ function WalletView({ user }: { user: UserType | null }) {
   const [activeTab, setActiveTab] = useState<'deposit' | 'withdraw'>('deposit')
   const [withdrawAmount, setWithdrawAmount] = useState('')
   const [withdrawAddress, setWithdrawAddress] = useState('')
+  const [withdrawNetwork, setWithdrawNetwork] = useState<'TRC20' | 'ERC20'>('ERC20')
   const [withdrawing, setWithdrawing] = useState(false)
   const [withdrawMessage, setWithdrawMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null)
   const [addressValidation, setAddressValidation] = useState<{
@@ -560,31 +561,39 @@ function WalletView({ user }: { user: UserType | null }) {
     let network = 'Unknown'
     let error = ''
 
-    // Tron (TRX) validation: starts with T, 34 characters
-    if (/^T[A-Za-z1-9]{33}$/.test(trimmedAddress)) {
-      isValid = true
+    // Ethereum (ERC20) validation: starts with 0x, 42 characters total
+    if (/^0x[a-fA-F0-9]{40}$/.test(trimmedAddress)) {
+      network = 'Ethereum (ERC20)'
+      if (withdrawNetwork === 'ERC20') {
+        isValid = true
+      } else {
+        error = 'This is an ERC20 address. Please select ERC20 network or use a TRC20 address.'
+      }
+    }
+    // Tron (TRC20) validation: starts with T, 34 characters
+    else if (/^T[A-Za-z1-9]{33}$/.test(trimmedAddress)) {
       network = 'Tron (TRC20)'
+      if (withdrawNetwork === 'TRC20') {
+        isValid = true
+      } else {
+        error = 'This is a TRC20 address. Please select TRC20 network or use an ERC20 address.'
+      }
     }
     // Bitcoin addresses
     else if (/^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/.test(trimmedAddress)) {
       network = 'Bitcoin (Legacy/SegWit)'
-      error = 'Only Tron (TRC20) addresses are accepted for USDT withdrawals.'
+      error = `Only ${withdrawNetwork} addresses are accepted for USDT withdrawals.`
     } else if (/^bc1[a-z0-9]{39,59}$/.test(trimmedAddress)) {
       network = 'Bitcoin (Native SegWit)'
-      error = 'Only Tron (TRC20) addresses are accepted for USDT withdrawals.'
-    }
-    // Ethereum (ETH)
-    else if (/^0x[a-fA-F0-9]{40}$/.test(trimmedAddress)) {
-      network = 'Ethereum (ERC20)'
-      error = 'Only Tron (TRC20) addresses are accepted for USDT withdrawals.'
+      error = `Only ${withdrawNetwork} addresses are accepted for USDT withdrawals.`
     }
     // Solana
-    else if (/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(trimmedAddress) && !trimmedAddress.startsWith('T')) {
+    else if (/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(trimmedAddress) && !trimmedAddress.startsWith('T') && !trimmedAddress.startsWith('0x')) {
       network = 'Solana'
-      error = 'Only Tron (TRC20) addresses are accepted for USDT withdrawals.'
+      error = `Only ${withdrawNetwork} addresses are accepted for USDT withdrawals.`
     }
     else {
-      error = 'Invalid address format. Please enter a valid Tron (TRC20) address.'
+      error = `Invalid address format. Please enter a valid ${withdrawNetwork} address.`
     }
 
     setAddressValidation({ isValid, network, error })
@@ -595,6 +604,13 @@ function WalletView({ user }: { user: UserType | null }) {
     setWithdrawAddress(value)
     validateWithdrawAddress(value)
   }
+
+  // Re-validate address when network changes
+  useEffect(() => {
+    if (withdrawAddress) {
+      validateWithdrawAddress(withdrawAddress)
+    }
+  }, [withdrawNetwork])
 
   const handleWithdrawSubmit = async () => {
     if (!withdrawAmount || !withdrawAddress || !addressValidation?.isValid) return
@@ -710,74 +726,79 @@ function WalletView({ user }: { user: UserType | null }) {
               <div className="space-y-6">
                 <div>
                   <h3 className="text-xl font-bold text-white mb-2">Deposit USDT</h3>
-                  <p className="text-gray-400 text-sm">Send USDT (TRC20) to your wallet address</p>
+                  <p className="text-gray-400 text-sm">Send USDT (ERC20) to your wallet address</p>
                 </div>
 
                 <Alert className="border-cyan-500/30 bg-cyan-500/5">
                   <AlertDescription className="text-sm text-gray-400">
-                    <strong className="text-cyan-400">Important:</strong> Only send USDT on the Tron (TRC20) network to this address. Sending other assets or using different networks may result in permanent loss.
+                    <strong className="text-cyan-400">Important:</strong> Only send USDT on the Ethereum (ERC20) network to this address. Sending other assets or using different networks may result in permanent loss.
                   </AlertDescription>
                 </Alert>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* QR Code Section */}
-                  <div className="flex flex-col items-center justify-center p-6 bg-secondary border border-border">
-                    {user.usdt_trc20_address ? (
-                      <>
-                        <div className="bg-white p-4 shadow-none">
-                          <QRCodeSVG value={user.usdt_trc20_address} size={180} />
+                {/* USDT ERC20 Wallet Section */}
+                <Card className="bg-gradient-to-br from-emerald-500/10 to-cyan-500/5 border-emerald-500/30">
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Wallet className="w-5 h-5 text-emerald-400" />
+                      <h4 className="text-lg font-bold text-white">USDT Deposit Address (ERC20)</h4>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* USDT QR Code */}
+                      <div className="flex flex-col items-center justify-center p-4 bg-white rounded-lg">
+                        <img 
+                          src="/wallet.png" 
+                          alt="USDT Wallet QR Code" 
+                          className="w-48 h-48 object-contain"
+                        />
+                        <p className="text-gray-600 text-xs mt-3 text-center font-medium">Scan to deposit USDT (ERC20)</p>
+                      </div>
+
+                      {/* USDT Address */}
+                      <div className="space-y-4">
+                        <div>
+                          <Label className="text-gray-300 mb-2 block text-sm">USDT Address (ERC20)</Label>
+                          <div className="p-4 bg-black/20 border border-emerald-500/20 rounded-lg">
+                            <p className="text-emerald-400 font-mono text-xs break-all">
+                              0xffE27BE1db0c29Be881f570b3d9961712b22C287
+                            </p>
+                          </div>
                         </div>
-                        <p className="text-muted-foreground text-xs mt-4 text-center">Scan QR code to deposit</p>
-                      </>
-                    ) : (
-                      <div className="text-center py-8">
-                        <QrCode className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                        <p className="text-muted-foreground text-sm">No deposit address set</p>
-                        <p className="text-muted-foreground text-xs mt-2">Configure your address below</p>
-                      </div>
-                    )}
-                  </div>
 
-                  {/* Address Section */}
-                  <div className="space-y-4">
-                    <div>
-                      <Label className="text-muted-foreground mb-2 block">Your Deposit Address (TRC20)</Label>
-                      <div className="p-4 bg-secondary border border-border">
-                        <p className="text-foreground font-mono text-sm break-all">
-                          {user.usdt_trc20_address || 'No address set'}
-                        </p>
+                        <Button
+                          onClick={() => {
+                            navigator.clipboard.writeText('0xffE27BE1db0c29Be881f570b3d9961712b22C287')
+                          }}
+                          className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold"
+                        >
+                          <Copy className="w-4 h-4 mr-2" />
+                          Copy USDT Address
+                        </Button>
+
+                        <div className="pt-4 border-t border-emerald-500/20 space-y-2">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-gray-400">Network</span>
+                            <span className="text-white font-medium">Ethereum (ERC20)</span>
+                          </div>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-gray-400">Min Deposit</span>
+                            <span className="text-white font-medium">10 USDT</span>
+                          </div>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-gray-400">Confirmations</span>
+                            <span className="text-white font-medium">12 blocks</span>
+                          </div>
+                        </div>
+
+                        <Alert className="border-yellow-500/30 bg-yellow-500/5">
+                          <AlertDescription className="text-xs text-gray-400">
+                            <strong className="text-yellow-400">Note:</strong> Send only USDT on ERC20 network. Gas fees apply on Ethereum network.
+                          </AlertDescription>
+                        </Alert>
                       </div>
                     </div>
-
-                    <Button
-                      onClick={() => {
-                        if (user.usdt_trc20_address) {
-                          navigator.clipboard.writeText(user.usdt_trc20_address)
-                        }
-                      }}
-                      disabled={!user.usdt_trc20_address}
-                      className="w-full bg-emerald-600 hover:bg-emerald-500 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <Copy className="w-4 h-4 mr-2" />
-                      Copy Address
-                    </Button>
-
-                    <div className="pt-4 border-t border-border space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Network</span>
-                        <span className="text-foreground font-medium">Tron (TRC20)</span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-400">Min Deposit</span>
-                        <span className="text-white font-medium">10 USDT</span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-400">Confirmations</span>
-                        <span className="text-white font-medium">19 blocks</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
 
               </div>
             ) : (
@@ -829,15 +850,63 @@ function WalletView({ user }: { user: UserType | null }) {
                     </div>
                   </div>
 
+                  {/* Network Selector */}
+                  <div>
+                    <Label className="text-gray-300 mb-2 block">
+                      Select Network
+                    </Label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        onClick={() => setWithdrawNetwork('TRC20')}
+                        className={`p-4 rounded-lg border-2 transition-all ${
+                          withdrawNetwork === 'TRC20'
+                            ? 'border-emerald-500 bg-emerald-500/10'
+                            : 'border-white/10 bg-white/5 hover:border-white/20'
+                        }`}
+                      >
+                        <div className="flex items-center justify-center gap-2 mb-2">
+                          <div className={`w-3 h-3 rounded-full ${
+                            withdrawNetwork === 'TRC20' ? 'bg-emerald-500' : 'bg-gray-500'
+                          }`} />
+                          <span className={`font-bold ${
+                            withdrawNetwork === 'TRC20' ? 'text-emerald-400' : 'text-gray-400'
+                          }`}>TRC20</span>
+                        </div>
+                        <div className="text-xs text-gray-500">Tron Network</div>
+                        <div className="text-xs text-gray-400 mt-1">Low fees (~1 USDT)</div>
+                      </button>
+
+                      <button
+                        onClick={() => setWithdrawNetwork('ERC20')}
+                        className={`p-4 rounded-lg border-2 transition-all ${
+                          withdrawNetwork === 'ERC20'
+                            ? 'border-blue-500 bg-blue-500/10'
+                            : 'border-white/10 bg-white/5 hover:border-white/20'
+                        }`}
+                      >
+                        <div className="flex items-center justify-center gap-2 mb-2">
+                          <div className={`w-3 h-3 rounded-full ${
+                            withdrawNetwork === 'ERC20' ? 'bg-blue-500' : 'bg-gray-500'
+                          }`} />
+                          <span className={`font-bold ${
+                            withdrawNetwork === 'ERC20' ? 'text-blue-400' : 'text-gray-400'
+                          }`}>ERC20</span>
+                        </div>
+                        <div className="text-xs text-gray-500">Ethereum Network</div>
+                        <div className="text-xs text-gray-400 mt-1">Higher fees (~5-20 USDT)</div>
+                      </button>
+                    </div>
+                  </div>
+
                   <div>
                     <Label htmlFor="withdraw-address" className="text-gray-300 mb-2 block">
-                      Recipient Address (TRC20)
+                      Recipient Address ({withdrawNetwork})
                     </Label>
                     <Input
                       id="withdraw-address"
                       value={withdrawAddress}
                       onChange={handleWithdrawAddressChange}
-                      placeholder="T..."
+                      placeholder={withdrawNetwork === 'TRC20' ? 'T...' : '0x...'}
                       className={`bg-[#1a1a2e] border-white/10 text-white h-12 ${
                         addressValidation?.isValid ? 'border-emerald-500/50' : 
                         addressValidation?.error ? 'border-red-500/50' : ''
