@@ -26,6 +26,7 @@ function SelfieCapture({
 }) {
   const [cameraActive, setCameraActive] = useState(false)
   const [stream, setStream] = useState<MediaStream | null>(null)
+  const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user')
   const [faceDetected, setFaceDetected] = useState(false)
   const [faceQuality, setFaceQuality] = useState<{
     centered: boolean
@@ -78,7 +79,7 @@ function SelfieCapture({
       // Request camera permission with clear message
       const mediaStream = await navigator.mediaDevices.getUserMedia({ 
         video: { 
-          facingMode: 'user',
+          facingMode: facingMode,
           width: { ideal: 1280 },
           height: { ideal: 720 }
         },
@@ -138,6 +139,31 @@ function SelfieCapture({
     setCameraActive(false)
     setFaceDetected(false)
   }
+
+  const flipCamera = () => {
+    // Stop current stream
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop())
+      setStream(null)
+    }
+    if (detectionIntervalRef.current) {
+      clearInterval(detectionIntervalRef.current)
+    }
+    
+    // Toggle facing mode (this will trigger useEffect to restart camera)
+    setFacingMode(prev => prev === 'user' ? 'environment' : 'user')
+  }
+
+  // Restart camera when facingMode changes
+  useEffect(() => {
+    if (cameraActive && !stream) {
+      // Small delay to ensure stream is stopped
+      const timer = setTimeout(() => {
+        startCamera()
+      }, 100)
+      return () => clearTimeout(timer)
+    }
+  }, [facingMode])
 
   // Face detection loop
   const detectFace = async () => {
@@ -386,6 +412,31 @@ function SelfieCapture({
               </>
             )}
           </div>
+
+          {/* Flip Camera Button */}
+          <button
+            onClick={flipCamera}
+            className="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/60 backdrop-blur-sm border border-white/20 flex items-center justify-center hover:bg-black/80 transition-all z-10"
+            title="Flip Camera"
+          >
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              width="20" 
+              height="20" 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              stroke="currentColor" 
+              strokeWidth="2" 
+              strokeLinecap="round" 
+              strokeLinejoin="round"
+              className="text-white"
+            >
+              <path d="M21 2v6h-6" />
+              <path d="M3 12a9 9 0 0 1 15-6.7L21 8" />
+              <path d="M3 22v-6h6" />
+              <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
+            </svg>
+          </button>
         </div>
         
         <canvas ref={canvasRef} className="hidden" />
