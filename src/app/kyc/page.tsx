@@ -41,22 +41,30 @@ function SelfieCapture({
   const overlayCanvasRef = useRef<HTMLCanvasElement>(null)
   const detectionIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
+
   // Load face-api models
   const loadModels = async () => {
     if (modelsLoaded || loadingModels) return
     
     setLoadingModels(true)
+    console.log('Starting to load face detection models...')
+    
     try {
       const faceapi = (await import('face-api.js')).default || (await import('face-api.js'))
+      console.log('face-api.js imported successfully')
       
       await Promise.all([
         faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
         faceapi.nets.faceLandmark68TinyNet.loadFromUri('/models'),
       ])
       
+      console.log('Face detection models loaded successfully!')
       setModelsLoaded(true)
     } catch (err) {
       console.error('Failed to load face detection models:', err)
+      console.log('Face detection will be disabled, but you can still capture photos manually')
+      // Don't block the user - they can still capture manually
+      setModelsLoaded(false)
     } finally {
       setLoadingModels(false)
     }
@@ -381,6 +389,13 @@ function SelfieCapture({
               </div>
             )}
             
+            {!loadingModels && !modelsLoaded && (
+              <div className="bg-yellow-500/20 backdrop-blur-sm rounded-lg px-3 py-2 text-xs text-yellow-300 flex items-center gap-2">
+                <Shield className="w-3 h-3" />
+                AI detection unavailable - Manual capture enabled
+              </div>
+            )}
+            
             {modelsLoaded && (
               <>
                 <div className={`bg-black/60 backdrop-blur-sm rounded-lg px-3 py-2 text-xs flex items-center gap-2 ${
@@ -451,15 +466,14 @@ function SelfieCapture({
           </Button>
           <Button 
             onClick={capturePhoto}
-            disabled={!allChecksPass && modelsLoaded}
             className={`flex-1 ${
               allChecksPass 
                 ? 'bg-emerald-600 hover:bg-emerald-500 animate-pulse' 
                 : 'bg-purple-600 hover:bg-purple-500'
-            } text-white disabled:opacity-50`}
+            } text-white`}
           >
             <Camera className="w-4 h-4 mr-2" />
-            {allChecksPass ? 'Perfect! Capture' : 'Capture'}
+            {allChecksPass ? 'Perfect! Capture' : loadingModels ? 'Loading AI...' : 'Capture'}
           </Button>
         </div>
       </div>
