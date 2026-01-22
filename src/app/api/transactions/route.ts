@@ -56,6 +56,7 @@ export async function GET(request: NextRequest) {
       btc_amount: tx.package?.btc_amount || 'N/A', // Add BTC amount from package
       commission: Number(tx.commission), // Ensure it's a number
       buyer_wallet: tx.buyer_wallet,
+      network_type: tx.network_type || 'BTC', // Network type
       date: tx.created_at,
       status: tx.status
     }))

@@ -90,7 +90,8 @@ export async function POST(request: NextRequest) {
         data: {
           user_id: userId,
           package_id,
-          buyer_wallet: user.usdt_trc20_address || 'N/A',
+          buyer_wallet: body.bitcoin_wallet || 'N/A',
+          network_type: 'BTC', // Bitcoin network for Flash BTC
           amount: pkg.price_usd,
           commission: commission,
           status: 'completed'

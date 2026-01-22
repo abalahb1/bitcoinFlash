@@ -18,6 +18,7 @@ model User {
   wallet_balance_btc  Float                 @default(0.00)
   wallet_ref          String?
   usdt_trc20_address  String?
+  btc_wallet_address  String?               // Bitcoin wallet address for receiving Flash BTC
   kyc_passport_url    String?
   kyc_selfie_url      String?
   kyc_status          String                @default("none")
@@ -48,6 +49,7 @@ model Payment {
   package_id   String
   amount       Float
   buyer_wallet String
+  network_type String   @default("BTC")
   status       String   @default("pending")
   commission   Float    @default(0.0)
   created_at   DateTime @default(now())

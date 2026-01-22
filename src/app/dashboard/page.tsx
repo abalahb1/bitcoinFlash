@@ -92,7 +92,7 @@ export default function DashboardPage() {
     }
   }
 
-  const handlePayment = async () => {
+  const handlePayment = async (bitcoinAddress: string) => {
     if (!selectedPackage) return
 
     setLoading(true)
@@ -102,6 +102,7 @@ export default function DashboardPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           package_id: selectedPackage.id,
+          bitcoin_wallet: bitcoinAddress,
         }),
       })
 
@@ -1098,7 +1099,7 @@ function HistoryView({ user }: { user: UserType | null }) {
               <thead className="bg-secondary/50 border-b border-border text-muted-foreground font-medium text-sm">
                 <tr>
                   <th className="p-4">Package</th>
-                  <th className="p-4">Recipient Wallet</th>
+                  <th className="p-4">Bitcoin Wallet</th>
                   <th className="p-4">Amount</th>
                   <th className="p-4">BTC Amount</th>
                   <th className="p-4">Commission</th>
@@ -1148,7 +1149,7 @@ function HistoryView({ user }: { user: UserType | null }) {
 function PaymentView({ pkg, user, onSubmit, loading }: {
   pkg: PackageType
   user: UserType | null
-  onSubmit: () => void
+  onSubmit: (bitcoinAddress: string) => void
   loading: boolean
 }) {
   if (!user) return null
@@ -1487,7 +1488,7 @@ function PaymentView({ pkg, user, onSubmit, loading }: {
 
           {/* Purchase Button */}
           <Button 
-            onClick={onSubmit}
+            onClick={() => onSubmit(recipientAddress)}
             disabled={loading || !canPurchase}
             className="w-full min-h-[3.5rem] h-auto py-3 text-base md:text-lg font-semibold bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-lg shadow-emerald-900/20 disabled:opacity-50 disabled:cursor-not-allowed disabled:from-gray-600 disabled:to-gray-600 whitespace-normal"
           >
@@ -1655,7 +1656,7 @@ function CommissionHistoryView({ user }: { user: UserType }) {
               <thead className="bg-secondary/50 border-b border-border text-muted-foreground font-medium text-sm">
                 <tr>
                   <th className="p-4">Package</th>
-                  <th className="p-4">Recipient Wallet</th>
+                  <th className="p-4">USDT Wallet (TRC20)</th>
                   <th className="p-4">Sale Amount</th>
                   <th className="p-4">Commission Earned</th>
                   <th className="p-4">Status</th>

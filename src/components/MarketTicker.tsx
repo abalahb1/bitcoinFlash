@@ -13,12 +13,15 @@ interface CryptoData {
 }
 
 const INITIAL_MARKET_DATA: CryptoData[] = [
-  { symbol: 'BTC/USDT', price: '95,607.00', change: 1.2, volume: '42.5B', chart: '↗' },
-  { symbol: 'ETH/USDT', price: '3,317.80', change: -0.8, volume: '18.2B', chart: '↘' },
-  { symbol: 'BNB/USDT', price: '932.84', change: 2.5, volume: '2.1B', chart: '↗' },
-  { symbol: 'SOL/USDT', price: '142.56', change: 4.1, volume: '5.8B', chart: '↗' },
-  { symbol: 'XRP/USDT', price: '2.08', change: -0.5, volume: '1.5B', chart: '↘' },
-  { symbol: 'ADA/USDT', price: '0.39', change: 0.2, volume: '600M', chart: '↗' },
+  { symbol: 'BTC/USDT', price: '89,413.00', change: 1.16, volume: '42.5B', chart: '↗' },
+  { symbol: 'ETH/USDT', price: '2,981.78', change: 1.35, volume: '18.2B', chart: '↗' },
+  { symbol: 'BNB/USDT', price: '882.87', change: 0.16, volume: '2.1B', chart: '↗' },
+  { symbol: 'XRP/USDT', price: '1.94', change: 3.74, volume: '1.5B', chart: '↗' },
+  { symbol: 'ADA/USDT', price: '0.37', change: 5.30, volume: '600M', chart: '↗' },
+  { symbol: 'DOGE/USDT', price: '0.13', change: 2.51, volume: '450M', chart: '↗' },
+  { symbol: 'SOL/USDT', price: '129.46', change: 3.42, volume: '5.8B', chart: '↗' },
+  { symbol: 'DOT/USDT', price: '1.95', change: 3.17, volume: '380M', chart: '↗' },
+  { symbol: 'AVAX/USDT', price: '12.41', change: 2.65, volume: '520M', chart: '↗' },
 ]
 
 export function TopTicker() {
