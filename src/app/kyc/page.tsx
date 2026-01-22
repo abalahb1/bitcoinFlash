@@ -63,6 +63,12 @@ function SelfieCapture({
 
   const startCamera = async () => {
     try {
+      // Check if we're in a secure context (HTTPS or localhost)
+      if (!window.isSecureContext && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+        alert('⚠️ Camera Requires HTTPS\n\nCamera access requires a secure connection (HTTPS).\n\nPlease:\n1. Access the site via HTTPS\n2. Or use localhost for testing\n3. Or use the "Upload Photo" option')
+        return
+      }
+
       // Check if camera API is available
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         alert('Sorry, your browser does not support camera access. Please use a modern browser or upload a photo instead.')
@@ -75,13 +81,30 @@ function SelfieCapture({
           facingMode: 'user',
           width: { ideal: 1280 },
           height: { ideal: 720 }
-        } 
+        },
+        audio: false
       })
       
+      if (!mediaStream) {
+        throw new Error('Failed to get media stream')
+      }
+
       setStream(mediaStream)
+      
+      // Set video source and ensure it plays
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream
+        
+        // Wait for metadata to load before playing
+        videoRef.current.onloadedmetadata = () => {
+          if (videoRef.current) {
+            videoRef.current.play().catch(err => {
+              console.error('Error playing video:', err)
+            })
+          }
+        }
       }
+      
       setCameraActive(true)
       
       // Load models when camera starts
@@ -91,13 +114,15 @@ function SelfieCapture({
       
       // Handle different error types
       if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        alert('⚠️ Camera Access Denied\n\nTo continue, please:\n1. Allow camera access in your browser settings\n2. Or use the "Upload Photo" option instead\n\nWe need camera access to verify your identity securely.')
+        alert('⚠️ Camera Access Denied\n\nTo continue, please:\n1. Allow camera access in your browser settings\n2. Click "Allow" when prompted\n3. Or use the "Upload Photo" option instead\n\nWe need camera access to verify your identity securely.')
       } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
-        alert('⚠️ No Camera Found\n\nPlease:\n1. Make sure your camera is connected\n2. Or use the "Upload Photo" option from gallery')
+        alert('⚠️ No Camera Found\n\nPlease:\n1. Make sure your camera is connected\n2. Check if another app is using the camera\n3. Or use the "Upload Photo" option from gallery')
       } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
-        alert('⚠️ Camera In Use\n\nPlease:\n1. Close other applications using the camera\n2. Or use the "Upload Photo" option')
+        alert('⚠️ Camera In Use\n\nPlease:\n1. Close other applications using the camera\n2. Restart your browser\n3. Or use the "Upload Photo" option')
+      } else if (err.name === 'NotSupportedError' || err.name === 'InsecureContextError') {
+        alert('⚠️ Secure Connection Required\n\nCamera access requires HTTPS.\n\nPlease:\n1. Access via HTTPS\n2. Or use the "Upload Photo" option')
       } else {
-        alert('⚠️ Camera Access Error\n\nPlease try again or use the "Upload Photo" option')
+        alert('⚠️ Camera Access Error\n\n' + (err.message || 'Unknown error') + '\n\nPlease try again or use the "Upload Photo" option')
       }
     }
   }
