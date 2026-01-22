@@ -108,7 +108,12 @@ export async function POST(request: NextRequest) {
         }
       })
 
+      console.log('[API] Payment Record Created:', payment)
+      
       return payment
+    }, {
+      maxWait: 5000, // default: 2000
+      timeout: 20000, // default: 5000
     })
 
 
@@ -120,9 +125,12 @@ export async function POST(request: NextRequest) {
       new_balance: user.wallet_balance_usdt - pkg.price_usd + commission
     })
   } catch (error) {
-    console.error('Payment error:', error)
+    console.error('Payment error details:', error)
     return NextResponse.json(
-      { error: 'Failed to process payment. Please try again.' },
+      { 
+        error: 'Payment failed', 
+        details: error instanceof Error ? error.message : String(error) 
+      },
       { status: 500 }
     )
   }

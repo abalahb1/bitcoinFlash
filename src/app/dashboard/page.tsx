@@ -25,6 +25,7 @@ import { AccountSettings } from '@/components/AccountSettings'
 import { KYCBlockingModal } from '@/components/KYCBlockingModal'
 import { WalletHistory } from '@/components/WalletHistory'
 import { TierBadge } from '@/components/TierBadge'
+import { PaymentAnimation } from '@/components/PaymentAnimation'
 
 
 type View = 'landing' | 'wallet' | 'payment' | 'account' | 'history' | 'commissions'
@@ -40,6 +41,7 @@ export default function DashboardPage() {
   const [selectedPackage, setSelectedPackage] = useState<PackageType | null>(null)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' | 'info' } | null>(null)
+  const [showPaymentAnimation, setShowPaymentAnimation] = useState(false)
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -96,6 +98,10 @@ export default function DashboardPage() {
     if (!selectedPackage) return
 
     setLoading(true)
+    
+    // Show payment animation immediately
+    setShowPaymentAnimation(true)
+    
     try {
       const res = await fetch('/api/payment', {
         method: 'POST',
@@ -109,16 +115,17 @@ export default function DashboardPage() {
       const data = await res.json()
 
       if (res.ok) {
-        showMessage(data.message || 'Package purchased successfully! Commission added to your balance.', 'success')
-        // Refresh user data to get updated balance
+        // Animation will handle the success message timing
+        // Just refresh user data in background
         const userRes = await fetch('/api/auth/me')
         if (userRes.ok) {
           const userData = await userRes.json()
           setUser(userData)
         }
-        // Go back to landing page
-        setTimeout(() => setCurrentView('landing'), 2000)
       } else {
+        // Hide animation on error
+        setShowPaymentAnimation(false)
+        
         if (data.error?.includes('Insufficient') || data.error?.includes('رصيد')) {
           const shortage = data.details?.shortage || 0
           showMessage(
@@ -134,10 +141,17 @@ export default function DashboardPage() {
       }
     } catch (error) {
       console.error('Payment error:', error)
+      setShowPaymentAnimation(false)
       showMessage('Connection error. Please try again', 'error')
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleAnimationComplete = () => {
+    setShowPaymentAnimation(false)
+    showMessage('Package purchased successfully! Commission added to your balance.', 'success')
+    setTimeout(() => setCurrentView('landing'), 2000)
   }
 
   if (!user) {
@@ -158,6 +172,7 @@ export default function DashboardPage() {
           setCurrentView={setCurrentView}
           onLogout={handleLogout}
         />
+
 
         {/* Verification Banner */}
         {!user.is_verified && (
@@ -197,6 +212,14 @@ export default function DashboardPage() {
 
         <Footer />
       </div>
+
+      {/* Payment Animation */}
+      <PaymentAnimation
+        isOpen={showPaymentAnimation}
+        onComplete={handleAnimationComplete}
+        packageName={selectedPackage?.name || ''}
+        amount={Number(selectedPackage?.btc_amount) || 0}
+      />
     </div>
   )
 }
@@ -624,7 +647,8 @@ function WalletView({ user }: { user: UserType | null }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           amount: parseFloat(withdrawAmount),
-          address: withdrawAddress
+          address: withdrawAddress,
+          network: withdrawNetwork
         })
       })
 
@@ -980,6 +1004,67 @@ function WalletView({ user }: { user: UserType | null }) {
           </div>
         </CardContent>
       </Card>
+
+      {/* Recent Activity Section */}
+      <div className="space-y-4">
+        <h3 className="text-xl font-bold text-white">Recent Activity</h3>
+        <RecentActivityList userId={user.id} />
+      </div>
+    </div>
+  )
+}
+
+function RecentActivityList({ userId }: { userId: string }) {
+  const [transactions, setTransactions] = useState<any[]>([])
+  
+  useEffect(() => {
+    fetch(`/api/transactions?userId=${userId}&_t=${Date.now()}`, { cache: 'no-store' })
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setTransactions(data.slice(0, 5)) // LAST 5
+        }
+      })
+      .catch(console.error)
+  }, [userId])
+
+  if (transactions.length === 0) {
+    return (
+      <Card className="bg-card border-border">
+        <CardContent className="p-8 text-center text-muted-foreground">
+          No recent activity found
+        </CardContent>
+      </Card>
+    )
+  }
+
+  return (
+    <div className="space-y-3">
+      {transactions.map((tx) => (
+        <Card key={tx.id} className="bg-card border-border hover:border-border/80 transition-colors">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                tx.status === 'completed' ? 'bg-emerald-500/10' : 'bg-yellow-500/10'
+              }`}>
+                {tx.status === 'completed' ? (
+                  <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                ) : (
+                  <Clock className="w-5 h-5 text-yellow-500" />
+                )}
+              </div>
+              <div>
+                <div className="font-semibold text-white">{tx.package}</div>
+                <div className="text-xs text-gray-400">{new Date(tx.date).toLocaleDateString()}</div>
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="font-bold text-white">-{Number(tx.amount).toLocaleString()} USDT</div>
+              <div className="text-xs text-emerald-400">+{Number(tx.commission).toLocaleString()} USDT</div>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
     </div>
   )
 }
@@ -1074,26 +1159,27 @@ function HistoryView({ user }: { user: UserType | null }) {
   const [transactions, setTransactions] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
+  const fetchHistory = () => {
+    setLoading(true)
     fetch(`/api/transactions?_t=${Date.now()}`, { 
       cache: 'no-store', 
       credentials: 'include' 
     })
-      .then(res => {
-        if (res.status === 401) {
-           window.location.href = '/login'
-           throw new Error('Unauthorized')
-        }
-        return res.json()
-      })
+      .then(res => res.json())
       .then(data => {
+        console.log('[HistoryView] Data received:', data)
         setTransactions(Array.isArray(data) ? data : [])
-        setLoading(false)
       })
       .catch(err => {
         console.error(err)
+      })
+      .finally(() => {
         setLoading(false)
       })
+  }
+
+  useEffect(() => {
+    fetchHistory()
   }, [])
 
   if (!user) return null
@@ -1101,10 +1187,20 @@ function HistoryView({ user }: { user: UserType | null }) {
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="flex items-center justify-between">
-         <h2 className="text-3xl font-bold text-white">Transactions Log</h2>
-         <Badge variant="outline" className="border-primary/30 text-primary bg-primary/5">
-            Verified Ledger
-         </Badge>
+         <div className="flex items-center gap-3">
+           <h2 className="text-3xl font-bold text-white">Transactions Log</h2>
+           <Badge variant="secondary" className="text-xs">
+             {loading ? '...' : transactions.length}
+           </Badge>
+         </div>
+         <div className="flex gap-2">
+           <Button variant="outline" size="sm" onClick={fetchHistory} disabled={loading}>
+             <span className={loading ? "animate-spin mr-2" : "mr-2"}>⟳</span> Refresh
+           </Button>
+           <Badge variant="outline" className="border-primary/30 text-primary bg-primary/5">
+              Verified Ledger
+           </Badge>
+         </div>
       </div>
 
       {/* Mobile View - Explicitly Separate Container */}
@@ -1623,9 +1719,18 @@ function CommissionHistoryView({ user }: { user: UserType }) {
 
       if (res.ok) {
         const data = await res.json()
+        console.log('[Dashboard] Raw transactions fetched:', data)
+
         if (Array.isArray(data)) {
           // Filter for transactions that have commission > 0
-          setTransactions(data.filter((t: any) => Number(t.commission) > 0))
+          const commissions = data.filter((t: any) => {
+             const comm = Number(t.commission)
+             // Debug log for each transaction's commission
+             // console.log(`Tx ${t.id} commission:`, t.commission, 'Parsed:', comm)
+             return comm > 0
+          })
+          console.log('[Dashboard] Filtered commissions:', commissions)
+          setTransactions(commissions)
         } else {
           setTransactions([])
         }

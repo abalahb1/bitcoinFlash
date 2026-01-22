@@ -7,6 +7,8 @@ const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'your-secr
 
 import { NextRequest } from 'next/server'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     console.log('[API] Transactions fetch started')

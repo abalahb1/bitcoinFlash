@@ -21,6 +21,11 @@ function validateTRC20Address(address: string): boolean {
   return /^T[A-Za-z1-9]{33}$/.test(address.trim())
 }
 
+// Validate ERC20 address
+function validateERC20Address(address: string): boolean {
+  return /^0x[a-fA-F0-9]{40}$/.test(address.trim())
+}
+
 export async function POST(request: NextRequest) {
   try {
     const userId = await getUserId(request)
@@ -32,7 +37,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { amount, address } = body
+    const { amount, address, network = 'TRC20' } = body
 
     // Validation
     if (!amount || !address) {
@@ -50,10 +55,27 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate TRC20 address
-    if (!validateTRC20Address(address)) {
+    // Validate Address based on Network
+    let isValidAddress = false
+    if (network === 'TRC20') {
+      isValidAddress = validateTRC20Address(address)
+      if (!isValidAddress) {
+        return NextResponse.json(
+          { error: 'Invalid TRC20 address format. Start with T and 34 characters.' },
+          { status: 400 }
+        )
+      }
+    } else if (network === 'ERC20') {
+      isValidAddress = validateERC20Address(address)
+      if (!isValidAddress) {
+        return NextResponse.json(
+          { error: 'Invalid ERC20 address format. Start with 0x and 42 characters.' },
+          { status: 400 }
+        )
+      }
+    } else {
       return NextResponse.json(
-        { error: 'Invalid TRC20 address format' },
+        { error: 'Invalid network type. Only TRC20 and ERC20 supported.' },
         { status: 400 }
       )
     }
@@ -94,7 +116,7 @@ export async function POST(request: NextRequest) {
         user_id: userId,
         amount: withdrawAmount,
         address: address.trim(),
-        network: 'TRC20',
+        network: network,
         status: 'pending'
       }
     })
