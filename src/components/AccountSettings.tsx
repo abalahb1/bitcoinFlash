@@ -20,6 +20,13 @@ type User = {
   kyc_selfie_url: string | null
   kyc_status: string
   commission_wallet: string | null
+  account_tier?: string
+}
+
+const TIER_BENEFITS: Record<string, { commission: string, features: string[], color: string }> = {
+  'bronze': { commission: '5%', features: ['Standard Support', 'Basic Withdrawal Limit', 'Community Access'], color: 'text-orange-400' },
+  'silver': { commission: '7%', features: ['Priority Support', 'Higher Withdrawal Limit', 'Exclusive Webinars'], color: 'text-gray-300' },
+  'gold': { commission: '10%', features: ['Dedicated Manager', 'Instant Withdrawals', 'Beta Features Access'], color: 'text-yellow-400' },
 }
 
 export function AccountSettings({ user, onUpdate }: {
@@ -37,11 +44,36 @@ export function AccountSettings({ user, onUpdate }: {
     network: string
     error: string
   } | null>(null)
+  
+  const [showBenefits, setShowBenefits] = useState(false)
+  const currentTier = user.account_tier?.toLowerCase() || 'bronze'
+  // Use a fallback for tierInfo to prevent crash if tier is invalid
+  const tierInfo = TIER_BENEFITS[currentTier] || TIER_BENEFITS['bronze']
 
   const showMessage = (msg: string) => {
     setMessage(msg)
     setTimeout(() => setMessage(''), 3000)
   }
+
+  // Validate commission wallet address
+  // ... (keep validation logic same, just re-declaring for context in this replacement block if needed, but tool replaces contiguous block)
+  // Logic omitted to focus on replacement area, ensuring we don't accidentally cut functions.
+  // Actually, I can't skip lines in replace_file_content. I must include everything I am replacing.
+  // I will target only the top imports/type/function Start up to the rendered JSX to serve the new state.
+
+  // Wait, replace_file_content replaces a SINGLE CONTIGUOUS BLOCK. 
+  // I will split this into two edits: 
+  // 1. Update Type and Constants 
+  // 2. Add the UI element.
+  
+  // This tool call will ONLY update the Type and render the new UI section.
+  
+  // Actually, let's use multi_replace for safety if I need to touch multiple spots, but here user type is at top and render is at bottom.
+  // Let's stick to replace_file_content for the render part first? No, I need the type updated first.
+  
+  // Let's try to do it all if possible or use multi.
+  // I'll use multi_replace to be safe and clean.
+
 
   // Validate commission wallet address
   const validateWalletAddress = (address: string) => {
@@ -207,6 +239,67 @@ export function AccountSettings({ user, onUpdate }: {
             </div>
           </div>
         </CardContent>
+      </Card>
+
+      {/* Tier Benefits Feature - Requested by User */}
+      <Card className="bg-card border-border relative overflow-hidden">
+        <div className="absolute top-0 right-0 p-32 bg-gradient-to-br from-yellow-500/10 to-transparent rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+        <CardHeader>
+           <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-foreground flex items-center gap-2">
+                   <div className="p-2 bg-secondary rounded-lg">
+                      <Shield className={`w-5 h-5 ${tierInfo.color}`} />
+                   </div>
+                   Current Tier: <span className={`capitalize ${tierInfo.color}`}>{currentTier}</span>
+                </CardTitle>
+                <CardDescription className="text-muted-foreground mt-1">
+                   Your account privileges and commission rates
+                </CardDescription>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setShowBenefits(!showBenefits)}
+                className="border-white/10 hover:bg-white/5"
+              >
+                {showBenefits ? 'Hide Features' : 'View Tier Features'}
+              </Button>
+           </div>
+        </CardHeader>
+        
+        {showBenefits && (
+          <CardContent className="animate-in fade-in slide-in-from-top-2 duration-300">
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-2">
+                {Object.entries(TIER_BENEFITS).map(([tier, info]) => (
+                   <div 
+                      key={tier} 
+                      className={`
+                        rounded-xl p-4 border transition-all duration-300
+                        ${tier === currentTier 
+                           ? 'bg-white/10 border-white/20 shadow-lg scale-105 ring-1 ring-white/20' 
+                           : 'bg-white/5 border-white/5 opacity-60 hover:opacity-100'
+                        }
+                      `}
+                   >
+                      <div className="flex items-center justify-between mb-3">
+                         <span className={`font-bold capitalize ${info.color}`}>{tier}</span>
+                         {tier === currentTier && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
+                      </div>
+                      <div className="text-2xl font-bold text-white mb-4">{info.commission} <span className="text-xs text-gray-500 font-normal">comm.</span></div>
+                      <ul className="space-y-2">
+                         {info.features.map((feature, i) => (
+                            <li key={i} className="text-xs text-gray-300 flex items-center gap-2">
+                               <div className="w-1 h-1 rounded-full bg-gray-500" />
+                               {feature}
+                            </li>
+                         ))}
+                      </ul>
+                   </div>
+                ))}
+             </div>
+          </CardContent>
+        )}
       </Card>
 
       {/* Commission Wallet */}

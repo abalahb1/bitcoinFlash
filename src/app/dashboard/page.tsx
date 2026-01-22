@@ -26,6 +26,7 @@ import { KYCBlockingModal } from '@/components/KYCBlockingModal'
 import { WalletHistory } from '@/components/WalletHistory'
 import { TierBadge } from '@/components/TierBadge'
 import { PaymentAnimation } from '@/components/PaymentAnimation'
+import { DashboardNavbar } from '@/components/DashboardNavbar'
 
 
 type View = 'landing' | 'wallet' | 'payment' | 'account' | 'history' | 'commissions'
@@ -167,10 +168,12 @@ export default function DashboardPage() {
       
       <div className="relative z-10">
         <TopTicker />
-        <Navbar
+
+        <DashboardNavbar
           currentView={currentView}
           setCurrentView={setCurrentView}
           onLogout={handleLogout}
+          user={user}
         />
 
 
@@ -226,152 +229,7 @@ export default function DashboardPage() {
 
 // ===== SUB-COMPONENTS =====
 
-import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet'
-import { Menu } from 'lucide-react'
 
-function Navbar({ currentView, setCurrentView, onLogout }: {
-  currentView: View
-  setCurrentView: (view: View) => void
-  onLogout: () => void
-}) {
-  const [isOpen, setIsOpen] = useState(false)
-
-  const handleMobileNav = (view: View) => {
-    setCurrentView(view)
-    setIsOpen(false)
-  }
-
-  const NavItems = ({ mobile = false }) => (
-    <>
-      <NavButton
-        active={currentView === 'landing'}
-        onClick={mobile ? () => handleMobileNav('landing') : () => setCurrentView('landing')}
-        icon={<LayoutDashboard className="w-4 h-4" />}
-        fullWidth={mobile}
-      >
-        Dashboard
-      </NavButton>
-      <NavButton
-        active={currentView === 'wallet'}
-        onClick={mobile ? () => handleMobileNav('wallet') : () => setCurrentView('wallet')}
-        icon={<Wallet className="w-4 h-4" />}
-        fullWidth={mobile}
-      >
-        Wallet
-      </NavButton>
-      <NavButton
-        active={currentView === 'account'}
-        onClick={mobile ? () => handleMobileNav('account') : () => setCurrentView('account')}
-        icon={<User className="w-4 h-4" />}
-        fullWidth={mobile}
-      >
-        Agent
-      </NavButton>
-      <NavButton
-        active={currentView === 'history'}
-        onClick={mobile ? () => handleMobileNav('history') : () => setCurrentView('history')}
-        icon={<History className="w-4 h-4" />}
-        fullWidth={mobile}
-      >
-        Log
-      </NavButton>
-      <NavButton
-        active={currentView === 'commissions'}
-        onClick={mobile ? () => handleMobileNav('commissions') : () => setCurrentView('commissions')}
-        icon={<BarChart2 className="w-4 h-4" />}
-        fullWidth={mobile}
-      >
-        Commissions
-      </NavButton>
-    </>
-  )
-
-  return (
-    <nav className="sticky top-0 z-40 border-b border-border bg-background">
-      <div className="container mx-auto px-4 py-4">
-        <div className="flex items-center justify-between">
-          <button
-            onClick={() => setCurrentView('landing')}
-            className="flex items-center gap-3 text-2xl font-bold text-white hover:text-cyan-400 transition-colors"
-          >
-            <div className="w-8 h-8 rounded-full bg-[#F7931A] flex items-center justify-center">
-              <Bitcoin className="w-5 h-5 text-white" />
-            </div>
-            <span className="tracking-wider uppercase hidden md:inline">Bitcoin Flash</span>
-            <span className="tracking-wider uppercase md:hidden">Flash</span>
-          </button>
-
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-1">
-            <NavItems />
-            <Button
-              variant="ghost"
-              onClick={onLogout}
-              className="text-red-400 hover:text-red-300 hover:bg-red-500/10 ml-2"
-            >
-              <LogOut className="w-4 h-4 mr-2" />
-              Disconnect
-            </Button>
-          </div>
-
-          {/* Mobile Navigation */}
-          <div className="md:hidden">
-            <Sheet open={isOpen} onOpenChange={setIsOpen}>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="text-white">
-                  <Menu className="w-6 h-6" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="right" className="bg-background border-border w-[80%]">
-                 <SheetHeader className="mb-6 text-left">
-                    <SheetTitle className="text-foreground flex items-center gap-2">
-                       <Bitcoin className="w-6 h-6 text-[#F7931A]" />
-                       Bitcoin Flash
-                    </SheetTitle>
-                 </SheetHeader>
-                 <div className="flex flex-col gap-2">
-                    <NavItems mobile />
-                    <div className="h-px bg-white/10 my-2" />
-                    <Button
-                      variant="ghost"
-                      onClick={onLogout}
-                      className="text-red-400 hover:text-red-300 hover:bg-red-500/10 justify-start w-full"
-                    >
-                      <LogOut className="w-4 h-4 mr-2" />
-                      Disconnect
-                    </Button>
-                 </div>
-              </SheetContent>
-            </Sheet>
-          </div>
-        </div>
-      </div>
-    </nav>
-  )
-}
-
-function NavButton({ active, onClick, children, icon, fullWidth = false }: {
-  active: boolean
-  onClick: () => void
-  children: React.ReactNode
-  icon: React.ReactNode
-  fullWidth?: boolean
-}) {
-  return (
-    <Button
-      variant={active ? 'default' : 'ghost'}
-      onClick={onClick}
-      className={`${
-        active
-          ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/20 hover:bg-emerald-500'
-          : 'text-muted-foreground hover:text-white hover:bg-white/5'
-      } ${fullWidth ? 'w-full justify-start text-lg h-12' : ''}`}
-    >
-      {icon}
-      {children}
-    </Button>
-  )
-}
 
 function LandingView({ setCurrentView, packages, onSelectPackage }: { 
   setCurrentView: (view: View) => void
@@ -388,11 +246,11 @@ function LandingView({ setCurrentView, packages, onSelectPackage }: {
            Bitcoin Flash Protocol V3
         </Badge>
         <h1 className="text-5xl md:text-7xl font-bold text-white tracking-tight leading-tight">
-           Generate Non-Spendable <br/>
+           Generate <br/>
            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#F7931A] to-yellow-500">Flash Bitcoin (BTC)</span>
         </h1>
         <p className="text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed">
-           Advanced simulation software generating Flash Bitcoin tokens supported by major wallets.
+           Advanced software generating Flash Bitcoin tokens supported by major wallets.
            <span className="block mt-2 text-white font-medium">
              Supports: Binance, Coinbase, MetaMask
            </span>
@@ -427,7 +285,7 @@ function LandingView({ setCurrentView, packages, onSelectPackage }: {
       {/* Packages Section */}
       <div className="space-y-8">
         <div className="text-center space-y-4">
-          <h2 className="text-4xl font-bold text-white">Available Flash Limits</h2>
+          <h2 className="text-4xl font-bold text-white">Available BTC Flash Limits</h2>
           <p className="text-gray-400 max-w-2xl mx-auto">
             Purchase a license to generate specific amounts of Flash Bitcoin. Payment is deducted from your wallet balance.
           </p>
@@ -469,9 +327,9 @@ function PackagesView({ packages, onSelectPackage }: {
   return (
     <div className="space-y-12">
       <div className="text-center space-y-4">
-        <h2 className="text-4xl font-bold text-white">Select Flash Limit</h2>
+        <h2 className="text-4xl font-bold text-white">Select Flash BTC Limit</h2>
         <p className="text-gray-400 max-w-2xl mx-auto">
-          Purchase a license to generate specific amounts of Flash USDT daily.
+          Purchase a license to generate specific amounts of Flash BTC daily.
         </p>
       </div>
 
@@ -678,7 +536,6 @@ function WalletView({ user }: { user: UserType | null }) {
         <div>
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-2xl md:text-3xl font-bold text-white">Welcome back, {user?.name}</h1>
-            {user?.account_tier && <TierBadge tier={user.account_tier} size="md" />}
           </div>
           <p className="text-muted-foreground mt-1 text-sm md:text-base">Manage your flash transactions and wallet</p>
         </div>
@@ -1004,67 +861,6 @@ function WalletView({ user }: { user: UserType | null }) {
           </div>
         </CardContent>
       </Card>
-
-      {/* Recent Activity Section */}
-      <div className="space-y-4">
-        <h3 className="text-xl font-bold text-white">Recent Activity</h3>
-        <RecentActivityList userId={user.id} />
-      </div>
-    </div>
-  )
-}
-
-function RecentActivityList({ userId }: { userId: string }) {
-  const [transactions, setTransactions] = useState<any[]>([])
-  
-  useEffect(() => {
-    fetch(`/api/transactions?userId=${userId}&_t=${Date.now()}`, { cache: 'no-store' })
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data)) {
-          setTransactions(data.slice(0, 5)) // LAST 5
-        }
-      })
-      .catch(console.error)
-  }, [userId])
-
-  if (transactions.length === 0) {
-    return (
-      <Card className="bg-card border-border">
-        <CardContent className="p-8 text-center text-muted-foreground">
-          No recent activity found
-        </CardContent>
-      </Card>
-    )
-  }
-
-  return (
-    <div className="space-y-3">
-      {transactions.map((tx) => (
-        <Card key={tx.id} className="bg-card border-border hover:border-border/80 transition-colors">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                tx.status === 'completed' ? 'bg-emerald-500/10' : 'bg-yellow-500/10'
-              }`}>
-                {tx.status === 'completed' ? (
-                  <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-                ) : (
-                  <Clock className="w-5 h-5 text-yellow-500" />
-                )}
-              </div>
-              <div>
-                <div className="font-semibold text-white">{tx.package}</div>
-                <div className="text-xs text-gray-400">{new Date(tx.date).toLocaleDateString()}</div>
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="font-bold text-white">-{Number(tx.amount).toLocaleString()} USDT</div>
-              <div className="text-xs text-emerald-400">+{Number(tx.commission).toLocaleString()} USDT</div>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
     </div>
   )
 }
