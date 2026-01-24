@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Outfit } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
+import { Providers } from "@/components/providers";
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -51,7 +52,9 @@ export default function RootLayout({
       <body
         className={`${outfit.variable} font-sans antialiased bg-background text-foreground selection:bg-emerald-500/30 selection:text-emerald-200`}
       >
-        {children}
+        <Providers>
+          {children}
+        </Providers>
         <Toaster />
       </body>
     </html>

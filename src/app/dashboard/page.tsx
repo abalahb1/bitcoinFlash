@@ -27,6 +27,7 @@ import { WalletHistory } from '@/components/WalletHistory'
 import { TierBadge } from '@/components/TierBadge'
 import { PaymentAnimation } from '@/components/PaymentAnimation'
 import { AppShell, type View } from '@/components/layout'
+import { extractApiError } from '@/lib/error-utils'
 
 // Extend UserType to include account_tier
 type ExtendedUserType = UserType & { account_tier?: string }
@@ -124,17 +125,18 @@ export default function DashboardPage() {
         // Hide animation on error
         setShowPaymentAnimation(false)
         
-        if (data.error?.includes('Insufficient') || data.error?.includes('رصيد')) {
-          const shortage = data.details?.shortage || 0
+        const errorMsg = extractApiError(data, 'Failed to purchase package')
+        if (errorMsg.includes('Insufficient') || errorMsg.includes('balance')) {
+          const shortage = data.details?.shortage || data.error?.details?.shortage || 0
           showMessage(
-            `Insufficient wallet balance. You need ${shortage.toFixed(2)} USDT more. Please top up your wallet first.`,
+            `Insufficient wallet balance. You need ${typeof shortage === 'number' ? shortage.toFixed(2) : shortage} USDT more. Please top up your wallet first.`,
             'error'
           )
-        } else if (data.error?.includes('Not authenticated')) {
+        } else if (errorMsg.includes('authenticated')) {
           showMessage('Please login first', 'error')
           router.push('/login')
         } else {
-          showMessage(data.error || 'Failed to purchase package', 'error')
+          showMessage(errorMsg, 'error')
         }
       }
     } catch (error) {
@@ -536,7 +538,7 @@ function WalletView({ user }: { user: UserType | null }) {
         // Refresh user data
         window.location.reload()
       } else {
-        setWithdrawMessage({ text: data.error || 'Failed to submit withdrawal request', type: 'error' })
+        setWithdrawMessage({ text: extractApiError(data, 'Failed to submit withdrawal request'), type: 'error' })
       }
     } catch (error) {
       setWithdrawMessage({ text: 'Connection error. Please try again.', type: 'error' })

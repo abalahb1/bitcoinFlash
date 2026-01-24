@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { jwtVerify } from 'jose'
+import { withdrawalSchema } from '@/lib/validations'
+import { 
+  apiSuccess, 
+  apiUnauthorized, 
+  apiNotFound, 
+  apiValidationError, 
+  apiInsufficientFunds,
+  handleApiError 
+} from '@/lib/api-response'
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'your-secret-key-change-in-production')
 
@@ -16,105 +25,44 @@ async function getUserId(request: NextRequest): Promise<string | null> {
   }
 }
 
-// Validate TRC20 address
-function validateTRC20Address(address: string): boolean {
-  return /^T[A-Za-z1-9]{33}$/.test(address.trim())
-}
-
-// Validate ERC20 address
-function validateERC20Address(address: string): boolean {
-  return /^0x[a-fA-F0-9]{40}$/.test(address.trim())
-}
-
 export async function POST(request: NextRequest) {
   try {
     const userId = await getUserId(request)
     if (!userId) {
-      return NextResponse.json(
-        { error: 'Not authenticated' },
-        { status: 401 }
-      )
+      return apiUnauthorized()
     }
 
     const body = await request.json()
-    const { amount, address, network = 'TRC20' } = body
-
-    // Validation
-    if (!amount || !address) {
-      return NextResponse.json(
-        { error: 'Amount and address are required' },
-        { status: 400 }
-      )
+    
+    // Validate with Zod schema
+    const validation = withdrawalSchema.safeParse(body)
+    if (!validation.success) {
+      const firstError = validation.error.issues[0]?.message || 'Invalid input'
+      return apiValidationError(firstError, validation.error.issues)
     }
-
-    const withdrawAmount = parseFloat(amount)
-    if (isNaN(withdrawAmount) || withdrawAmount <= 0) {
-      return NextResponse.json(
-        { error: 'Invalid withdrawal amount' },
-        { status: 400 }
-      )
-    }
-
-    // Validate Address based on Network
-    let isValidAddress = false
-    if (network === 'TRC20') {
-      isValidAddress = validateTRC20Address(address)
-      if (!isValidAddress) {
-        return NextResponse.json(
-          { error: 'Invalid TRC20 address format. Start with T and 34 characters.' },
-          { status: 400 }
-        )
-      }
-    } else if (network === 'ERC20') {
-      isValidAddress = validateERC20Address(address)
-      if (!isValidAddress) {
-        return NextResponse.json(
-          { error: 'Invalid ERC20 address format. Start with 0x and 42 characters.' },
-          { status: 400 }
-        )
-      }
-    } else {
-      return NextResponse.json(
-        { error: 'Invalid network type. Only TRC20 and ERC20 supported.' },
-        { status: 400 }
-      )
-    }
+    
+    const { amount, address, network } = validation.data
 
     // Get user
     const user = await db.user.findUnique({ where: { id: userId } })
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
-    }
-
-    // Check minimum withdrawal
-    const MIN_WITHDRAWAL = 10
-    if (withdrawAmount < MIN_WITHDRAWAL) {
-      return NextResponse.json(
-        { error: `Minimum withdrawal amount is ${MIN_WITHDRAWAL} USDT` },
-        { status: 400 }
-      )
+      return apiNotFound('User not found')
     }
 
     // Check balance
-    if (user.wallet_balance_usdt < withdrawAmount) {
-      return NextResponse.json(
-        { 
-          error: 'Insufficient balance',
-          details: {
-            current_balance: user.wallet_balance_usdt,
-            requested: withdrawAmount,
-            shortage: withdrawAmount - user.wallet_balance_usdt
-          }
-        },
-        { status: 400 }
-      )
+    if (user.wallet_balance_usdt < amount) {
+      return apiInsufficientFunds('Insufficient balance for withdrawal', {
+        current: user.wallet_balance_usdt,
+        required: amount,
+        shortage: amount - user.wallet_balance_usdt
+      })
     }
 
     // Create withdrawal request
     const withdrawalRequest = await db.withdrawalRequest.create({
       data: {
         user_id: userId,
-        amount: withdrawAmount,
+        amount: amount,
         address: address.trim(),
         network: network,
         status: 'pending'
@@ -126,25 +74,21 @@ export async function POST(request: NextRequest) {
       where: { id: userId },
       data: {
         wallet_balance_usdt: {
-          decrement: withdrawAmount
+          decrement: amount
         }
       }
     })
 
-    return NextResponse.json({ 
-      success: true,
+    return apiSuccess({
       message: 'Withdrawal request submitted successfully. Processing time: 1-24 hours.',
       request_id: withdrawalRequest.id,
-      amount: withdrawAmount,
-      new_balance: user.wallet_balance_usdt - withdrawAmount
+      amount: amount,
+      new_balance: user.wallet_balance_usdt - amount
     })
 
   } catch (error) {
     console.error('Withdrawal error:', error)
-    return NextResponse.json(
-      { error: 'Failed to process withdrawal request. Please try again.' },
-      { status: 500 }
-    )
+    return handleApiError(error)
   }
 }
 
@@ -153,10 +97,7 @@ export async function GET(request: NextRequest) {
   try {
     const userId = await getUserId(request)
     if (!userId) {
-      return NextResponse.json(
-        { error: 'Not authenticated' },
-        { status: 401 }
-      )
+      return apiUnauthorized()
     }
 
     const withdrawals = await db.withdrawalRequest.findMany({
@@ -164,13 +105,10 @@ export async function GET(request: NextRequest) {
       orderBy: { created_at: 'desc' }
     })
 
-    return NextResponse.json(withdrawals)
+    return apiSuccess(withdrawals)
 
   } catch (error) {
     console.error('Fetch withdrawals error:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch withdrawal requests' },
-      { status: 500 }
-    )
+    return handleApiError(error)
   }
 }

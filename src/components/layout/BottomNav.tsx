@@ -26,10 +26,10 @@ const navItems = [
 export function BottomNav({ currentView, setCurrentView }: BottomNavProps) {
   return (
     <nav 
-      className="bg-card/95 backdrop-blur-xl border-t border-border pb-safe"
-      style={{ paddingBottom: 'max(var(--safe-bottom), 8px)' }}
+      className="bg-card/95 backdrop-blur-xl border-t border-border"
+      style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 8px)' }}
     >
-      <div className="flex items-center justify-around h-16">
+      <div className="flex items-center justify-around h-[72px]">
         {navItems.map((item) => {
           const isActive = currentView === item.id
           const Icon = item.icon
@@ -40,28 +40,31 @@ export function BottomNav({ currentView, setCurrentView }: BottomNavProps) {
               onClick={() => setCurrentView(item.id as View)}
               className={`
                 flex flex-col items-center justify-center 
-                w-16 h-14 rounded-xl
+                min-w-[64px] min-h-[56px] px-3 py-2 rounded-xl
                 transition-all duration-200 relative
+                active:scale-95 touch-manipulation
                 ${isActive ? 'text-primary' : 'text-muted-foreground'}
               `}
+              aria-label={item.label}
+              aria-current={isActive ? 'page' : undefined}
             >
               {isActive && (
                 <motion.div
                   layoutId="bottomnav-active"
-                  className="absolute inset-x-2 -top-0.5 h-0.5 bg-primary rounded-full"
+                  className="absolute inset-x-3 -top-0.5 h-0.5 bg-primary rounded-full"
                   transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                 />
               )}
               <motion.div
                 animate={{ 
-                  scale: isActive ? 1.1 : 1,
+                  scale: isActive ? 1.15 : 1,
                   y: isActive ? -2 : 0
                 }}
                 transition={{ type: "spring", stiffness: 500, damping: 30 }}
               >
-                <Icon className={`w-5 h-5 ${isActive ? 'stroke-[2.5]' : ''}`} />
+                <Icon className={`w-6 h-6 ${isActive ? 'stroke-[2.5]' : ''}`} />
               </motion.div>
-              <span className={`text-[10px] mt-1 font-medium ${isActive ? 'text-primary' : ''}`}>
+              <span className={`text-[11px] mt-1 font-medium ${isActive ? 'text-primary' : ''}`}>
                 {item.label}
               </span>
             </button>

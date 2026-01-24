@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Upload, Loader2, ShieldCheck, Percent, Briefcase, FileCheck, Wallet, Camera, UserSquare2, CheckCircle2, Shield } from 'lucide-react'
 import { FaceCapture } from '@/components/FaceCapture'
+import { extractApiError } from '@/lib/error-utils'
 
 type User = {
   id: string
@@ -148,7 +149,7 @@ export function AccountSettings({ user, onUpdate }: {
         showMessage('Document uploaded successfully')
         onUpdate()
       } else {
-        showMessage(data.error || 'Upload failed')
+        showMessage(extractApiError(data, 'Upload failed'))
       }
     } catch (error) {
       showMessage('Connection error')
@@ -174,7 +175,7 @@ export function AccountSettings({ user, onUpdate }: {
         showMessage('Commission wallet saved successfully')
         onUpdate()
       } else {
-        showMessage(data.error || 'Failed to save')
+        showMessage(extractApiError(data, 'Failed to save'))
       }
     } catch (error) {
       showMessage('Connection error')

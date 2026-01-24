@@ -2,6 +2,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { jwtVerify } from 'jose'
 import { calculateCommission } from '@/lib/tiers'
+import { paymentSchema } from '@/lib/validations'
+import { 
+  apiSuccess, 
+  apiUnauthorized, 
+  apiNotFound, 
+  apiValidationError, 
+  apiInsufficientFunds,
+  handleApiError 
+} from '@/lib/api-response'
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'your-secret-key-change-in-production')
 
@@ -21,21 +30,19 @@ export async function POST(request: NextRequest) {
   try {
     const userId = await getUserId(request)
     if (!userId) {
-      return NextResponse.json(
-        { error: 'Not authenticated' },
-        { status: 401 }
-      )
+      return apiUnauthorized()
     }
 
     const body = await request.json()
-    const { package_id } = body
-
-    if (!package_id) {
-      return NextResponse.json(
-        { error: 'Package ID is required' },
-        { status: 400 }
-      )
+    
+    // Validate with Zod schema
+    const validation = paymentSchema.safeParse(body)
+    if (!validation.success) {
+      const firstError = validation.error.issues[0]?.message || 'Invalid input'
+      return apiValidationError(firstError, validation.error.issues)
     }
+    
+    const { package_id, bitcoin_wallet } = validation.data
 
     // Check if package exists
     const pkg = await db.package.findUnique({
@@ -43,31 +50,22 @@ export async function POST(request: NextRequest) {
     })
 
     if (!pkg) {
-      return NextResponse.json(
-        { error: 'Package not found' },
-        { status: 404 }
-      )
+      return apiNotFound('Package not found')
     }
 
     // Get user with current balance
     const user = await db.user.findUnique({ where: { id: userId } })
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+      return apiNotFound('User not found')
     }
 
     // Check if user has sufficient balance
     if (user.wallet_balance_usdt < pkg.price_usd) {
-      return NextResponse.json(
-        { 
-          error: 'Insufficient wallet balance',
-          details: {
-            current_balance: user.wallet_balance_usdt,
-            required: pkg.price_usd,
-            shortage: pkg.price_usd - user.wallet_balance_usdt
-          }
-        },
-        { status: 400 }
-      )
+      return apiInsufficientFunds('Insufficient wallet balance', {
+        current: user.wallet_balance_usdt,
+        required: pkg.price_usd,
+        shortage: pkg.price_usd - user.wallet_balance_usdt
+      })
     }
 
     // Calculate commission based on user tier
@@ -90,8 +88,8 @@ export async function POST(request: NextRequest) {
         data: {
           user_id: userId,
           package_id,
-          buyer_wallet: body.bitcoin_wallet || 'N/A',
-          network_type: 'BTC', // Bitcoin network for Flash BTC
+          buyer_wallet: bitcoin_wallet,
+          network_type: 'BTC',
           amount: pkg.price_usd,
           commission: commission,
           status: 'completed'
@@ -112,26 +110,19 @@ export async function POST(request: NextRequest) {
       
       return payment
     }, {
-      maxWait: 5000, // default: 2000
-      timeout: 20000, // default: 5000
+      maxWait: 5000,
+      timeout: 20000,
     })
 
-
-    return NextResponse.json({ 
-      success: true, 
+    return apiSuccess({
       paymentId: result.id,
       message: 'Package purchased successfully! Commission added to your balance.',
       commission: commission,
       new_balance: user.wallet_balance_usdt - pkg.price_usd + commission
     })
+    
   } catch (error) {
     console.error('Payment error details:', error)
-    return NextResponse.json(
-      { 
-        error: 'Payment failed', 
-        details: error instanceof Error ? error.message : String(error) 
-      },
-      { status: 500 }
-    )
+    return handleApiError(error)
   }
 }
