@@ -275,14 +275,7 @@ function LandingView({ setCurrentView, packages, onSelectPackage }: {
            <span className="text-sm text-gray-500 mt-1 block">(More exchanges coming soon)</span>
         </p>
         
-        <div className="flex flex-wrap justify-center gap-6 pt-4">
-           <Button onClick={() => setCurrentView('account')} className="h-14 px-10 text-lg rounded-full bg-[#F7931A] text-black hover:bg-[#F7931A]/90 shadow-[0_0_40px_rgba(247,147,26,0.3)] transition-all hover:scale-105 font-bold">
-              <Bitcoin className="mr-2 w-5 h-5 fill-black" /> Agent Dashboard
-           </Button>
-           <Button variant="outline" onClick={() => setCurrentView('wallet')} className="h-14 px-10 text-lg rounded-full border-white/20 text-white hover:bg-white/10 hover:border-white/30 backdrop-blur-sm">
-              View Wallet
-           </Button>
-        </div>
+
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-white/5 border border-white/5 rounded-2xl overflow-hidden backdrop-blur-sm">
