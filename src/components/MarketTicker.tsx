@@ -57,7 +57,7 @@ export function TopTicker() {
   }, [])
 
   return (
-    <div className="w-full bg-background border-b border-white/5 h-10 flex items-center overflow-hidden relative z-50">
+    <div className="w-full bg-background border-b border-white/5 h-10 flex items-center overflow-hidden relative z-10">
       <div className="flex animate-ticker whitespace-nowrap">
         {[...marketData, ...marketData, ...marketData].map((coin, i) => (
           <div key={i} className="flex items-center gap-4 px-6 border-r border-border text-xs font-mono">
