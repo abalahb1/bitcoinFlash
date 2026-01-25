@@ -43,7 +43,11 @@ export default function LoginPage() {
             router.refresh() // Ensure middleware re-runs
         }, 800)
       } else {
-        showMessage(data.error || 'Access Denied', 'error')
+        // Handle both old format (data.error = string) and new format (data.error = { message: string })
+        const errorMessage = typeof data.error === 'string' 
+          ? data.error 
+          : data.error?.message || 'Access Denied'
+        showMessage(errorMessage, 'error')
       }
     } catch (error) {
       showMessage('Connection refused by host', 'error')

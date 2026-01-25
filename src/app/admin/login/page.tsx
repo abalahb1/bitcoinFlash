@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Loader2, Shield, Lock, AlertCircle } from 'lucide-react'
+import { extractApiError } from '@/lib/error-utils'
 
 export default function AdminLoginPage() {
   const router = useRouter()
@@ -43,7 +44,7 @@ export default function AdminLoginPage() {
         router.push('/admin/dashboard')
         router.refresh()
       } else {
-        setError(data.error || 'Invalid credentials')
+        setError(extractApiError(data, 'Invalid credentials'))
       }
     } catch (err) {
       setError('Connection error. Please try again.')

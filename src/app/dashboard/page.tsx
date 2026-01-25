@@ -16,7 +16,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Loader2, Wallet, Copy, CheckCircle2, Bitcoin, Zap, Shield, Clock, User, LayoutDashboard, LogOut, Activity, BarChart2, History, ChevronRight, QrCode } from 'lucide-react'
+import { Loader2, Wallet, Copy, CheckCircle2, Bitcoin, Zap, Shield, Clock, User, LayoutDashboard, LogOut, Activity, BarChart2, History, ChevronRight, QrCode, AlertTriangle } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
 import type { User as UserType, Package as PackageType } from '@prisma/client'
 import { TopTicker, HeroMarketSlides } from '@/components/MarketTicker'
@@ -26,10 +26,8 @@ import { KYCBlockingModal } from '@/components/KYCBlockingModal'
 import { WalletHistory } from '@/components/WalletHistory'
 import { TierBadge } from '@/components/TierBadge'
 import { PaymentAnimation } from '@/components/PaymentAnimation'
-import { DashboardNavbar } from '@/components/DashboardNavbar'
-
-
-type View = 'landing' | 'wallet' | 'payment' | 'account' | 'history' | 'commissions'
+import { AppShell, type View } from '@/components/layout'
+import { extractApiError } from '@/lib/error-utils'
 
 // Extend UserType to include account_tier
 type ExtendedUserType = UserType & { account_tier?: string }
@@ -127,17 +125,18 @@ export default function DashboardPage() {
         // Hide animation on error
         setShowPaymentAnimation(false)
         
-        if (data.error?.includes('Insufficient') || data.error?.includes('رصيد')) {
-          const shortage = data.details?.shortage || 0
+        const errorMsg = extractApiError(data, 'Failed to purchase package')
+        if (errorMsg.includes('Insufficient') || errorMsg.includes('balance')) {
+          const shortage = data.details?.shortage || data.error?.details?.shortage || 0
           showMessage(
-            `Insufficient wallet balance. You need ${shortage.toFixed(2)} USDT more. Please top up your wallet first.`,
+            `Insufficient wallet balance. You need ${typeof shortage === 'number' ? shortage.toFixed(2) : shortage} USDT more. Please top up your wallet first.`,
             'error'
           )
-        } else if (data.error?.includes('Not authenticated')) {
+        } else if (errorMsg.includes('authenticated')) {
           showMessage('Please login first', 'error')
           router.push('/login')
         } else {
-          showMessage(data.error || 'Failed to purchase package', 'error')
+          showMessage(errorMsg, 'error')
         }
       }
     } catch (error) {
@@ -157,64 +156,83 @@ export default function DashboardPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-[#050510] flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+      <div className="min-h-screen-safe bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative">
+            <div className="absolute inset-0 bg-primary rounded-full blur-xl opacity-30 animate-pulse" />
+            <div className="relative w-16 h-16 rounded-full bg-gradient-to-br from-primary to-yellow-600 flex items-center justify-center">
+              <Bitcoin className="w-8 h-8 text-white animate-pulse" />
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Loader2 className="w-4 h-4 text-primary animate-spin" />
+            <span className="text-sm text-muted-foreground">Loading dashboard...</span>
+          </div>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background relative overflow-x-hidden font-sans text-foreground">
-      
-      <div className="relative z-10">
-        <TopTicker />
+    <AppShell
+      user={user}
+      currentView={currentView}
+      setCurrentView={setCurrentView}
+      onLogout={handleLogout}
+    >
+      {/* Market Ticker - Shows on landing only */}
+      {currentView === 'landing' && (
+        <div className="-mx-4 md:-mx-6 lg:-mx-8 mb-6">
+          <TopTicker />
+        </div>
+      )}
 
-        <DashboardNavbar
-          currentView={currentView}
-          setCurrentView={setCurrentView}
-          onLogout={handleLogout}
-          user={user}
-        />
+      {/* Verification Banner */}
+      {!user.is_verified && (
+        <div className="relative z-50 mb-6">
+          <KYCBlockingModal status={user.kyc_status || 'none'} userId={user.id} isVerified={user.is_verified} />
+        </div>
+      )}
 
+      {/* Alert Messages */}
+      {message && (
+        <Alert className={`mb-6 border ${
+          message.type === 'success' ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-400' :
+          message.type === 'error' ? 'border-red-500/50 bg-red-500/10 text-red-400' :
+          'border-blue-500/50 bg-blue-500/10 text-blue-400'
+        }`}>
+          <AlertDescription className="flex items-center gap-2">
+            {message.type === 'success' && <CheckCircle2 className="w-4 h-4" />}
+            {message.type === 'error' && <AlertTriangle className="w-4 h-4" />}
+            {message.text}
+          </AlertDescription>
+        </Alert>
+      )}
 
-        {/* Verification Banner */}
-        {!user.is_verified && (
-           <div className="relative z-50">
-             <KYCBlockingModal status={user.kyc_status || 'none'} userId={user.id} isVerified={user.is_verified} />
-           </div>
-        )}
-
-        <main className="flex-1 container mx-auto px-4 py-8">
-          {message && (
-            <Alert className={`mb-6 border ${
-              message.type === 'success' ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-500' :
-              message.type === 'error' ? 'border-red-500/50 bg-red-500/10 text-red-500' :
-              'border-blue-500/50 bg-blue-500/10 text-blue-500'
-            }`}>
-              <AlertDescription>{message.text}</AlertDescription>
-            </Alert>
-          )}
-
-          {currentView === 'landing' && <LandingView setCurrentView={setCurrentView} packages={packages} onSelectPackage={(pkg) => {
+      {/* Page Content */}
+      {currentView === 'landing' && (
+        <LandingView 
+          setCurrentView={setCurrentView} 
+          packages={packages} 
+          onSelectPackage={(pkg) => {
             setSelectedPackage(pkg)
             setCurrentView('payment')
-          }} />}
-          {currentView === 'wallet' && <WalletView user={user} />}
-          {currentView === 'account' && <AccountView user={user} />}
-          {currentView === 'history' && <HistoryView user={user} />}
-          {currentView === 'commissions' && <CommissionHistoryView user={user} />}
-          {currentView === 'payment' && selectedPackage && (
-            <PaymentView
-              pkg={selectedPackage}
-              user={user}
-              onSubmit={handlePayment}
-              loading={loading}
-            />
-          )}
-        </main>
-
-        <Footer />
-      </div>
+          }} 
+        />
+      )}
+      {currentView === 'wallet' && <WalletView user={user} />}
+      {currentView === 'account' && <AccountView user={user} />}
+      {currentView === 'history' && <HistoryView user={user} />}
+      {currentView === 'commissions' && <CommissionHistoryView user={user} />}
+      {currentView === 'payment' && selectedPackage && (
+        <PaymentView
+          pkg={selectedPackage}
+          user={user}
+          onSubmit={handlePayment}
+          loading={loading}
+          onBack={() => setCurrentView('landing')}
+        />
+      )}
 
       {/* Payment Animation */}
       <PaymentAnimation
@@ -223,7 +241,7 @@ export default function DashboardPage() {
         packageName={selectedPackage?.name || ''}
         amount={Number(selectedPackage?.btc_amount) || 0}
       />
-    </div>
+    </AppShell>
   )
 }
 
@@ -520,7 +538,7 @@ function WalletView({ user }: { user: UserType | null }) {
         // Refresh user data
         window.location.reload()
       } else {
-        setWithdrawMessage({ text: data.error || 'Failed to submit withdrawal request', type: 'error' })
+        setWithdrawMessage({ text: extractApiError(data, 'Failed to submit withdrawal request'), type: 'error' })
       }
     } catch (error) {
       setWithdrawMessage({ text: 'Connection error. Please try again.', type: 'error' })
@@ -1107,11 +1125,12 @@ function HistoryView({ user }: { user: UserType | null }) {
 }
 
 
-function PaymentView({ pkg, user, onSubmit, loading }: {
+function PaymentView({ pkg, user, onSubmit, loading, onBack }: {
   pkg: PackageType
   user: UserType | null
   onSubmit: (bitcoinAddress: string) => void
   loading: boolean
+  onBack?: () => void
 }) {
   if (!user) return null
 
@@ -1204,8 +1223,8 @@ function PaymentView({ pkg, user, onSubmit, loading }: {
       <div className="flex items-center justify-between">
         <Button 
           variant="ghost" 
-          onClick={() => window.location.reload()}
-          className="text-gray-400 hover:text-white -ml-4"
+          onClick={() => onBack ? onBack() : window.location.reload()}
+          className="text-muted-foreground hover:text-white -ml-2 h-11"
         >
           <ChevronRight className="w-4 h-4 mr-1 rotate-180" /> Back
         </Button>
