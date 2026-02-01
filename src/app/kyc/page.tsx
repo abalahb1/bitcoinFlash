@@ -14,7 +14,7 @@ import { TopTicker } from '@/components/MarketTicker'
 // Types
 type Step = 'intro' | 'passport' | 'selfie' | 'review' | 'success'
 
-// Selfie Capture Component with AI Face Detection
+// Selfie Capture Component - Simple Manual Capture
 function SelfieCapture({
   onCapture,
   preview,
@@ -27,54 +27,9 @@ function SelfieCapture({
   const [cameraActive, setCameraActive] = useState(false)
   const [stream, setStream] = useState<MediaStream | null>(null)
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user')
-  const [faceDetected, setFaceDetected] = useState(false)
-  const [faceQuality, setFaceQuality] = useState<{
-    centered: boolean
-    goodLighting: boolean
-    faceSize: 'good' | 'too-far' | 'too-close' | null
-  }>({ centered: false, goodLighting: false, faceSize: null })
-  const [modelsLoaded, setModelsLoaded] = useState(false)
-  const [loadingModels, setLoadingModels] = useState(false)
 
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const overlayCanvasRef = useRef<HTMLCanvasElement>(null)
-  const detectionIntervalRef = useRef<NodeJS.Timeout | null>(null)
-
-
-  // Load face-api models
-  const loadModels = async () => {
-    if (modelsLoaded || loadingModels) return
-
-    setLoadingModels(true)
-    console.log('Starting to load face detection models...')
-
-    try {
-      // Import face-api.js properly
-      const faceapiModule = await import('face-api.js')
-      const faceapi = faceapiModule.default || faceapiModule
-
-        // Store faceapi reference for later use
-        ; (window as any).__faceapi = faceapi
-
-      console.log('face-api.js imported, loading models from /models...')
-
-      await Promise.all([
-        faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
-        faceapi.nets.faceLandmark68TinyNet.loadFromUri('/models'),
-      ])
-
-      console.log('Face detection models loaded successfully!')
-      setModelsLoaded(true)
-    } catch (err) {
-      console.error('Failed to load face detection models:', err)
-      console.log('Face detection will be disabled, but you can still capture photos manually')
-      // Don't block the user - they can still capture manually
-      setModelsLoaded(false)
-    } finally {
-      setLoadingModels(false)
-    }
-  }
 
   const startCamera = async () => {
     try {
@@ -90,7 +45,7 @@ function SelfieCapture({
         return
       }
 
-      // Request camera permission with clear message
+      // Request camera permission
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: facingMode,
@@ -100,17 +55,10 @@ function SelfieCapture({
         audio: false
       })
 
-      if (!mediaStream) {
-        throw new Error('Failed to get media stream')
-      }
-
       setStream(mediaStream)
 
-      // Set video source and ensure it plays
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream
-
-        // Wait for metadata to load before playing
         videoRef.current.onloadedmetadata = () => {
           if (videoRef.current) {
             videoRef.current.play().catch(err => {
@@ -121,21 +69,13 @@ function SelfieCapture({
       }
 
       setCameraActive(true)
-
-      // Load models when camera starts
-      loadModels()
     } catch (err: any) {
       console.error('Camera access error:', err)
 
-      // Handle different error types
       if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        alert('⚠️ Camera Access Denied\n\nTo continue, please:\n1. Allow camera access in your browser settings\n2. Click "Allow" when prompted\n3. Or use the "Upload Photo" option instead\n\nWe need camera access to verify your identity securely.')
+        alert('⚠️ Camera Access Denied\n\nTo continue, please:\n1. Allow camera access in your browser settings\n2. Click "Allow" when prompted\n3. Or use the "Upload Photo" option instead')
       } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
         alert('⚠️ No Camera Found\n\nPlease:\n1. Make sure your camera is connected\n2. Check if another app is using the camera\n3. Or use the "Upload Photo" option from gallery')
-      } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
-        alert('⚠️ Camera In Use\n\nPlease:\n1. Close other applications using the camera\n2. Restart your browser\n3. Or use the "Upload Photo" option')
-      } else if (err.name === 'NotSupportedError' || err.name === 'InsecureContextError') {
-        alert('⚠️ Secure Connection Required\n\nCamera access requires HTTPS.\n\nPlease:\n1. Access via HTTPS\n2. Or use the "Upload Photo" option')
       } else {
         alert('⚠️ Camera Access Error\n\n' + (err.message || 'Unknown error') + '\n\nPlease try again or use the "Upload Photo" option')
       }
@@ -147,152 +87,26 @@ function SelfieCapture({
       stream.getTracks().forEach(track => track.stop())
       setStream(null)
     }
-    if (detectionIntervalRef.current) {
-      clearInterval(detectionIntervalRef.current)
-    }
     setCameraActive(false)
-    setFaceDetected(false)
   }
 
   const flipCamera = () => {
-    // Stop current stream
     if (stream) {
       stream.getTracks().forEach(track => track.stop())
       setStream(null)
     }
-    if (detectionIntervalRef.current) {
-      clearInterval(detectionIntervalRef.current)
-    }
-
-    // Toggle facing mode (this will trigger useEffect to restart camera)
     setFacingMode(prev => prev === 'user' ? 'environment' : 'user')
   }
 
   // Restart camera when facingMode changes
   useEffect(() => {
     if (cameraActive && !stream) {
-      // Small delay to ensure stream is stopped
       const timer = setTimeout(() => {
         startCamera()
       }, 100)
       return () => clearTimeout(timer)
     }
   }, [facingMode])
-
-  // Face detection loop
-  const detectFace = async () => {
-    if (!videoRef.current || !overlayCanvasRef.current || !modelsLoaded) return
-
-    try {
-      // Use stored faceapi reference
-      const faceapi = (window as any).__faceapi
-      if (!faceapi) {
-        console.error('faceapi not available')
-        return
-      }
-
-      const video = videoRef.current
-      const canvas = overlayCanvasRef.current
-
-      // Ensure video is playing and has dimensions
-      if (video.readyState < 2 || video.videoWidth === 0) {
-        return
-      }
-
-      const detections = await faceapi
-        .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 }))
-        .withFaceLandmarks(true)
-
-      // Clear previous drawings
-      const ctx = canvas.getContext('2d')
-      if (ctx) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height)
-      }
-
-      if (detections) {
-        setFaceDetected(true)
-
-        // Draw face landmarks (mirrored for display)
-        if (ctx) {
-          ctx.save()
-          ctx.translate(canvas.width, 0)
-          ctx.scale(-1, 1)
-
-          // Draw face box
-          const box = detections.detection.box
-          ctx.strokeStyle = '#a855f7'
-          ctx.lineWidth = 3
-          ctx.strokeRect(box.x, box.y, box.width, box.height)
-
-          // Draw landmarks
-          const landmarks = detections.landmarks.positions
-          ctx.fillStyle = '#a855f7'
-          landmarks.forEach((point: any) => {
-            ctx.beginPath()
-            ctx.arc(point.x, point.y, 2, 0, 2 * Math.PI)
-            ctx.fill()
-          })
-
-          ctx.restore()
-        }
-
-        // Check face quality
-        const box = detections.detection.box
-        const videoWidth = video.videoWidth
-        const videoHeight = video.videoHeight
-
-        // Check if face is centered
-        const centerX = box.x + box.width / 2
-        const centerY = box.y + box.height / 2
-        const videoCenterX = videoWidth / 2
-        const videoCenterY = videoHeight / 2
-        const centered = Math.abs(centerX - videoCenterX) < videoWidth * 0.15 &&
-          Math.abs(centerY - videoCenterY) < videoHeight * 0.15
-
-        // Check face size
-        const faceArea = box.width * box.height
-        const videoArea = videoWidth * videoHeight
-        const faceRatio = faceArea / videoArea
-
-        let faceSize: 'good' | 'too-far' | 'too-close' = 'good'
-        if (faceRatio < 0.08) faceSize = 'too-far'
-        else if (faceRatio > 0.35) faceSize = 'too-close'
-
-        // Simple lighting check (using detection confidence as proxy)
-        const goodLighting = detections.detection.score > 0.7
-
-        setFaceQuality({ centered, goodLighting, faceSize })
-      } else {
-        setFaceDetected(false)
-        setFaceQuality({ centered: false, goodLighting: false, faceSize: null })
-      }
-    } catch (err) {
-      console.error('Face detection error:', err)
-    }
-  }
-
-  // Start detection when camera is active and models are loaded
-  useEffect(() => {
-    if (cameraActive && modelsLoaded && videoRef.current) {
-      // Set canvas size to match video
-      const video = videoRef.current
-      video.addEventListener('loadedmetadata', () => {
-        if (overlayCanvasRef.current) {
-          overlayCanvasRef.current.width = video.videoWidth
-          overlayCanvasRef.current.height = video.videoHeight
-        }
-      })
-
-      // Start detection loop
-      detectionIntervalRef.current = setInterval(detectFace, 200) // 5 FPS for detection
-
-      return () => {
-        if (detectionIntervalRef.current) {
-          clearInterval(detectionIntervalRef.current)
-        }
-      }
-    }
-  }, [cameraActive, modelsLoaded])
 
   const capturePhoto = () => {
     if (!videoRef.current || !canvasRef.current) return
@@ -303,18 +117,14 @@ function SelfieCapture({
 
     if (!context) return
 
-    // Set canvas size to match video
     canvas.width = video.videoWidth
     canvas.height = video.videoHeight
 
-    // Mirror the image horizontally to fix the flipped camera issue
+    // Mirror the image horizontally
     context.translate(canvas.width, 0)
     context.scale(-1, 1)
-
-    // Draw the video frame to canvas
     context.drawImage(video, 0, 0, canvas.width, canvas.height)
 
-    // Convert canvas to blob and create file
     canvas.toBlob((blob) => {
       if (!blob) return
 
@@ -367,8 +177,6 @@ function SelfieCapture({
   }
 
   if (cameraActive) {
-    const allChecksPass = faceDetected && faceQuality.centered && faceQuality.goodLighting && faceQuality.faceSize === 'good'
-
     return (
       <div className="space-y-4">
         <div className="relative w-full max-w-md mx-auto aspect-[3/4] rounded-2xl overflow-hidden border-4 border-purple-500/30 bg-black shadow-xl">
@@ -381,64 +189,28 @@ function SelfieCapture({
             style={{ transform: 'scaleX(-1)' }}
           />
 
-          {/* Face detection overlay */}
-          <canvas
-            ref={overlayCanvasRef}
-            className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-            style={{ transform: 'scaleX(-1)' }}
-          />
-
           {/* Face guide overlay */}
           <div className="absolute inset-0 pointer-events-none">
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className={`w-48 h-64 border-4 rounded-full transition-colors ${allChecksPass ? 'border-emerald-500' : 'border-purple-500/50'
-                }`}></div>
+              <div className="w-48 h-64 border-4 border-purple-500/60 rounded-full"></div>
+            </div>
+            {/* Corner brackets */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-56 h-72 relative">
+                <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-emerald-500" />
+                <div className="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-emerald-500" />
+                <div className="absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-emerald-500" />
+                <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-emerald-500" />
+              </div>
             </div>
           </div>
 
-          {/* Quality indicators */}
-          <div className="absolute top-4 left-4 right-4 space-y-2">
-            {loadingModels && (
-              <div className="bg-black/60 backdrop-blur-sm rounded-lg px-3 py-2 text-xs text-white flex items-center gap-2">
-                <Loader2 className="w-3 h-3 animate-spin" />
-                Loading AI models...
-              </div>
-            )}
-
-            {!loadingModels && !modelsLoaded && (
-              <div className="bg-yellow-500/20 backdrop-blur-sm rounded-lg px-3 py-2 text-xs text-yellow-300 flex items-center gap-2">
-                <Shield className="w-3 h-3" />
-                AI detection unavailable - Manual capture enabled
-              </div>
-            )}
-
-            {modelsLoaded && (
-              <>
-                <div className={`bg-black/60 backdrop-blur-sm rounded-lg px-3 py-2 text-xs flex items-center gap-2 ${faceDetected ? 'text-emerald-400' : 'text-yellow-400'
-                  }`}>
-                  {faceDetected ? <CheckCircle2 className="w-3 h-3" /> : <Shield className="w-3 h-3" />}
-                  {faceDetected ? 'Face detected' : 'Looking for face...'}
-                </div>
-
-                {faceDetected && (
-                  <>
-                    <div className={`bg-black/60 backdrop-blur-sm rounded-lg px-3 py-2 text-xs flex items-center gap-2 ${faceQuality.centered ? 'text-emerald-400' : 'text-yellow-400'
-                      }`}>
-                      {faceQuality.centered ? <CheckCircle2 className="w-3 h-3" /> : <Shield className="w-3 h-3" />}
-                      {faceQuality.centered ? 'Well centered' : 'Center your face'}
-                    </div>
-
-                    <div className={`bg-black/60 backdrop-blur-sm rounded-lg px-3 py-2 text-xs flex items-center gap-2 ${faceQuality.faceSize === 'good' ? 'text-emerald-400' : 'text-yellow-400'
-                      }`}>
-                      {faceQuality.faceSize === 'good' ? <CheckCircle2 className="w-3 h-3" /> : <Shield className="w-3 h-3" />}
-                      {faceQuality.faceSize === 'good' ? 'Good distance' :
-                        faceQuality.faceSize === 'too-far' ? 'Move closer' :
-                          faceQuality.faceSize === 'too-close' ? 'Move back' : 'Adjusting...'}
-                    </div>
-                  </>
-                )}
-              </>
-            )}
+          {/* Instructions */}
+          <div className="absolute top-4 left-4 right-4">
+            <div className="bg-black/60 backdrop-blur-sm rounded-lg px-3 py-2 text-xs text-white flex items-center gap-2">
+              <Camera className="w-3 h-3 text-purple-400" />
+              Position your face in the oval and tap Capture
+            </div>
           </div>
 
           {/* Flip Camera Button */}
@@ -479,13 +251,10 @@ function SelfieCapture({
           </Button>
           <Button
             onClick={capturePhoto}
-            className={`flex-1 ${allChecksPass
-              ? 'bg-emerald-600 hover:bg-emerald-500 animate-pulse'
-              : 'bg-purple-600 hover:bg-purple-500'
-              } text-white`}
+            className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white"
           >
             <Camera className="w-4 h-4 mr-2" />
-            {allChecksPass ? 'Perfect! Capture' : loadingModels ? 'Loading AI...' : 'Capture'}
+            Capture Photo
           </Button>
         </div>
       </div>
@@ -512,8 +281,8 @@ function SelfieCapture({
               <Camera className="w-8 h-8 text-purple-400" />
             </div>
             <div>
-              <p className="text-white font-medium">Use AI Camera</p>
-              <p className="text-xs text-gray-500 mt-1">Smart face detection</p>
+              <p className="text-white font-medium">Take Selfie</p>
+              <p className="text-xs text-gray-500 mt-1">Use your camera</p>
             </div>
           </div>
         </button>
