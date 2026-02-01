@@ -26,6 +26,7 @@ import { KYCBlockingModal } from '@/components/KYCBlockingModal'
 import { WalletHistory } from '@/components/WalletHistory'
 import { TierBadge } from '@/components/TierBadge'
 import { PaymentAnimation } from '@/components/PaymentAnimation'
+import { PaymentSuccessPage } from '@/components/PaymentSuccessPage'
 import { AppShell, type View } from '@/components/layout'
 import { extractApiError } from '@/lib/error-utils'
 
@@ -41,6 +42,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' | 'info' } | null>(null)
   const [showPaymentAnimation, setShowPaymentAnimation] = useState(false)
+  const [showSuccessPage, setShowSuccessPage] = useState(false)
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -51,7 +53,7 @@ export default function DashboardPage() {
           setUser(userData)
           await fetchPackages()
         } else {
-            router.push('/login')
+          router.push('/login')
         }
       } catch (error) {
         console.error('Auth check failed:', error)
@@ -97,10 +99,10 @@ export default function DashboardPage() {
     if (!selectedPackage) return
 
     setLoading(true)
-    
+
     // Show payment animation immediately
     setShowPaymentAnimation(true)
-    
+
     try {
       const res = await fetch('/api/payment', {
         method: 'POST',
@@ -124,7 +126,7 @@ export default function DashboardPage() {
       } else {
         // Hide animation on error
         setShowPaymentAnimation(false)
-        
+
         const errorMsg = extractApiError(data, 'Failed to purchase package')
         if (errorMsg.includes('Insufficient') || errorMsg.includes('balance')) {
           const shortage = data.details?.shortage || data.error?.details?.shortage || 0
@@ -150,8 +152,13 @@ export default function DashboardPage() {
 
   const handleAnimationComplete = () => {
     setShowPaymentAnimation(false)
+    setShowSuccessPage(true)
+  }
+
+  const handleSuccessContinue = () => {
+    setShowSuccessPage(false)
     showMessage('Package purchased successfully! Commission added to your balance.', 'success')
-    setTimeout(() => setCurrentView('landing'), 2000)
+    setCurrentView('landing')
   }
 
   if (!user) {
@@ -196,11 +203,10 @@ export default function DashboardPage() {
 
       {/* Alert Messages */}
       {message && (
-        <Alert className={`mb-6 border ${
-          message.type === 'success' ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-400' :
+        <Alert className={`mb-6 border ${message.type === 'success' ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-400' :
           message.type === 'error' ? 'border-red-500/50 bg-red-500/10 text-red-400' :
-          'border-blue-500/50 bg-blue-500/10 text-blue-400'
-        }`}>
+            'border-blue-500/50 bg-blue-500/10 text-blue-400'
+          }`}>
           <AlertDescription className="flex items-center gap-2">
             {message.type === 'success' && <CheckCircle2 className="w-4 h-4" />}
             {message.type === 'error' && <AlertTriangle className="w-4 h-4" />}
@@ -211,13 +217,13 @@ export default function DashboardPage() {
 
       {/* Page Content */}
       {currentView === 'landing' && (
-        <LandingView 
-          setCurrentView={setCurrentView} 
-          packages={packages} 
+        <LandingView
+          setCurrentView={setCurrentView}
+          packages={packages}
           onSelectPackage={(pkg) => {
             setSelectedPackage(pkg)
             setCurrentView('payment')
-          }} 
+          }}
         />
       )}
       {currentView === 'wallet' && <WalletView user={user} />}
@@ -241,6 +247,14 @@ export default function DashboardPage() {
         packageName={selectedPackage?.name || ''}
         amount={Number(selectedPackage?.btc_amount) || 0}
       />
+
+      {/* Payment Success Page */}
+      <PaymentSuccessPage
+        isOpen={showSuccessPage}
+        package={selectedPackage}
+        user={user}
+        onContinue={handleSuccessContinue}
+      />
     </AppShell>
   )
 }
@@ -249,7 +263,7 @@ export default function DashboardPage() {
 
 
 
-function LandingView({ setCurrentView, packages, onSelectPackage }: { 
+function LandingView({ setCurrentView, packages, onSelectPackage }: {
   setCurrentView: (view: View) => void
   packages: PackageType[]
   onSelectPackage: (pkg: PackageType) => void
@@ -260,37 +274,37 @@ function LandingView({ setCurrentView, packages, onSelectPackage }: {
 
       <div className="text-center space-y-8 max-w-4xl mx-auto py-8">
         <Badge variant="outline" className="border-[#F7931A]/30 text-[#F7931A] px-4 py-1.5 rounded-full uppercase tracking-widest text-xs bg-[#F7931A]/5 backdrop-blur-sm">
-           <Bitcoin className="w-3 h-3 mr-2 fill-[#F7931A]" />
-           Bitcoin Flash Protocol V3
+          <Bitcoin className="w-3 h-3 mr-2 fill-[#F7931A]" />
+          Bitcoin Flash Protocol V3
         </Badge>
         <h1 className="text-5xl md:text-7xl font-bold text-white tracking-tight leading-tight">
-           Generate <br/>
-           <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#F7931A] to-yellow-500">Flash Bitcoin (BTC)</span>
+          Generate <br />
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#F7931A] to-yellow-500">Flash Bitcoin (BTC)</span>
         </h1>
         <p className="text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed">
-           Advanced software generating Flash Bitcoin tokens supported by major wallets.
-           <span className="block mt-2 text-white font-medium">
-             Supports: Binance, Coinbase, MetaMask
-           </span>
-           <span className="text-sm text-gray-500 mt-1 block">(More exchanges coming soon)</span>
+          Advanced software generating Flash Bitcoin tokens supported by major wallets.
+          <span className="block mt-2 text-white font-medium">
+            Supports: Binance, Coinbase, MetaMask
+          </span>
+          <span className="text-sm text-gray-500 mt-1 block">(More exchanges coming soon)</span>
         </p>
-        
+
 
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-white/5 border border-white/5 rounded-2xl overflow-hidden backdrop-blur-sm">
-          {[
-             { label: "Flash Nodes", value: "1,240+", icon: Activity },
-             { label: "BTC Generated", value: "124K", icon: BarChart2 },
-             { label: "Success Rate", value: "100%", icon: Zap },
-             { label: "Traceability", value: "0%", icon: Shield }
-          ].map((stat, i) => (
-             <div key={i} className="text-center p-8 bg-[#0a0a1f]/50 hover:bg-white/5 transition-colors group">
-                <stat.icon className="w-6 h-6 text-gray-500 mx-auto mb-4 group-hover:text-[#F7931A] transition-colors" />
-                <div className="text-3xl font-bold text-white mb-1 group-hover:scale-110 transition-transform">{stat.value}</div>
-                <div className="text-xs text-gray-500 uppercase tracking-widest font-medium">{stat.label}</div>
-             </div>
-          ))}
+        {[
+          { label: "Flash Nodes", value: "1,240+", icon: Activity },
+          { label: "BTC Generated", value: "124K", icon: BarChart2 },
+          { label: "Success Rate", value: "100%", icon: Zap },
+          { label: "Traceability", value: "0%", icon: Shield }
+        ].map((stat, i) => (
+          <div key={i} className="text-center p-8 bg-[#0a0a1f]/50 hover:bg-white/5 transition-colors group">
+            <stat.icon className="w-6 h-6 text-gray-500 mx-auto mb-4 group-hover:text-[#F7931A] transition-colors" />
+            <div className="text-3xl font-bold text-white mb-1 group-hover:scale-110 transition-transform">{stat.value}</div>
+            <div className="text-xs text-gray-500 uppercase tracking-widest font-medium">{stat.label}</div>
+          </div>
+        ))}
       </div>
 
       {/* Packages Section */}
@@ -320,10 +334,10 @@ function RateCard({ tier, price, sub }: { tier: string; price: string; sub: stri
   return (
     <div className="p-6 bg-[#0e0e24]/50 border border-white/5 rounded-2xl hover:border-emerald-500/30 transition-all cursor-pointer group hover:-translate-y-1">
       <div className="flex justify-between items-start mb-4">
-         <div className="p-2 rounded-lg bg-white/5 group-hover:bg-emerald-500/10 transition-colors">
-            <Zap className="w-5 h-5 text-gray-400 group-hover:text-emerald-400" />
-         </div>
-         <Badge variant="outline" className="border-white/10 text-gray-500 text-xs">{tier}</Badge>
+        <div className="p-2 rounded-lg bg-white/5 group-hover:bg-emerald-500/10 transition-colors">
+          <Zap className="w-5 h-5 text-gray-400 group-hover:text-emerald-400" />
+        </div>
+        <Badge variant="outline" className="border-white/10 text-gray-500 text-xs">{tier}</Badge>
       </div>
       <div className="text-3xl font-bold text-white mb-1">{price}</div>
       <div className="text-gray-500 text-sm font-medium">{sub} Limit</div>
@@ -364,53 +378,53 @@ function PackageCard({ pkg, onSelect }: {
   return (
     <Card className="bg-card border-border hover:border-primary transition-all duration-300 group relative overflow-hidden flex flex-col h-full shadow-none hover:shadow-md">
       <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-emerald-500 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-      
+
       <CardHeader>
         <div className="text-sm font-medium text-muted-foreground uppercase tracking-widest mb-2 flex items-center gap-2">
-           <Bitcoin className="w-4 h-4 text-primary" /> {pkg.name} License
+          <Bitcoin className="w-4 h-4 text-primary" /> {pkg.name} License
         </div>
         <div className="text-4xl font-bold text-foreground flex items-baseline gap-1">
-           {pkg.btc_amount} <span className="text-lg text-gray-500 font-normal">BTC</span>
+          {pkg.btc_amount} <span className="text-lg text-gray-500 font-normal">BTC</span>
         </div>
         <div className="text-primary font-semibold mt-1">
-            Price: ${pkg.price_usd.toLocaleString()} USDT
+          Price: ${pkg.price_usd.toLocaleString()} USDT
         </div>
       </CardHeader>
-      
+
       <CardContent className="space-y-6 flex-1">
         <div className="space-y-3 pt-4 border-t border-border">
-           <div className="flex justify-between items-center text-sm">
-              <span className="text-muted-foreground">Unit Price</span>
-              <span className="text-foreground font-medium">${(pkg.price_usd / Number(pkg.btc_amount)).toFixed(2)}/BTC</span>
-           </div>
-           <div className="flex justify-between items-center text-sm">
-              <span className="text-gray-400">License Duration</span>
-              <span className="text-white font-medium">{pkg.duration} Days</span>
-           </div>
-           <div className="flex justify-between items-center text-sm">
-              <span className="text-gray-400">Daily Injections</span>
-              <span className="text-white font-medium">{pkg.transfers}</span>
-           </div>
+          <div className="flex justify-between items-center text-sm">
+            <span className="text-muted-foreground">Unit Price</span>
+            <span className="text-foreground font-medium">${(pkg.price_usd / Number(pkg.btc_amount)).toFixed(2)}/BTC</span>
+          </div>
+          <div className="flex justify-between items-center text-sm">
+            <span className="text-gray-400">License Duration</span>
+            <span className="text-white font-medium">{pkg.duration} Days</span>
+          </div>
+          <div className="flex justify-between items-center text-sm">
+            <span className="text-gray-400">Daily Injections</span>
+            <span className="text-white font-medium">{pkg.transfers}</span>
+          </div>
         </div>
-        
+
         <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm text-gray-400">
-               <CheckCircle2 className="w-4 h-4 text-orange-500" />
-               <span>Bitcoin Core Support</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-gray-400">
-               <CheckCircle2 className="w-4 h-4 text-orange-500" />
-               <span>Full Blockchain Confirmation</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-gray-400">
-               <CheckCircle2 className="w-4 h-4 text-orange-500" />
-               <span>Instant Wallet Credit</span>
-            </div>
+          <div className="flex items-center gap-2 text-sm text-gray-400">
+            <CheckCircle2 className="w-4 h-4 text-orange-500" />
+            <span>Bitcoin Core Support</span>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-gray-400">
+            <CheckCircle2 className="w-4 h-4 text-orange-500" />
+            <span>Full Blockchain Confirmation</span>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-gray-400">
+            <CheckCircle2 className="w-4 h-4 text-orange-500" />
+            <span>Instant Wallet Credit</span>
+          </div>
         </div>
       </CardContent>
 
       <CardFooter>
-        <Button 
+        <Button
           className="w-full bg-secondary hover:bg-primary hover:text-primary-foreground text-foreground border border-border hover:border-primary transition-all h-12"
           onClick={onSelect}
         >
@@ -435,7 +449,7 @@ function WalletView({ user }: { user: UserType | null }) {
     network: string
     error: string
   } | null>(null)
-  
+
 
 
   // Calculate total value
@@ -586,11 +600,10 @@ function WalletView({ user }: { user: UserType | null }) {
           <div className="flex border-b border-white/10">
             <button
               onClick={() => setActiveTab('deposit')}
-              className={`flex-1 px-6 py-4 text-sm font-semibold transition-all ${
-                activeTab === 'deposit'
-                  ? 'text-primary border-b-2 border-primary bg-primary/5'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
-              }`}
+              className={`flex-1 px-6 py-4 text-sm font-semibold transition-all ${activeTab === 'deposit'
+                ? 'text-primary border-b-2 border-primary bg-primary/5'
+                : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
+                }`}
             >
               <div className="flex items-center justify-center gap-2">
                 <Activity className="w-4 h-4" />
@@ -599,11 +612,10 @@ function WalletView({ user }: { user: UserType | null }) {
             </button>
             <button
               onClick={() => setActiveTab('withdraw')}
-              className={`flex-1 px-6 py-4 text-sm font-semibold transition-all ${
-                activeTab === 'withdraw'
-                  ? 'text-blue-500 border-b-2 border-blue-500 bg-blue-500/5'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
-              }`}
+              className={`flex-1 px-6 py-4 text-sm font-semibold transition-all ${activeTab === 'withdraw'
+                ? 'text-blue-500 border-b-2 border-blue-500 bg-blue-500/5'
+                : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
+                }`}
             >
               <div className="flex items-center justify-center gap-2">
                 <Zap className="w-4 h-4" />
@@ -634,13 +646,13 @@ function WalletView({ user }: { user: UserType | null }) {
                       <Wallet className="w-5 h-5 text-emerald-400" />
                       <h4 className="text-lg font-bold text-white">USDT Deposit Address (ERC20)</h4>
                     </div>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {/* USDT QR Code */}
                       <div className="flex flex-col items-center justify-center p-4 bg-white rounded-lg">
-                        <img 
-                          src="/wallet.png" 
-                          alt="USDT Wallet QR Code" 
+                        <img
+                          src="/wallet.png"
+                          alt="USDT Wallet QR Code"
                           className="w-48 h-48 object-contain"
                         />
                         <p className="text-gray-600 text-xs mt-3 text-center font-medium">Scan to deposit USDT (ERC20)</p>
@@ -707,11 +719,10 @@ function WalletView({ user }: { user: UserType | null }) {
                 </Alert>
 
                 {withdrawMessage && (
-                  <Alert className={`border ${
-                    withdrawMessage.type === 'success' 
-                      ? 'border-emerald-500/50 bg-emerald-500/10' 
-                      : 'border-red-500/50 bg-red-500/10'
-                  }`}>
+                  <Alert className={`border ${withdrawMessage.type === 'success'
+                    ? 'border-emerald-500/50 bg-emerald-500/10'
+                    : 'border-red-500/50 bg-red-500/10'
+                    }`}>
                     <AlertDescription className={withdrawMessage.type === 'success' ? 'text-emerald-400' : 'text-red-400'}>
                       {withdrawMessage.text}
                     </AlertDescription>
@@ -750,19 +761,16 @@ function WalletView({ user }: { user: UserType | null }) {
                     <div className="grid grid-cols-2 gap-3">
                       <button
                         onClick={() => setWithdrawNetwork('TRC20')}
-                        className={`p-4 rounded-lg border-2 transition-all ${
-                          withdrawNetwork === 'TRC20'
-                            ? 'border-emerald-500 bg-emerald-500/10'
-                            : 'border-white/10 bg-white/5 hover:border-white/20'
-                        }`}
+                        className={`p-4 rounded-lg border-2 transition-all ${withdrawNetwork === 'TRC20'
+                          ? 'border-emerald-500 bg-emerald-500/10'
+                          : 'border-white/10 bg-white/5 hover:border-white/20'
+                          }`}
                       >
                         <div className="flex items-center justify-center gap-2 mb-2">
-                          <div className={`w-3 h-3 rounded-full ${
-                            withdrawNetwork === 'TRC20' ? 'bg-emerald-500' : 'bg-gray-500'
-                          }`} />
-                          <span className={`font-bold ${
-                            withdrawNetwork === 'TRC20' ? 'text-emerald-400' : 'text-gray-400'
-                          }`}>TRC20</span>
+                          <div className={`w-3 h-3 rounded-full ${withdrawNetwork === 'TRC20' ? 'bg-emerald-500' : 'bg-gray-500'
+                            }`} />
+                          <span className={`font-bold ${withdrawNetwork === 'TRC20' ? 'text-emerald-400' : 'text-gray-400'
+                            }`}>TRC20</span>
                         </div>
                         <div className="text-xs text-gray-500">Tron Network</div>
                         <div className="text-xs text-gray-400 mt-1">Low fees (~1 USDT)</div>
@@ -770,19 +778,16 @@ function WalletView({ user }: { user: UserType | null }) {
 
                       <button
                         onClick={() => setWithdrawNetwork('ERC20')}
-                        className={`p-4 rounded-lg border-2 transition-all ${
-                          withdrawNetwork === 'ERC20'
-                            ? 'border-blue-500 bg-blue-500/10'
-                            : 'border-white/10 bg-white/5 hover:border-white/20'
-                        }`}
+                        className={`p-4 rounded-lg border-2 transition-all ${withdrawNetwork === 'ERC20'
+                          ? 'border-blue-500 bg-blue-500/10'
+                          : 'border-white/10 bg-white/5 hover:border-white/20'
+                          }`}
                       >
                         <div className="flex items-center justify-center gap-2 mb-2">
-                          <div className={`w-3 h-3 rounded-full ${
-                            withdrawNetwork === 'ERC20' ? 'bg-blue-500' : 'bg-gray-500'
-                          }`} />
-                          <span className={`font-bold ${
-                            withdrawNetwork === 'ERC20' ? 'text-blue-400' : 'text-gray-400'
-                          }`}>ERC20</span>
+                          <div className={`w-3 h-3 rounded-full ${withdrawNetwork === 'ERC20' ? 'bg-blue-500' : 'bg-gray-500'
+                            }`} />
+                          <span className={`font-bold ${withdrawNetwork === 'ERC20' ? 'text-blue-400' : 'text-gray-400'
+                            }`}>ERC20</span>
                         </div>
                         <div className="text-xs text-gray-500">Ethereum Network</div>
                         <div className="text-xs text-gray-400 mt-1">Higher fees (~5-20 USDT)</div>
@@ -799,19 +804,17 @@ function WalletView({ user }: { user: UserType | null }) {
                       value={withdrawAddress}
                       onChange={handleWithdrawAddressChange}
                       placeholder={withdrawNetwork === 'TRC20' ? 'T...' : '0x...'}
-                      className={`bg-[#1a1a2e] border-white/10 text-white h-12 ${
-                        addressValidation?.isValid ? 'border-emerald-500/50' : 
+                      className={`bg-[#1a1a2e] border-white/10 text-white h-12 ${addressValidation?.isValid ? 'border-emerald-500/50' :
                         addressValidation?.error ? 'border-red-500/50' : ''
-                      }`}
+                        }`}
                     />
-                    
+
                     {/* Address Validation Feedback */}
                     {addressValidation && (
-                      <div className={`mt-2 p-3 rounded-lg border ${
-                        addressValidation.isValid 
-                          ? 'bg-emerald-500/10 border-emerald-500/30' 
-                          : 'bg-red-500/10 border-red-500/30'
-                      }`}>
+                      <div className={`mt-2 p-3 rounded-lg border ${addressValidation.isValid
+                        ? 'bg-emerald-500/10 border-emerald-500/30'
+                        : 'bg-red-500/10 border-red-500/30'
+                        }`}>
                         {addressValidation.isValid ? (
                           <div className="flex items-center gap-2">
                             <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
@@ -903,13 +906,12 @@ function AccountView({ user }: { user: UserType | null }) {
           <h2 className="text-3xl font-bold text-white">Agent Profile</h2>
           <p className="text-gray-400 mt-1">Manage your account and verification</p>
         </div>
-        <Badge 
-          variant="outline" 
-          className={`px-4 py-2 ${
-            isVerified 
-              ? 'border-emerald-500/30 text-emerald-400 bg-emerald-500/5' 
-              : 'border-yellow-500/30 text-yellow-400 bg-yellow-500/5'
-          }`}
+        <Badge
+          variant="outline"
+          className={`px-4 py-2 ${isVerified
+            ? 'border-emerald-500/30 text-emerald-400 bg-emerald-500/5'
+            : 'border-yellow-500/30 text-yellow-400 bg-yellow-500/5'
+            }`}
         >
           <Shield className="w-3 h-3 mr-2" />
           {isVerified ? 'Verified Agent' : 'Pending Verification'}
@@ -954,9 +956,9 @@ function AccountView({ user }: { user: UserType | null }) {
       </Card>
 
       {/* Account Settings */}
-      <AccountSettings 
-        user={localUser as any} 
-        onUpdate={refreshUser} 
+      <AccountSettings
+        user={localUser as any}
+        onUpdate={refreshUser}
       />
     </div>
   )
@@ -968,9 +970,9 @@ function HistoryView({ user }: { user: UserType | null }) {
 
   const fetchHistory = () => {
     setLoading(true)
-    fetch(`/api/transactions?_t=${Date.now()}`, { 
-      cache: 'no-store', 
-      credentials: 'include' 
+    fetch(`/api/transactions?_t=${Date.now()}`, {
+      cache: 'no-store',
+      credentials: 'include'
     })
       .then(res => res.json())
       .then(data => {
@@ -994,73 +996,73 @@ function HistoryView({ user }: { user: UserType | null }) {
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="flex items-center justify-between">
-         <div className="flex items-center gap-3">
-           <h2 className="text-3xl font-bold text-white">Transactions Log</h2>
-           <Badge variant="secondary" className="text-xs">
-             {loading ? '...' : transactions.length}
-           </Badge>
-         </div>
-         <div className="flex gap-2">
-           <Button variant="outline" size="sm" onClick={fetchHistory} disabled={loading}>
-             <span className={loading ? "animate-spin mr-2" : "mr-2"}>⟳</span> Refresh
-           </Button>
-           <Badge variant="outline" className="border-primary/30 text-primary bg-primary/5">
-              Verified Ledger
-           </Badge>
-         </div>
+        <div className="flex items-center gap-3">
+          <h2 className="text-3xl font-bold text-white">Transactions Log</h2>
+          <Badge variant="secondary" className="text-xs">
+            {loading ? '...' : transactions.length}
+          </Badge>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={fetchHistory} disabled={loading}>
+            <span className={loading ? "animate-spin mr-2" : "mr-2"}>⟳</span> Refresh
+          </Button>
+          <Badge variant="outline" className="border-primary/30 text-primary bg-primary/5">
+            Verified Ledger
+          </Badge>
+        </div>
       </div>
 
       {/* Mobile View - Explicitly Separate Container */}
       <div className="md:hidden space-y-4">
-         <div className="text-xs text-muted-foreground px-1">
-            {loading ? 'Loading...' : `Found ${transactions.length} records`}
-         </div>
-         
-         {loading ? (
-             <div className="text-center text-muted-foreground py-8">Loading records...</div>
-          ) : transactions.length === 0 ? (
-             <div className="text-center text-muted-foreground py-8">No transactions found</div>
-          ) : (
-             transactions.map((tx) => (
-               <Card key={tx.id} className="bg-card border-border mb-4">
-                 <CardContent className="p-4 space-y-3">
-                   <div className="flex justify-between items-start">
-                     <div>
-                       <div className="font-bold text-foreground">{String(tx.package || 'Unknown Package')}</div>
-                       <div className="text-xs text-muted-foreground font-mono mt-1 w-32 truncate">{tx.buyer_wallet}</div>
-                     </div>
-                     <Badge variant="outline" className={`
+        <div className="text-xs text-muted-foreground px-1">
+          {loading ? 'Loading...' : `Found ${transactions.length} records`}
+        </div>
+
+        {loading ? (
+          <div className="text-center text-muted-foreground py-8">Loading records...</div>
+        ) : transactions.length === 0 ? (
+          <div className="text-center text-muted-foreground py-8">No transactions found</div>
+        ) : (
+          transactions.map((tx) => (
+            <Card key={tx.id} className="bg-card border-border mb-4">
+              <CardContent className="p-4 space-y-3">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="font-bold text-foreground">{String(tx.package || 'Unknown Package')}</div>
+                    <div className="text-xs text-muted-foreground font-mono mt-1 w-32 truncate">{tx.buyer_wallet}</div>
+                  </div>
+                  <Badge variant="outline" className={`
                        ${tx.status === 'completed' ? 'border-emerald-500/30 text-emerald-500 bg-emerald-500/10' : ''}
                        ${tx.status === 'pending' ? 'border-yellow-500/30 text-yellow-500 bg-yellow-500/10' : ''}
                        ${tx.status === 'failed' ? 'border-red-500/30 text-red-500 bg-red-500/10' : ''}
                        uppercase text-[10px]
                      `}>
-                       {tx.status}
-                     </Badge>
-                   </div>
-                   
-                   <div className="grid grid-cols-2 gap-3 text-sm pt-2 border-t border-border/50">
-                     <div className="min-w-0">
-                       <div className="text-muted-foreground text-[10px] mb-0.5">Amount</div>
-                       <div className="text-foreground font-medium text-xs break-words">{Number(tx.amount).toLocaleString()} USDT</div>
-                     </div>
-                     <div className="text-right min-w-0">
-                       <div className="text-muted-foreground text-[10px] mb-0.5">Commission</div>
-                       <div className="text-emerald-500 font-medium text-xs break-words">+{Number(tx.commission).toLocaleString()} USDT</div>
-                     </div>
-                     <div className="min-w-0">
-                       <div className="text-muted-foreground text-[10px] mb-0.5">BTC Amount</div>
-                       <div className="text-orange-500 font-medium text-xs truncate">{tx.btc_amount || 'N/A'}</div>
-                     </div>
-                     <div className="text-right min-w-0">
-                       <div className="text-muted-foreground text-[10px] mb-0.5">Date</div>
-                       <div className="text-muted-foreground text-xs">{new Date(tx.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
-                     </div>
-                   </div>
-                 </CardContent>
-               </Card>
-             ))
-          )}
+                    {tx.status}
+                  </Badge>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 text-sm pt-2 border-t border-border/50">
+                  <div className="min-w-0">
+                    <div className="text-muted-foreground text-[10px] mb-0.5">Amount</div>
+                    <div className="text-foreground font-medium text-xs break-words">{Number(tx.amount).toLocaleString()} USDT</div>
+                  </div>
+                  <div className="text-right min-w-0">
+                    <div className="text-muted-foreground text-[10px] mb-0.5">Commission</div>
+                    <div className="text-emerald-500 font-medium text-xs break-words">+{Number(tx.commission).toLocaleString()} USDT</div>
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-muted-foreground text-[10px] mb-0.5">BTC Amount</div>
+                    <div className="text-orange-500 font-medium text-xs truncate">{tx.btc_amount || 'N/A'}</div>
+                  </div>
+                  <div className="text-right min-w-0">
+                    <div className="text-muted-foreground text-[10px] mb-0.5">Date</div>
+                    <div className="text-muted-foreground text-xs">{new Date(tx.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
       </div>
 
       {/* Desktop View (Table) - Explicitly Hidden on Mobile */}
@@ -1081,32 +1083,32 @@ function HistoryView({ user }: { user: UserType | null }) {
               </thead>
               <tbody className="divide-y divide-border">
                 {loading ? (
-                   <tr><td colSpan={7} className="p-8 text-center text-muted-foreground">Loading records...</td></tr>
+                  <tr><td colSpan={7} className="p-8 text-center text-muted-foreground">Loading records...</td></tr>
                 ) : transactions.length === 0 ? (
-                   <tr><td colSpan={7} className="p-8 text-center text-muted-foreground">No transactions found</td></tr>
+                  <tr><td colSpan={7} className="p-8 text-center text-muted-foreground">No transactions found</td></tr>
                 ) : (
-                   transactions.map((tx) => (
-                     <tr key={tx.id} className="hover:bg-secondary/50 transition-colors">
-                       <td className="p-4 text-foreground font-medium">{String(tx.package || 'Unknown Package')}</td>
-                       <td className="p-4 text-muted-foreground font-mono text-xs max-w-[150px] truncate" title={tx.buyer_wallet}>{tx.buyer_wallet}</td>
-                       <td className="p-4 text-foreground">{Number(tx.amount).toLocaleString()} USDT</td>
-                       <td className="p-4 text-primary font-bold">{tx.btc_amount || 'N/A'}</td>
-                       <td className="p-4 text-emerald-500 font-bold">+{Number(tx.commission).toLocaleString()} USDT</td>
-                       <td className="p-4">
-                         <Badge variant="outline" className={`
+                  transactions.map((tx) => (
+                    <tr key={tx.id} className="hover:bg-secondary/50 transition-colors">
+                      <td className="p-4 text-foreground font-medium">{String(tx.package || 'Unknown Package')}</td>
+                      <td className="p-4 text-muted-foreground font-mono text-xs max-w-[150px] truncate" title={tx.buyer_wallet}>{tx.buyer_wallet}</td>
+                      <td className="p-4 text-foreground">{Number(tx.amount).toLocaleString()} USDT</td>
+                      <td className="p-4 text-primary font-bold">{tx.btc_amount || 'N/A'}</td>
+                      <td className="p-4 text-emerald-500 font-bold">+{Number(tx.commission).toLocaleString()} USDT</td>
+                      <td className="p-4">
+                        <Badge variant="outline" className={`
                            ${tx.status === 'completed' ? 'border-emerald-500/30 text-emerald-500 bg-emerald-500/10' : ''}
                            ${tx.status === 'pending' ? 'border-yellow-500/30 text-yellow-500 bg-yellow-500/10' : ''}
                            ${tx.status === 'failed' ? 'border-red-500/30 text-red-500 bg-red-500/10' : ''}
                            uppercase text-xs
                          `}>
-                           {tx.status}
-                         </Badge>
-                       </td>
-                       <td className="p-4 text-muted-foreground text-sm">
-                         {new Date(tx.date).toLocaleDateString()}
-                       </td>
-                     </tr>
-                   ))
+                          {tx.status}
+                        </Badge>
+                      </td>
+                      <td className="p-4 text-muted-foreground text-sm">
+                        {new Date(tx.date).toLocaleDateString()}
+                      </td>
+                    </tr>
+                  ))
                 )}
               </tbody>
             </table>
@@ -1214,8 +1216,8 @@ function PaymentView({ pkg, user, onSubmit, loading, onBack }: {
     <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-8 duration-700">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <Button 
-          variant="ghost" 
+        <Button
+          variant="ghost"
           onClick={() => onBack ? onBack() : window.location.reload()}
           className="text-muted-foreground hover:text-white -ml-2 h-11"
         >
@@ -1294,7 +1296,7 @@ function PaymentView({ pkg, user, onSubmit, loading, onBack }: {
                 </div>
               </div>
             </div>
-            
+
             <div className="mt-6">
               <Dialog>
                 <DialogTrigger className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border shadow-xs h-9 px-4 py-2 w-full border-primary/20 text-primary hover:bg-primary/10 bg-background">
@@ -1304,45 +1306,45 @@ function PaymentView({ pkg, user, onSubmit, loading, onBack }: {
                 <DialogContent className="bg-card border-border text-foreground sm:max-w-md">
                   <DialogHeader>
                     <DialogTitle className="text-xl font-bold flex items-center gap-2">
-                       <Bitcoin className="w-6 h-6 text-primary" />
-                       Bitcoin Flash Supported Wallets
+                      <Bitcoin className="w-6 h-6 text-primary" />
+                      Bitcoin Flash Supported Wallets
                     </DialogTitle>
                     <DialogDescription className="text-muted-foreground">
                       Our Flash protocol is fully compatible with these major providers.
                     </DialogDescription>
                   </DialogHeader>
                   <div className="grid gap-6 py-4">
-                     {/* Decentralized */}
-                     <div className="space-y-3">
-                       <div className="flex items-center gap-2 pb-2 border-b border-border/50">
-                         <Shield className="w-4 h-4 text-emerald-500" />
-                         <span className="font-semibold text-sm uppercase tracking-wider text-muted-foreground">Decentralized (Web3)</span>
-                       </div>
-                       <div className="grid grid-cols-2 gap-3">
-                         {['Trust Wallet', 'Exodus', 'BlueWallet', 'Atomic', 'Trezor', 'Ledger', 'MetaMask', 'Phantom'].map(wallet => (
-                            <div key={wallet} className="flex items-center gap-2 p-2 rounded-md bg-secondary/50 border border-border/50 hover:border-primary/30 transition-colors">
-                              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
-                              <span className="text-sm font-medium">{wallet}</span>
-                            </div>
-                         ))}
-                       </div>
-                     </div>
+                    {/* Decentralized */}
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2 pb-2 border-b border-border/50">
+                        <Shield className="w-4 h-4 text-emerald-500" />
+                        <span className="font-semibold text-sm uppercase tracking-wider text-muted-foreground">Decentralized (Web3)</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        {['Trust Wallet', 'Exodus', 'BlueWallet', 'Atomic', 'Trezor', 'Ledger', 'MetaMask', 'Phantom'].map(wallet => (
+                          <div key={wallet} className="flex items-center gap-2 p-2 rounded-md bg-secondary/50 border border-border/50 hover:border-primary/30 transition-colors">
+                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
+                            <span className="text-sm font-medium">{wallet}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
 
-                     {/* Centralized */}
-                     <div className="space-y-3">
-                       <div className="flex items-center gap-2 pb-2 border-b border-border/50">
-                         <Wallet className="w-4 h-4 text-blue-500" />
-                         <span className="font-semibold text-sm uppercase tracking-wider text-muted-foreground">Centralized (Exchanges)</span>
-                       </div>
-                       <div className="grid grid-cols-2 gap-3">
-                         {['Binance', 'Coinbase', 'Bybit', 'KuCoin', 'OKX', 'Kraken', 'Bitget', 'Gate.io', 'HTX', 'MEXC'].map(wallet => (
-                            <div key={wallet} className="flex items-center gap-2 p-2 rounded-md bg-secondary/50 border border-border/50 hover:border-blue-500/30 transition-colors">
-                              <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div>
-                              <span className="text-sm font-medium">{wallet}</span>
-                            </div>
-                         ))}
-                       </div>
-                     </div>
+                    {/* Centralized */}
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2 pb-2 border-b border-border/50">
+                        <Wallet className="w-4 h-4 text-blue-500" />
+                        <span className="font-semibold text-sm uppercase tracking-wider text-muted-foreground">Centralized (Exchanges)</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        {['Binance', 'Coinbase', 'Bybit', 'KuCoin', 'OKX', 'Kraken', 'Bitget', 'Gate.io', 'HTX', 'MEXC'].map(wallet => (
+                          <div key={wallet} className="flex items-center gap-2 p-2 rounded-md bg-secondary/50 border border-border/50 hover:border-blue-500/30 transition-colors">
+                            <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div>
+                            <span className="text-sm font-medium">{wallet}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </DialogContent>
               </Dialog>
@@ -1355,7 +1357,7 @@ function PaymentView({ pkg, user, onSubmit, loading, onBack }: {
           {/* Payment Summary */}
           <div>
             <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Payment Summary</h3>
-            
+
             {/* Current Balance */}
             <div className={`p-4 rounded-lg mb-4 border-2 ${hasEnoughBalance ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-red-500/5 border-red-500/20'}`}>
               <div className="flex items-center justify-between">
@@ -1403,20 +1405,18 @@ function PaymentView({ pkg, user, onSubmit, loading, onBack }: {
                   value={recipientAddress}
                   onChange={handleAddressChange}
                   placeholder="Enter your wallet address..."
-                  className={`bg-[#0e0e24] border-white/10 text-white focus:border-cyan-500 h-12 ${
-                    addressValidation?.isValid ? 'border-emerald-500/50' : 
+                  className={`bg-[#0e0e24] border-white/10 text-white focus:border-cyan-500 h-12 ${addressValidation?.isValid ? 'border-emerald-500/50' :
                     addressValidation?.error ? 'border-red-500/50' : ''
-                  }`}
+                    }`}
                 />
               </div>
-              
+
               {/* Validation Feedback */}
               {addressValidation && (
-                <div className={`p-3 rounded-lg border ${
-                  addressValidation.isValid 
-                    ? 'bg-emerald-500/10 border-emerald-500/30' 
-                    : 'bg-red-500/10 border-red-500/30'
-                }`}>
+                <div className={`p-3 rounded-lg border ${addressValidation.isValid
+                  ? 'bg-emerald-500/10 border-emerald-500/30'
+                  : 'bg-red-500/10 border-red-500/30'
+                  }`}>
                   {addressValidation.isValid ? (
                     <div className="flex items-center gap-2">
                       <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
@@ -1460,7 +1460,7 @@ function PaymentView({ pkg, user, onSubmit, loading, onBack }: {
           )}
 
           {/* Purchase Button */}
-          <Button 
+          <Button
             onClick={() => onSubmit(recipientAddress)}
             disabled={loading || !canPurchase}
             className="w-full min-h-[3.5rem] h-auto py-3 text-base md:text-lg font-semibold bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-lg shadow-emerald-900/20 disabled:opacity-50 disabled:cursor-not-allowed disabled:from-gray-600 disabled:to-gray-600 whitespace-normal"
@@ -1515,11 +1515,11 @@ function CommissionHistoryView({ user }: { user: UserType }) {
 
   const fetchTransactions = async () => {
     try {
-      const res = await fetch(`/api/transactions?userId=${user.id}&_t=${Date.now()}`, { 
+      const res = await fetch(`/api/transactions?userId=${user.id}&_t=${Date.now()}`, {
         cache: 'no-store',
         credentials: 'include'
       })
-      
+
       if (res.status === 401) {
         window.location.href = '/login'
         return
@@ -1532,10 +1532,10 @@ function CommissionHistoryView({ user }: { user: UserType }) {
         if (Array.isArray(data)) {
           // Filter for transactions that have commission > 0
           const commissions = data.filter((t: any) => {
-             const comm = Number(t.commission)
-             // Debug log for each transaction's commission
-             // console.log(`Tx ${t.id} commission:`, t.commission, 'Parsed:', comm)
-             return comm > 0
+            const comm = Number(t.commission)
+            // Debug log for each transaction's commission
+            // console.log(`Tx ${t.id} commission:`, t.commission, 'Parsed:', comm)
+            return comm > 0
           })
           console.log('[Dashboard] Filtered commissions:', commissions)
           setTransactions(commissions)
@@ -1554,10 +1554,10 @@ function CommissionHistoryView({ user }: { user: UserType }) {
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="flex items-center justify-between">
-         <h2 className="text-3xl font-bold text-foreground">Agent Commissions</h2>
-         <Badge variant="outline" className="border-primary/30 text-primary bg-primary/5">
-            Revenue Log
-         </Badge>
+        <h2 className="text-3xl font-bold text-foreground">Agent Commissions</h2>
+        <Badge variant="outline" className="border-primary/30 text-primary bg-primary/5">
+          Revenue Log
+        </Badge>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -1572,62 +1572,62 @@ function CommissionHistoryView({ user }: { user: UserType }) {
             <p className="text-xs text-muted-foreground mt-1">Total commissions earned</p>
           </CardContent>
         </Card>
-        
+
         <Card className="bg-card border-border">
           <CardHeader className="pb-2">
-             <CardTitle className="text-sm font-medium text-muted-foreground">Sales Count</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Sales Count</CardTitle>
           </CardHeader>
           <CardContent>
-             <div className="text-2xl font-bold text-primary">
-                {transactions.length}
-             </div>
-             <p className="text-xs text-muted-foreground mt-1">Total packages sold</p>
+            <div className="text-2xl font-bold text-primary">
+              {transactions.length}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Total packages sold</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Mobile View - Explicitly Separate Container */}
       <div className="md:hidden space-y-4">
-         <div className="text-xs text-muted-foreground px-1">
-            {loading ? 'Loading...' : `Found ${transactions.length} commissions`}
-         </div>
+        <div className="text-xs text-muted-foreground px-1">
+          {loading ? 'Loading...' : `Found ${transactions.length} commissions`}
+        </div>
 
-         {loading ? (
-             <div className="text-center text-muted-foreground py-8">Loading records...</div>
-          ) : transactions.length === 0 ? (
-             <div className="text-center text-muted-foreground py-8">No commissions found</div>
-          ) : (
-             transactions.map((tx) => (
-               <Card key={tx.id} className="bg-card border-border mb-4">
-                 <CardContent className="p-4 space-y-3">
-                   <div className="flex justify-between items-start">
-                     <div>
-                       <div className="font-bold text-foreground">{String(tx.package || 'Unknown Package')}</div>
-                       <div className="text-xs text-muted-foreground font-mono mt-1 w-32 truncate">{tx.buyer_wallet}</div>
-                     </div>
-                     <Badge variant="outline" className="border-emerald-500/30 text-emerald-500 bg-emerald-500/10 uppercase text-[10px]">
-                       Earned
-                     </Badge>
-                   </div>
-                   
-                   <div className="grid grid-cols-2 gap-2 text-sm pt-2 border-t border-border/50">
-                     <div>
-                       <div className="text-muted-foreground text-xs">Sale Amount</div>
-                       <div className="text-foreground font-medium">{Number(tx.amount).toLocaleString()} USDT</div>
-                     </div>
-                     <div className="text-right">
-                       <div className="text-muted-foreground text-xs">Your Commission</div>
-                       <div className="text-emerald-500 font-bold">+{Number(tx.commission).toLocaleString()} USDT</div>
-                     </div>
-                     <div className="col-span-2 text-right">
-                       <div className="text-muted-foreground text-xs">Date</div>
-                       <div className="text-muted-foreground">{new Date(tx.date).toLocaleDateString()}</div>
-                     </div>
-                   </div>
-                 </CardContent>
-               </Card>
-             ))
-          )}
+        {loading ? (
+          <div className="text-center text-muted-foreground py-8">Loading records...</div>
+        ) : transactions.length === 0 ? (
+          <div className="text-center text-muted-foreground py-8">No commissions found</div>
+        ) : (
+          transactions.map((tx) => (
+            <Card key={tx.id} className="bg-card border-border mb-4">
+              <CardContent className="p-4 space-y-3">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="font-bold text-foreground">{String(tx.package || 'Unknown Package')}</div>
+                    <div className="text-xs text-muted-foreground font-mono mt-1 w-32 truncate">{tx.buyer_wallet}</div>
+                  </div>
+                  <Badge variant="outline" className="border-emerald-500/30 text-emerald-500 bg-emerald-500/10 uppercase text-[10px]">
+                    Earned
+                  </Badge>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-sm pt-2 border-t border-border/50">
+                  <div>
+                    <div className="text-muted-foreground text-xs">Sale Amount</div>
+                    <div className="text-foreground font-medium">{Number(tx.amount).toLocaleString()} USDT</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-muted-foreground text-xs">Your Commission</div>
+                    <div className="text-emerald-500 font-bold">+{Number(tx.commission).toLocaleString()} USDT</div>
+                  </div>
+                  <div className="col-span-2 text-right">
+                    <div className="text-muted-foreground text-xs">Date</div>
+                    <div className="text-muted-foreground">{new Date(tx.date).toLocaleDateString()}</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
       </div>
 
       {/* Desktop View (Table) - Explicitly Hidden on Mobile */}
@@ -1647,26 +1647,26 @@ function CommissionHistoryView({ user }: { user: UserType }) {
               </thead>
               <tbody className="divide-y divide-border">
                 {loading ? (
-                   <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">Loading records...</td></tr>
+                  <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">Loading records...</td></tr>
                 ) : transactions.length === 0 ? (
-                   <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">No commissions found</td></tr>
+                  <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">No commissions found</td></tr>
                 ) : (
-                   transactions.map((tx) => (
-                     <tr key={tx.id} className="hover:bg-secondary/50 transition-colors">
-                       <td className="p-4 text-foreground font-medium">{String(tx.package || 'Unknown Package')}</td>
-                       <td className="p-4 text-muted-foreground font-mono text-xs max-w-[150px] truncate" title={tx.buyer_wallet}>{tx.buyer_wallet}</td>
-                       <td className="p-4 text-foreground">{Number(tx.amount).toLocaleString()} USDT</td>
-                       <td className="p-4 text-emerald-500 font-bold">+{Number(tx.commission).toLocaleString()} USDT</td>
-                       <td className="p-4">
-                         <Badge variant="outline" className="border-emerald-500/30 text-emerald-500 bg-emerald-500/10 uppercase text-xs">
-                           Paid
-                         </Badge>
-                       </td>
-                       <td className="p-4 text-muted-foreground text-sm">
-                         {new Date(tx.date).toLocaleDateString()}
-                       </td>
-                     </tr>
-                   ))
+                  transactions.map((tx) => (
+                    <tr key={tx.id} className="hover:bg-secondary/50 transition-colors">
+                      <td className="p-4 text-foreground font-medium">{String(tx.package || 'Unknown Package')}</td>
+                      <td className="p-4 text-muted-foreground font-mono text-xs max-w-[150px] truncate" title={tx.buyer_wallet}>{tx.buyer_wallet}</td>
+                      <td className="p-4 text-foreground">{Number(tx.amount).toLocaleString()} USDT</td>
+                      <td className="p-4 text-emerald-500 font-bold">+{Number(tx.commission).toLocaleString()} USDT</td>
+                      <td className="p-4">
+                        <Badge variant="outline" className="border-emerald-500/30 text-emerald-500 bg-emerald-500/10 uppercase text-xs">
+                          Paid
+                        </Badge>
+                      </td>
+                      <td className="p-4 text-muted-foreground text-sm">
+                        {new Date(tx.date).toLocaleDateString()}
+                      </td>
+                    </tr>
+                  ))
                 )}
               </tbody>
             </table>
@@ -1688,9 +1688,9 @@ function Footer() {
             <span className="text-xs">© 2018</span>
           </div>
           <div className="flex gap-6 text-sm text-muted-foreground">
-             <a href="#" className="hover:text-primary transition-colors">Terms of Use</a>
-             <a href="#" className="hover:text-primary transition-colors">Privacy</a>
-             <a href="#" className="hover:text-primary transition-colors">Flash Support</a>
+            <a href="#" className="hover:text-primary transition-colors">Terms of Use</a>
+            <a href="#" className="hover:text-primary transition-colors">Privacy</a>
+            <a href="#" className="hover:text-primary transition-colors">Flash Support</a>
           </div>
         </div>
       </div>
