@@ -210,49 +210,55 @@ export function CryptoPriceTicker({ count = 5 }: { count?: number }) {
   const [tickers, setTickers] = useState<PriceTicker[]>([])
   const [offset, setOffset] = useState(0)
 
-  useEffect(() => {
-    const cryptoData = [
-      { pair: 'BTC/USDT', basePrice: 45000 },
-      { pair: 'ETH/USDT', basePrice: 2500 },
-      { pair: 'BNB/USDT', basePrice: 320 },
-      { pair: 'SOL/USDT', basePrice: 105 },
-      { pair: 'XRP/USDT', basePrice: 0.52 },
-    ]
+  // Fetch live prices from API
+  const fetchLivePrices = async () => {
+    try {
+      const response = await fetch('/api/crypto/prices')
+      if (!response.ok) throw new Error('Failed to fetch prices')
+      const data = await response.json()
 
-    const initialTickers: PriceTicker[] = cryptoData.slice(0, count).map((crypto, i) => {
-      const change = (Math.random() - 0.5) * 10
-      const price = (crypto.basePrice * (1 + change / 100)).toFixed(2)
-      return {
+      if (data.data && data.data.length > 0) {
+        const liveTickers: PriceTicker[] = data.data.slice(0, count).map((crypto: any, i: number) => ({
+          id: i,
+          pair: `${crypto.symbol}/USDT`,
+          price: `$${parseFloat(crypto.price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+          change: parseFloat(crypto.percent_change_24h.toFixed(2)),
+          x: i * 25,
+        }))
+        setTickers(liveTickers)
+      }
+    } catch (error) {
+      console.error('Failed to fetch live prices:', error)
+      // Fallback to mock data
+      const fallbackData = [
+        { pair: 'BTC/USDT', basePrice: 76900 },
+        { pair: 'ETH/USDT', basePrice: 2309 },
+        { pair: 'BNB/USDT', basePrice: 755 },
+        { pair: 'SOL/USDT', basePrice: 100 },
+        { pair: 'XRP/USDT', basePrice: 1.59 },
+      ]
+      const fallbackTickers: PriceTicker[] = fallbackData.slice(0, count).map((crypto, i) => ({
         id: i,
         pair: crypto.pair,
-        price: `$${price}`,
-        change: parseFloat(change.toFixed(2)),
+        price: `$${crypto.basePrice.toLocaleString()}`,
+        change: 0,
         x: i * 25,
-      }
-    })
+      }))
+      setTickers(fallbackTickers)
+    }
+  }
 
-    setTickers(initialTickers)
+  useEffect(() => {
+    // Fetch initial prices
+    fetchLivePrices()
+
+    // Refresh prices every 15 seconds
+    const priceInterval = setInterval(fetchLivePrices, 15000)
 
     // Animate scroll
     const scrollInterval = setInterval(() => {
       setOffset((prev) => (prev - 0.1) % 100)
     }, 50)
-
-    // Update prices occasionally
-    const priceInterval = setInterval(() => {
-      setTickers((prevTickers) =>
-        prevTickers.map((ticker) => {
-          const change = (Math.random() - 0.5) * 10
-          const basePrice = cryptoData.find((c) => c.pair === ticker.pair)?.basePrice || 100
-          const price = (basePrice * (1 + change / 100)).toFixed(2)
-          return {
-            ...ticker,
-            price: `$${price}`,
-            change: parseFloat(change.toFixed(2)),
-          }
-        })
-      )
-    }, 3000)
 
     return () => {
       clearInterval(scrollInterval)
@@ -274,9 +280,8 @@ export function CryptoPriceTicker({ count = 5 }: { count?: number }) {
             <span className="text-cyan-400 font-semibold">{ticker.pair}</span>
             <span className="text-white">{ticker.price}</span>
             <span
-              className={`${
-                ticker.change >= 0 ? 'text-emerald-400' : 'text-red-400'
-              } font-semibold`}
+              className={`${ticker.change >= 0 ? 'text-emerald-400' : 'text-red-400'
+                } font-semibold`}
             >
               {ticker.change >= 0 ? '+' : ''}
               {ticker.change}%

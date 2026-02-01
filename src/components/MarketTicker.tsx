@@ -49,7 +49,7 @@ function transformApiData(prices: CryptoPrice[]): CryptoData[] {
 }
 
 export function TopTicker() {
-  const { prices, loading, error } = useCryptoPrices(60000) // Refresh every 60 seconds
+  const { prices, loading, error } = useCryptoPrices(15000) // Refresh every 15 seconds
   const [marketData, setMarketData] = useState<CryptoData[]>(INITIAL_MARKET_DATA)
 
   // Update market data when prices load
@@ -81,7 +81,7 @@ export function TopTicker() {
 
 
 export function HeroMarketSlides() {
-  const { prices, loading, error } = useCryptoPrices(60000) // Refresh every 60 seconds
+  const { prices, loading, error } = useCryptoPrices(15000) // Refresh every 15 seconds
   const [marketData, setMarketData] = useState<CryptoData[]>(INITIAL_MARKET_DATA)
   const [currentIndex, setCurrentIndex] = useState(0)
 
