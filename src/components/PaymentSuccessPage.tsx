@@ -1,11 +1,11 @@
 'use client'
 
-import { CheckCircle, Copy, ArrowLeft, Award, Share2 } from 'lucide-react'
+import { CheckCircle, Copy, ArrowLeft, Share2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { Package as PackageType, User as UserType } from '@prisma/client'
 import { useState, useRef } from 'react'
 import { getTierConfig } from '@/lib/tiers'
-import { TierBadge } from '@/components/TierBadge'
+import html2canvas from 'html2canvas-pro'
 
 // Extended user type with account_tier
 type ExtendedUserType = UserType & { account_tier?: string }
@@ -59,36 +59,29 @@ export function PaymentSuccessPage({ isOpen, package: pkg, user, transactionId, 
         setShareStatus('Capturing screenshot...')
 
         try {
-            // Dynamically import dom-to-image-more
-            const domtoimage = await import('dom-to-image-more')
+            await new Promise(resolve => setTimeout(resolve, 100))
 
-            // Wait a bit for any pending renders
-            await new Promise(resolve => setTimeout(resolve, 200))
-
-            // Capture as PNG blob
-            const blob = await domtoimage.toBlob(element, {
-                bgcolor: '#000000',
-                quality: 1,
+            const canvas = await html2canvas(element, {
+                backgroundColor: '#000000',
                 scale: 2,
-                style: {
-                    transform: 'scale(1)',
-                    transformOrigin: 'top left'
-                }
+                useCORS: true,
+                logging: false,
+            })
+
+            setShareStatus('Creating image...')
+
+            const blob = await new Promise<Blob | null>((resolve) => {
+                canvas.toBlob((b) => resolve(b), 'image/png', 1.0)
             })
 
             if (!blob) {
                 throw new Error('Failed to create image')
             }
 
-            setShareStatus('Creating image...')
-
-            // Create file for sharing
             const file = new File([blob], `flash-btc-receipt-${Date.now()}.png`, { type: 'image/png' })
 
-            // Check if Web Share API is available with file sharing
             if (typeof navigator !== 'undefined' && navigator.share) {
                 try {
-                    // Check if can share files
                     if (navigator.canShare && navigator.canShare({ files: [file] })) {
                         setShareStatus('Opening share menu...')
                         await navigator.share({
@@ -98,7 +91,6 @@ export function PaymentSuccessPage({ isOpen, package: pkg, user, transactionId, 
                         })
                         setShareStatus('Shared successfully!')
                     } else {
-                        // Download fallback
                         downloadImage(blob)
                     }
                 } catch (shareError: any) {
@@ -109,7 +101,6 @@ export function PaymentSuccessPage({ isOpen, package: pkg, user, transactionId, 
                     }
                 }
             } else {
-                // No Web Share API - download instead
                 downloadImage(blob)
             }
         } catch (error: any) {
@@ -117,7 +108,6 @@ export function PaymentSuccessPage({ isOpen, package: pkg, user, transactionId, 
             setShareStatus(`Error: ${error.message || 'Failed to capture'}`)
         } finally {
             setSharing(false)
-            // Clear status after 3 seconds
             setTimeout(() => setShareStatus(''), 3000)
         }
     }
@@ -138,186 +128,227 @@ export function PaymentSuccessPage({ isOpen, package: pkg, user, transactionId, 
         setShareStatus('Image downloaded!')
     }
 
+    const tierName = user.account_tier === 'gold' ? 'Gold' : user.account_tier === 'silver' ? 'Silver' : 'Bronze'
+
     return (
         <div className="fixed inset-0 z-50 bg-black overflow-y-auto">
             <div className="min-h-full flex flex-col items-center justify-center px-4 py-8">
                 {/* Capturable Content */}
                 <div
                     ref={contentRef}
-                    className="w-full max-w-md"
                     style={{
-                        padding: '16px',
-                        backgroundColor: '#000000'
+                        width: '100%',
+                        maxWidth: '400px',
+                        padding: '32px 24px',
+                        backgroundColor: '#000000',
+                        fontFamily: 'system-ui, -apple-system, sans-serif'
                     }}
                 >
 
-                    {/* Success Icon */}
-                    <div className="text-center mb-8">
-                        <div
-                            className="inline-flex items-center justify-center w-20 h-20 rounded-full mb-5"
-                            style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.2)' }}
-                        >
-                            <CheckCircle className="w-12 h-12" style={{ color: '#10b981' }} />
+                    {/* Header */}
+                    <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+                        {/* Success Circle with Checkmark */}
+                        <div style={{
+                            width: '72px',
+                            height: '72px',
+                            borderRadius: '50%',
+                            backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                            border: '2px solid #10b981',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            margin: '0 auto 20px auto'
+                        }}>
+                            {/* CSS Checkmark */}
+                            <div style={{
+                                width: '24px',
+                                height: '14px',
+                                borderLeft: '4px solid #10b981',
+                                borderBottom: '4px solid #10b981',
+                                transform: 'rotate(-45deg)',
+                                marginTop: '-4px'
+                            }} />
                         </div>
-                        <h1 className="text-2xl font-semibold text-white mb-2">Payment Successful</h1>
-                        <p className="text-sm" style={{ color: '#71717a' }}>Your Flash BTC license has been activated</p>
+                        <h1 style={{
+                            fontSize: '22px',
+                            fontWeight: 600,
+                            color: '#ffffff',
+                            margin: '0 0 8px 0',
+                            letterSpacing: '-0.02em'
+                        }}>
+                            Payment Successful
+                        </h1>
+                        <p style={{
+                            fontSize: '14px',
+                            color: '#71717a',
+                            margin: 0
+                        }}>
+                            Your Flash BTC license has been activated
+                        </p>
                     </div>
 
                     {/* Amount Display */}
-                    <div
-                        className="text-center py-6 mb-6 rounded-xl"
-                        style={{ backgroundColor: '#09090b', border: '1px solid #27272a' }}
-                    >
-                        <div className="text-4xl font-bold text-white mb-2">
+                    <div style={{
+                        textAlign: 'center',
+                        padding: '28px 20px',
+                        marginBottom: '20px',
+                        backgroundColor: '#0a0a0a',
+                        borderRadius: '12px',
+                        border: '1px solid #1f1f1f'
+                    }}>
+                        <div style={{
+                            fontSize: '38px',
+                            fontWeight: 700,
+                            color: '#ffffff',
+                            marginBottom: '6px',
+                            letterSpacing: '-0.02em'
+                        }}>
                             {pkg.btc_amount} <span style={{ color: '#f7931a' }}>BTC</span>
                         </div>
-                        <div className="text-sm" style={{ color: '#71717a' }}>
+                        <div style={{ fontSize: '14px', color: '#71717a' }}>
                             ${pkg.price_usd.toLocaleString()} USDT
                         </div>
                     </div>
 
-                    {/* Commission Earned Card */}
-                    <div
-                        className="rounded-xl p-4 mb-6"
-                        style={{
-                            background: 'linear-gradient(to right, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.05))',
-                            border: '1px solid rgba(16, 185, 129, 0.2)'
-                        }}
-                    >
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div
-                                    className="w-10 h-10 rounded-lg flex items-center justify-center"
-                                    style={{ backgroundColor: 'rgba(16, 185, 129, 0.2)' }}
-                                >
-                                    <Award className="w-5 h-5" style={{ color: '#10b981' }} />
-                                </div>
-                                <div>
-                                    <p className="text-xs" style={{ color: '#71717a' }}>Commission Earned</p>
-                                    <p className="text-lg font-bold" style={{ color: '#34d399' }}>+${commissionAmount.toLocaleString()} USDT</p>
-                                </div>
+                    {/* Commission Card */}
+                    <div style={{
+                        padding: '16px 20px',
+                        marginBottom: '20px',
+                        backgroundColor: 'rgba(16, 185, 129, 0.08)',
+                        borderRadius: '12px',
+                        border: '1px solid rgba(16, 185, 129, 0.2)',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center'
+                    }}>
+                        <div>
+                            <p style={{ fontSize: '12px', color: '#71717a', margin: '0 0 4px 0' }}>Commission Earned</p>
+                            <p style={{ fontSize: '20px', fontWeight: 700, color: '#10b981', margin: 0 }}>
+                                +${commissionAmount.toLocaleString()}
+                            </p>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                            <div style={{
+                                display: 'inline-block',
+                                padding: '4px 12px',
+                                borderRadius: '6px',
+                                backgroundColor: 'rgba(247, 147, 26, 0.15)',
+                                border: '1px solid rgba(247, 147, 26, 0.3)',
+                                marginBottom: '4px'
+                            }}>
+                                <span style={{ fontSize: '13px', fontWeight: 600, color: '#f7931a' }}>{tierName}</span>
                             </div>
-                            <div className="text-right">
-                                <div className="flex items-center gap-2 mb-1">
-                                    <TierBadge tier={user.account_tier || 'bronze'} size="sm" />
-                                </div>
-                                <p className="text-xs" style={{ color: '#71717a' }}>{commissionRate}% Rate</p>
-                            </div>
+                            <p style={{ fontSize: '12px', color: '#71717a', margin: 0 }}>{commissionRate}% Rate</p>
                         </div>
                     </div>
 
-                    {/* Order Details Card */}
-                    <div
-                        className="rounded-xl overflow-hidden mb-6"
-                        style={{ backgroundColor: '#09090b', border: '1px solid #27272a' }}
-                    >
-                        <div className="px-4 py-3" style={{ borderBottom: '1px solid #27272a' }}>
-                            <h3 className="text-sm font-medium text-white">Order Details</h3>
+                    {/* Details Table */}
+                    <div style={{
+                        marginBottom: '20px',
+                        backgroundColor: '#0a0a0a',
+                        borderRadius: '12px',
+                        border: '1px solid #1f1f1f',
+                        overflow: 'hidden'
+                    }}>
+                        <div style={{ padding: '14px 20px', borderBottom: '1px solid #1f1f1f' }}>
+                            <span style={{ fontSize: '13px', fontWeight: 600, color: '#ffffff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Order Details</span>
                         </div>
 
-                        <div>
-                            <div className="flex justify-between items-center px-4 py-3" style={{ borderBottom: '1px solid #27272a' }}>
-                                <span className="text-sm" style={{ color: '#71717a' }}>Package</span>
-                                <span className="text-sm text-white font-medium">{pkg.name}</span>
-                            </div>
-
-                            <div className="flex justify-between items-center px-4 py-3" style={{ borderBottom: '1px solid #27272a' }}>
-                                <span className="text-sm" style={{ color: '#71717a' }}>BTC Amount</span>
-                                <span className="text-sm text-white font-medium">{pkg.btc_amount} BTC</span>
-                            </div>
-
-                            <div className="flex justify-between items-center px-4 py-3" style={{ borderBottom: '1px solid #27272a' }}>
-                                <span className="text-sm" style={{ color: '#71717a' }}>Duration</span>
-                                <span className="text-sm text-white font-medium">{pkg.duration} Days</span>
-                            </div>
-
-                            <div className="flex justify-between items-center px-4 py-3" style={{ borderBottom: '1px solid #27272a' }}>
-                                <span className="text-sm" style={{ color: '#71717a' }}>Daily Transfers</span>
-                                <span className="text-sm text-white font-medium">{pkg.transfers}</span>
-                            </div>
-
-                            <div className="flex justify-between items-center px-4 py-3" style={{ borderBottom: '1px solid #27272a' }}>
-                                <span className="text-sm" style={{ color: '#71717a' }}>Status</span>
-                                <span className="inline-flex items-center gap-1.5 text-sm font-medium" style={{ color: '#10b981' }}>
-                                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#10b981' }}></span>
-                                    Completed
+                        {[
+                            { label: 'Package', value: pkg.name },
+                            { label: 'BTC Amount', value: `${pkg.btc_amount} BTC` },
+                            { label: 'Duration', value: `${pkg.duration} Days` },
+                            { label: 'Daily Transfers', value: `${pkg.transfers}` },
+                            { label: 'Status', value: 'Completed', isStatus: true },
+                            { label: 'Date', value: timestamp },
+                            { label: 'Transaction ID', value: txId.slice(0, 18) + '...' },
+                        ].map((item, index) => (
+                            <div key={index} style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                padding: '14px 20px',
+                                borderBottom: index < 6 ? '1px solid #1f1f1f' : 'none'
+                            }}>
+                                <span style={{ fontSize: '14px', color: '#71717a' }}>{item.label}</span>
+                                <span style={{
+                                    fontSize: '14px',
+                                    fontWeight: 500,
+                                    color: item.isStatus ? '#10b981' : '#ffffff'
+                                }}>
+                                    {item.value}
                                 </span>
                             </div>
+                        ))}
+                    </div>
 
-                            <div className="flex justify-between items-center px-4 py-3" style={{ borderBottom: '1px solid #27272a' }}>
-                                <span className="text-sm" style={{ color: '#71717a' }}>Date & Time</span>
-                                <span className="text-sm text-white font-medium">{timestamp}</span>
-                            </div>
+                    {/* Summary Table */}
+                    <div style={{
+                        marginBottom: '24px',
+                        backgroundColor: '#0a0a0a',
+                        borderRadius: '12px',
+                        border: '1px solid #1f1f1f',
+                        overflow: 'hidden'
+                    }}>
+                        <div style={{ padding: '14px 20px', borderBottom: '1px solid #1f1f1f' }}>
+                            <span style={{ fontSize: '13px', fontWeight: 600, color: '#ffffff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Summary</span>
+                        </div>
 
-                            <div className="flex justify-between items-start px-4 py-3">
-                                <span className="text-sm" style={{ color: '#71717a' }}>Transaction ID</span>
-                                <div className="flex items-center gap-2">
-                                    <span className="text-sm text-white font-mono max-w-[160px] truncate">{txId}</span>
-                                    <button
-                                        onClick={handleCopy}
-                                        className="p-1.5 rounded-md transition-colors"
-                                        style={{ color: '#f7931a' }}
-                                        title="Copy"
-                                    >
-                                        {copied ? (
-                                            <CheckCircle className="w-4 h-4" style={{ color: '#10b981' }} />
-                                        ) : (
-                                            <Copy className="w-4 h-4" />
-                                        )}
-                                    </button>
-                                </div>
-                            </div>
+                        <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            padding: '14px 20px',
+                            borderBottom: '1px solid #1f1f1f'
+                        }}>
+                            <span style={{ fontSize: '14px', color: '#71717a' }}>Package Price</span>
+                            <span style={{ fontSize: '14px', color: '#ffffff' }}>${pkg.price_usd.toLocaleString()}</span>
+                        </div>
+                        <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            padding: '14px 20px',
+                            borderBottom: '1px solid #1f1f1f'
+                        }}>
+                            <span style={{ fontSize: '14px', color: '#71717a' }}>Commission ({commissionRate}%)</span>
+                            <span style={{ fontSize: '14px', fontWeight: 500, color: '#10b981' }}>+${commissionAmount.toLocaleString()}</span>
+                        </div>
+                        <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            padding: '14px 20px',
+                            backgroundColor: '#111111'
+                        }}>
+                            <span style={{ fontSize: '14px', fontWeight: 600, color: '#ffffff' }}>Total Paid</span>
+                            <span style={{ fontSize: '14px', fontWeight: 700, color: '#f7931a' }}>${pkg.price_usd.toLocaleString()} USDT</span>
                         </div>
                     </div>
 
-                    {/* Payment Summary Card */}
-                    <div
-                        className="rounded-xl overflow-hidden mb-6"
-                        style={{ backgroundColor: '#09090b', border: '1px solid #27272a' }}
-                    >
-                        <div className="px-4 py-3" style={{ borderBottom: '1px solid #27272a' }}>
-                            <h3 className="text-sm font-medium text-white">Payment Summary</h3>
-                        </div>
-
-                        <div>
-                            <div className="flex justify-between items-center px-4 py-3" style={{ borderBottom: '1px solid #27272a' }}>
-                                <span className="text-sm" style={{ color: '#71717a' }}>Package Price</span>
-                                <span className="text-sm text-white">${pkg.price_usd.toLocaleString()}</span>
-                            </div>
-                            <div className="flex justify-between items-center px-4 py-3" style={{ borderBottom: '1px solid #27272a' }}>
-                                <span className="text-sm" style={{ color: '#71717a' }}>Your Commission ({commissionRate}%)</span>
-                                <span className="text-sm font-medium" style={{ color: '#34d399' }}>+${commissionAmount.toLocaleString()}</span>
-                            </div>
-                            <div className="flex justify-between items-center px-4 py-3" style={{ backgroundColor: 'rgba(24, 24, 27, 0.3)' }}>
-                                <span className="text-sm font-medium text-white">Total Paid</span>
-                                <span className="text-sm font-bold" style={{ color: '#f7931a' }}>${pkg.price_usd.toLocaleString()} USDT</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Branding Footer (visible in screenshot) */}
-                    <div className="text-center py-3" style={{ borderTop: '1px solid #27272a' }}>
-                        <p className="text-xs" style={{ color: '#71717a' }}>Flash BTC Protocol • Secure Transaction</p>
+                    {/* Footer */}
+                    <div style={{
+                        textAlign: 'center',
+                        paddingTop: '20px',
+                        borderTop: '1px solid #1f1f1f'
+                    }}>
+                        <p style={{ fontSize: '11px', color: '#525252', margin: 0, letterSpacing: '0.03em' }}>
+                            Flash BTC Protocol | Secure Transaction
+                        </p>
                     </div>
 
                 </div>
 
-                {/* Action Buttons (outside screenshot area) */}
-                <div className="w-full max-w-md space-y-3 px-4 mt-4">
-                    {/* Status Message */}
+                {/* Action Buttons */}
+                <div className="w-full max-w-md space-y-3 px-4 mt-6">
                     {shareStatus && (
-                        <div className="text-center text-sm py-2" style={{ color: '#71717a' }}>
+                        <div className="text-center text-sm py-2 text-zinc-500">
                             {shareStatus}
                         </div>
                     )}
 
-                    {/* Share Button */}
                     <Button
                         onClick={handleShare}
                         disabled={sharing}
                         variant="outline"
-                        className="w-full h-12 text-white rounded-xl"
-                        style={{ borderColor: '#27272a' }}
+                        className="w-full h-12 text-white rounded-xl border-zinc-700 hover:bg-zinc-800"
                     >
                         {sharing ? (
                             <>
@@ -332,20 +363,30 @@ export function PaymentSuccessPage({ isOpen, package: pkg, user, transactionId, 
                         )}
                     </Button>
 
-                    {/* Back to Dashboard Button */}
                     <Button
                         onClick={onContinue}
-                        className="w-full h-12 font-semibold rounded-xl"
-                        style={{ backgroundColor: '#f7931a', color: '#000000' }}
+                        className="w-full h-12 font-semibold rounded-xl bg-[#f7931a] hover:bg-[#f7931a]/90 text-black"
                     >
                         <ArrowLeft className="w-4 h-4 mr-2" />
                         Back to Dashboard
                     </Button>
 
-                    {/* Footer Note */}
-                    <p className="text-center text-xs" style={{ color: '#71717a' }}>
-                        Commission has been added to your wallet balance.
-                    </p>
+                    <button
+                        onClick={handleCopy}
+                        className="w-full flex items-center justify-center gap-2 text-sm text-zinc-500 hover:text-white py-2 transition-colors"
+                    >
+                        {copied ? (
+                            <>
+                                <CheckCircle className="w-4 h-4 text-emerald-500" />
+                                <span>Transaction ID Copied!</span>
+                            </>
+                        ) : (
+                            <>
+                                <Copy className="w-4 h-4" />
+                                <span>Copy Full Transaction ID</span>
+                            </>
+                        )}
+                    </button>
                 </div>
             </div>
         </div>
