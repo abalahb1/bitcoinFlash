@@ -45,7 +45,7 @@ export function AccountSettings({ user, onUpdate }: {
     network: string
     error: string
   } | null>(null)
-  
+
   const [showBenefits, setShowBenefits] = useState(false)
   const currentTier = user.account_tier?.toLowerCase() || 'bronze'
   // Use a fallback for tierInfo to prevent crash if tier is invalid
@@ -66,12 +66,12 @@ export function AccountSettings({ user, onUpdate }: {
   // I will split this into two edits: 
   // 1. Update Type and Constants 
   // 2. Add the UI element.
-  
+
   // This tool call will ONLY update the Type and render the new UI section.
-  
+
   // Actually, let's use multi_replace for safety if I need to touch multiple spots, but here user type is at top and render is at bottom.
   // Let's stick to replace_file_content for the render part first? No, I need the type updated first.
-  
+
   // Let's try to do it all if possible or use multi.
   // I'll use multi_replace to be safe and clean.
 
@@ -88,36 +88,12 @@ export function AccountSettings({ user, onUpdate }: {
     let network = 'Unknown'
     let error = ''
 
-    // Bitcoin (BTC) validation
-    if (/^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/.test(trimmedAddress)) {
-      isValid = true
-      network = 'Bitcoin (Legacy/SegWit)'
-    } else if (/^bc1[a-z0-9]{39,59}$/.test(trimmedAddress)) {
-      isValid = true
-      network = 'Bitcoin (Native SegWit)'
-    }
-    // Tron (TRX) validation
-    else if (/^T[A-Za-z1-9]{33}$/.test(trimmedAddress)) {
+    // Tron (TRX) validation - Only accept TRC20
+    if (/^T[A-Za-z1-9]{33}$/.test(trimmedAddress)) {
       isValid = true
       network = 'Tron (TRC20)'
-    }
-    // Ethereum (ETH) validation
-    else if (/^0x[a-fA-F0-9]{40}$/.test(trimmedAddress)) {
-      isValid = true
-      network = 'Ethereum (ERC20)'
-    }
-    // Solana validation
-    else if (/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(trimmedAddress) && !trimmedAddress.startsWith('T') && !trimmedAddress.startsWith('1') && !trimmedAddress.startsWith('3')) {
-      isValid = true
-      network = 'Solana'
-    }
-    // Litecoin validation
-    else if (/^[LM][a-km-zA-HJ-NP-Z1-9]{26,33}$/.test(trimmedAddress)) {
-      isValid = true
-      network = 'Litecoin'
-    }
-    else {
-      error = 'Invalid wallet address format. Please enter a valid cryptocurrency address.'
+    } else {
+      error = 'Invalid address. Only USDT TRC20 addresses are accepted (starts with T).'
     }
 
     setWalletValidation({ isValid, network, error })
@@ -219,8 +195,8 @@ export function AccountSettings({ user, onUpdate }: {
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-xl font-bold text-white capitalize">{user.kyc_status}</span>
-                <Badge 
-                  variant={user.kyc_status === 'approved' ? 'default' : 'secondary'} 
+                <Badge
+                  variant={user.kyc_status === 'approved' ? 'default' : 'secondary'}
                   className={user.kyc_status === 'approved' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'}
                 >
                   {user.kyc_status === 'approved' ? 'Active' : 'Pending'}
@@ -246,59 +222,59 @@ export function AccountSettings({ user, onUpdate }: {
       <Card className="bg-card border-border relative overflow-hidden">
         <div className="absolute top-0 right-0 p-32 bg-gradient-to-br from-yellow-500/10 to-transparent rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
         <CardHeader>
-           <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-foreground flex items-center gap-2">
-                   <div className="p-2 bg-secondary rounded-lg">
-                      <Shield className={`w-5 h-5 ${tierInfo.color}`} />
-                   </div>
-                   Current Tier: <span className={`capitalize ${tierInfo.color}`}>{currentTier}</span>
-                </CardTitle>
-                <CardDescription className="text-muted-foreground mt-1">
-                   Your account privileges and commission rates
-                </CardDescription>
-              </div>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => setShowBenefits(!showBenefits)}
-                className="border-white/10 hover:bg-white/5"
-              >
-                {showBenefits ? 'Hide Features' : 'View Tier Features'}
-              </Button>
-           </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-foreground flex items-center gap-2">
+                <div className="p-2 bg-secondary rounded-lg">
+                  <Shield className={`w-5 h-5 ${tierInfo.color}`} />
+                </div>
+                Current Tier: <span className={`capitalize ${tierInfo.color}`}>{currentTier}</span>
+              </CardTitle>
+              <CardDescription className="text-muted-foreground mt-1">
+                Your account privileges and commission rates
+              </CardDescription>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowBenefits(!showBenefits)}
+              className="border-white/10 hover:bg-white/5"
+            >
+              {showBenefits ? 'Hide Features' : 'View Tier Features'}
+            </Button>
+          </div>
         </CardHeader>
-        
+
         {showBenefits && (
           <CardContent className="animate-in fade-in slide-in-from-top-2 duration-300">
-             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-2">
-                {Object.entries(TIER_BENEFITS).map(([tier, info]) => (
-                   <div 
-                      key={tier} 
-                      className={`
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-2">
+              {Object.entries(TIER_BENEFITS).map(([tier, info]) => (
+                <div
+                  key={tier}
+                  className={`
                         rounded-xl p-4 border transition-all duration-300
-                        ${tier === currentTier 
-                           ? 'bg-white/10 border-white/20 shadow-lg scale-105 ring-1 ring-white/20' 
-                           : 'bg-white/5 border-white/5 opacity-60 hover:opacity-100'
-                        }
+                        ${tier === currentTier
+                      ? 'bg-white/10 border-white/20 shadow-lg scale-105 ring-1 ring-white/20'
+                      : 'bg-white/5 border-white/5 opacity-60 hover:opacity-100'
+                    }
                       `}
-                   >
-                      <div className="flex items-center justify-between mb-3">
-                         <span className={`font-bold capitalize ${info.color}`}>{tier}</span>
-                         {tier === currentTier && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
-                      </div>
-                      <div className="text-2xl font-bold text-white mb-4">{info.commission} <span className="text-xs text-gray-500 font-normal">comm.</span></div>
-                      <ul className="space-y-2">
-                         {info.features.map((feature, i) => (
-                            <li key={i} className="text-xs text-gray-300 flex items-center gap-2">
-                               <div className="w-1 h-1 rounded-full bg-gray-500" />
-                               {feature}
-                            </li>
-                         ))}
-                      </ul>
-                   </div>
-                ))}
-             </div>
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <span className={`font-bold capitalize ${info.color}`}>{tier}</span>
+                    {tier === currentTier && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
+                  </div>
+                  <div className="text-2xl font-bold text-white mb-4">{info.commission} <span className="text-xs text-gray-500 font-normal">comm.</span></div>
+                  <ul className="space-y-2">
+                    {info.features.map((feature, i) => (
+                      <li key={i} className="text-xs text-gray-300 flex items-center gap-2">
+                        <div className="w-1 h-1 rounded-full bg-gray-500" />
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
           </CardContent>
         )}
       </Card>
@@ -318,24 +294,22 @@ export function AccountSettings({ user, onUpdate }: {
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-2">
-            <Label className="text-gray-300 font-medium">Wallet Address (BTC/USDT/ETH)</Label>
+            <Label className="text-gray-300 font-medium">Wallet Address (USDT TRC20)</Label>
             <Input
               value={commissionWallet}
               onChange={handleWalletChange}
               placeholder="Enter your wallet address"
-              className={`bg-black/40 border-gray-700 text-white font-mono h-11 focus:border-cyan-500 transition-colors ${
-                walletValidation?.isValid ? 'border-emerald-500/50' : 
+              className={`bg-black/40 border-gray-700 text-white font-mono h-11 focus:border-cyan-500 transition-colors ${walletValidation?.isValid ? 'border-emerald-500/50' :
                 walletValidation?.error ? 'border-red-500/50' : ''
-              }`}
+                }`}
             />
-            
+
             {/* Validation Feedback */}
             {walletValidation && (
-              <div className={`mt-2 p-3 rounded-lg border ${
-                walletValidation.isValid 
-                  ? 'bg-emerald-500/10 border-emerald-500/30' 
-                  : 'bg-red-500/10 border-red-500/30'
-              }`}>
+              <div className={`mt-2 p-3 rounded-lg border ${walletValidation.isValid
+                ? 'bg-emerald-500/10 border-emerald-500/30'
+                : 'bg-red-500/10 border-red-500/30'
+                }`}>
                 {walletValidation.isValid ? (
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
@@ -375,133 +349,133 @@ export function AccountSettings({ user, onUpdate }: {
 
       {/* KYC Upload - Only show if not approved */}
       {user.kyc_status !== 'approved' && (
-      <Card className="bg-card border-border">
-        <CardHeader>
-          <CardTitle className="text-foreground flex items-center gap-2">
-             <div className="p-2 bg-secondary rounded-lg">
-              <FileCheck className="w-5 h-5 text-primary" />
-            </div>
-            Identity Verification (KYC)
-          </CardTitle>
-          <CardDescription className="text-muted-foreground">
-            Required to activate your agent status and withdraw commissions
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          
-          <div className="grid md:grid-cols-2 gap-6">
-            {/* Passport Upload */}
-            <div className="space-y-4">
-              <Label className="text-gray-300 font-medium flex items-center gap-2">
-                <UserSquare2 className="w-4 h-4 text-cyan-400" />
-                Passport / ID Card
-              </Label>
-              {user.kyc_passport_url ? (
-                <div className="mt-2 relative group overflow-hidden rounded-xl border border-cyan-500/30">
-                  <img src={user.kyc_passport_url} alt="Passport" className="w-full h-48 object-cover transition-transform group-hover:scale-105" />
-                  <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <span className="text-white flex items-center gap-2 bg-cyan-500/20 px-4 py-2 rounded-full border border-cyan-500/50 backdrop-blur-sm">
-                      <FileCheck className="w-4 h-4" /> Uploaded
-                    </span>
-                  </div>
-                </div>
-              ) : (
-                <div className="mt-2">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], 'passport')}
-                    className="hidden"
-                    id="passport-upload"
-                    disabled={uploadingPassport}
-                  />
-                  <label htmlFor="passport-upload" className="block w-full h-48 border-2 border-dashed border-gray-700/50 bg-black/20 rounded-xl hover:border-cyan-500/50 hover:bg-cyan-500/5 transition-all cursor-pointer flex flex-col items-center justify-center gap-3 group">
-                    <div className="p-4 bg-cyan-500/10 rounded-full group-hover:scale-110 transition-transform duration-300">
-                      {uploadingPassport ? (
-                        <Loader2 className="w-6 h-6 text-cyan-400 animate-spin" />
-                      ) : (
-                        <Upload className="w-6 h-6 text-cyan-400" />
-                      )}
-                    </div>
-                    <div className="text-center">
-                      <span className="text-gray-300 font-medium block">Click to upload</span>
-                      <span className="text-gray-500 text-xs mt-1">JPG, PNG up to 5MB</span>
-                    </div>
-                  </label>
-                </div>
-              )}
-            </div>
+        <Card className="bg-card border-border">
+          <CardHeader>
+            <CardTitle className="text-foreground flex items-center gap-2">
+              <div className="p-2 bg-secondary rounded-lg">
+                <FileCheck className="w-5 h-5 text-primary" />
+              </div>
+              Identity Verification (KYC)
+            </CardTitle>
+            <CardDescription className="text-muted-foreground">
+              Required to activate your agent status and withdraw commissions
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
 
-            {/* Selfie Upload - Enhanced with Live Face Capture */}
-            <div className="space-y-4">
-              <Label className="text-gray-300 font-medium flex items-center gap-2">
-                <Camera className="w-4 h-4 text-cyan-400" />
-                Live Face Verification
-              </Label>
-              {user.kyc_selfie_url ? (
-                <div className="mt-2 relative group overflow-hidden rounded-xl border border-cyan-500/30">
-                  <img src={user.kyc_selfie_url} alt="Selfie" className="w-full h-48 object-cover transition-transform group-hover:scale-105" />
-                  <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <span className="text-white flex items-center gap-2 bg-cyan-500/20 px-4 py-2 rounded-full border border-cyan-500/50 backdrop-blur-sm">
-                       <FileCheck className="w-4 h-4" /> Verified
-                    </span>
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Passport Upload */}
+              <div className="space-y-4">
+                <Label className="text-gray-300 font-medium flex items-center gap-2">
+                  <UserSquare2 className="w-4 h-4 text-cyan-400" />
+                  Passport / ID Card
+                </Label>
+                {user.kyc_passport_url ? (
+                  <div className="mt-2 relative group overflow-hidden rounded-xl border border-cyan-500/30">
+                    <img src={user.kyc_passport_url} alt="Passport" className="w-full h-48 object-cover transition-transform group-hover:scale-105" />
+                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <span className="text-white flex items-center gap-2 bg-cyan-500/20 px-4 py-2 rounded-full border border-cyan-500/50 backdrop-blur-sm">
+                        <FileCheck className="w-4 h-4" /> Uploaded
+                      </span>
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <div className="mt-2">
+                ) : (
+                  <div className="mt-2">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], 'passport')}
+                      className="hidden"
+                      id="passport-upload"
+                      disabled={uploadingPassport}
+                    />
+                    <label htmlFor="passport-upload" className="block w-full h-48 border-2 border-dashed border-gray-700/50 bg-black/20 rounded-xl hover:border-cyan-500/50 hover:bg-cyan-500/5 transition-all cursor-pointer flex flex-col items-center justify-center gap-3 group">
+                      <div className="p-4 bg-cyan-500/10 rounded-full group-hover:scale-110 transition-transform duration-300">
+                        {uploadingPassport ? (
+                          <Loader2 className="w-6 h-6 text-cyan-400 animate-spin" />
+                        ) : (
+                          <Upload className="w-6 h-6 text-cyan-400" />
+                        )}
+                      </div>
+                      <div className="text-center">
+                        <span className="text-gray-300 font-medium block">Click to upload</span>
+                        <span className="text-gray-500 text-xs mt-1">JPG, PNG up to 5MB</span>
+                      </div>
+                    </label>
+                  </div>
+                )}
+              </div>
+
+              {/* Selfie Upload - Enhanced with Live Face Capture */}
+              <div className="space-y-4">
+                <Label className="text-gray-300 font-medium flex items-center gap-2">
+                  <Camera className="w-4 h-4 text-cyan-400" />
+                  Live Face Verification
+                </Label>
+                {user.kyc_selfie_url ? (
+                  <div className="mt-2 relative group overflow-hidden rounded-xl border border-cyan-500/30">
+                    <img src={user.kyc_selfie_url} alt="Selfie" className="w-full h-48 object-cover transition-transform group-hover:scale-105" />
+                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <span className="text-white flex items-center gap-2 bg-cyan-500/20 px-4 py-2 rounded-full border border-cyan-500/50 backdrop-blur-sm">
+                        <FileCheck className="w-4 h-4" /> Verified
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-2">
                     {/* Toggle between Upload and Camera */}
                     {showCamera ? (
-                        <div className="space-y-4">
-                             <FaceCapture 
-                                onCapture={(file) => handleFileUpload(file, 'selfie')}
-                                loading={uploadingSelfie}
-                             />
-                             <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                onClick={() => setShowCamera(false)}
-                                className="w-full text-gray-400 hover:text-white"
-                             >
-                                Cancel Camera
-                             </Button>
-                        </div>
+                      <div className="space-y-4">
+                        <FaceCapture
+                          onCapture={(file) => handleFileUpload(file, 'selfie')}
+                          loading={uploadingSelfie}
+                        />
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setShowCamera(false)}
+                          className="w-full text-gray-400 hover:text-white"
+                        >
+                          Cancel Camera
+                        </Button>
+                      </div>
                     ) : (
-                        <div className="flex flex-col gap-3">
-                             <Button
-                                onClick={() => setShowCamera(true)}
-                                className="h-32 bg-secondary hover:bg-secondary/80 border border-primary/20 hover:border-primary hover:shadow-md transition-all group flex flex-col gap-3"
-                             >
-                                <div className="p-3 bg-primary/10 rounded-full group-hover:scale-110 transition-transform">
-                                   <Camera className="w-8 h-8 text-primary" />
-                                </div>
-                                <div className="text-center">
-                                    <span className="text-foreground font-medium block">Start Face Scan</span>
-                                    <span className="text-muted-foreground text-xs">Professional Verification</span>
-                                </div>
-                             </Button>
+                      <div className="flex flex-col gap-3">
+                        <Button
+                          onClick={() => setShowCamera(true)}
+                          className="h-32 bg-secondary hover:bg-secondary/80 border border-primary/20 hover:border-primary hover:shadow-md transition-all group flex flex-col gap-3"
+                        >
+                          <div className="p-3 bg-primary/10 rounded-full group-hover:scale-110 transition-transform">
+                            <Camera className="w-8 h-8 text-primary" />
+                          </div>
+                          <div className="text-center">
+                            <span className="text-foreground font-medium block">Start Face Scan</span>
+                            <span className="text-muted-foreground text-xs">Professional Verification</span>
+                          </div>
+                        </Button>
 
-                             {/* Fallback to file upload */}
-                             <div>
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], 'selfie')}
-                                    className="hidden"
-                                    id="selfie-upload"
-                                    disabled={uploadingSelfie}
-                                />
-                                <label htmlFor="selfie-upload" className="block w-full text-center py-2 text-xs text-gray-500 hover:text-gray-300 cursor-pointer transition-colors">
-                                    or upload a file manually
-                                </label>
-                             </div>
+                        {/* Fallback to file upload */}
+                        <div>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], 'selfie')}
+                            className="hidden"
+                            id="selfie-upload"
+                            disabled={uploadingSelfie}
+                          />
+                          <label htmlFor="selfie-upload" className="block w-full text-center py-2 text-xs text-gray-500 hover:text-gray-300 cursor-pointer transition-colors">
+                            or upload a file manually
+                          </label>
                         </div>
+                      </div>
                     )}
-                </div>
-              )}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
       )}
     </div>
   )
