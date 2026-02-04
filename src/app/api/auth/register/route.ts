@@ -1,28 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import bcrypt from 'bcryptjs'
+import { registerSchema } from '@/lib/validations'
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { name, email, phone, password } = body
-
-    // Validate input
-    if (!name || !email || !password) {
+    
+    // Validate input with Zod
+    const validation = registerSchema.safeParse(body)
+    if (!validation.success) {
+      const firstError = validation.error.issues[0]?.message || 'Invalid input'
       return NextResponse.json(
-        { error: 'All fields are required' },
+        { error: firstError },
         { status: 400 }
       )
     }
+    
+    const { name, username, phone, password } = validation.data
 
     // Check if user already exists
     const existingUser = await db.user.findUnique({
-      where: { email }
+      where: { username: username.toLowerCase().trim() }
     })
 
     if (existingUser) {
       return NextResponse.json(
-        { error: 'Email already registered' },
+        { error: 'Username already taken' },
         { status: 400 }
       )
     }
@@ -37,7 +41,7 @@ export async function POST(request: NextRequest) {
     const user = await db.user.create({
       data: {
         name,
-        email,
+        username: username.toLowerCase().trim(),
         phone,
         password: hashedPassword,
         wallet_ref: walletRef,
@@ -47,7 +51,7 @@ export async function POST(request: NextRequest) {
       select: {
         id: true,
         name: true,
-        email: true,
+        username: true,
         phone: true,
         wallet_balance_usdt: true,
         wallet_balance_btc: true,

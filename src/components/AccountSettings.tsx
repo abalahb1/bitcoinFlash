@@ -7,14 +7,15 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
-import { Upload, Loader2, ShieldCheck, Percent, Briefcase, FileCheck, Wallet, Camera, UserSquare2, CheckCircle2, Shield } from 'lucide-react'
+import { Upload, Loader2, ShieldCheck, Percent, Briefcase, FileCheck, Wallet, Camera, UserSquare2, CheckCircle2, Shield, Key, Eye, EyeOff, ChevronDown, ChevronUp } from 'lucide-react'
 import { FaceCapture } from '@/components/FaceCapture'
 import { extractApiError } from '@/lib/error-utils'
 
 type User = {
   id: string
   name: string
-  email: string
+  username: string
+  email?: string | null
   wallet_ref: string | null
   usdt_trc20_address: string | null
   kyc_passport_url: string | null
@@ -46,6 +47,16 @@ export function AccountSettings({ user, onUpdate }: {
     error: string
   } | null>(null)
 
+  // Password change states
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false)
+  const [showNewPassword, setShowNewPassword] = useState(false)
+  const [changingPassword, setChangingPassword] = useState(false)
+  const [passwordMessage, setPasswordMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null)
+  const [showPasswordChange, setShowPasswordChange] = useState(false)
+
   const [showBenefits, setShowBenefits] = useState(false)
   const currentTier = user.account_tier?.toLowerCase() || 'bronze'
   // Use a fallback for tierInfo to prevent crash if tier is invalid
@@ -54,6 +65,52 @@ export function AccountSettings({ user, onUpdate }: {
   const showMessage = (msg: string) => {
     setMessage(msg)
     setTimeout(() => setMessage(''), 3000)
+  }
+
+  // Handle password change
+  const handleChangePassword = async () => {
+    if (newPassword !== confirmPassword) {
+      setPasswordMessage({ text: 'New passwords do not match', type: 'error' })
+      setTimeout(() => setPasswordMessage(null), 3000)
+      return
+    }
+
+    if (newPassword.length < 8) {
+      setPasswordMessage({ text: 'Password must be at least 8 characters', type: 'error' })
+      setTimeout(() => setPasswordMessage(null), 3000)
+      return
+    }
+
+    setChangingPassword(true)
+    try {
+      const res = await fetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          current_password: currentPassword,
+          new_password: newPassword
+        })
+      })
+
+      const data = await res.json()
+
+      if (res.ok) {
+        setPasswordMessage({ text: 'Password changed successfully!', type: 'success' })
+        setCurrentPassword('')
+        setNewPassword('')
+        setConfirmPassword('')
+      } else {
+        setPasswordMessage({ 
+          text: data.error?.message || 'Failed to change password', 
+          type: 'error' 
+        })
+      }
+    } catch (error) {
+      setPasswordMessage({ text: 'Connection error', type: 'error' })
+    } finally {
+      setChangingPassword(false)
+      setTimeout(() => setPasswordMessage(null), 4000)
+    }
   }
 
   // Validate commission wallet address
@@ -279,7 +336,122 @@ export function AccountSettings({ user, onUpdate }: {
         )}
       </Card>
 
-      {/* Commission Wallet */}
+      {/* Change Password Section */}
+      <Card className="bg-card border-border shadow-sm">
+        <CardHeader 
+          className="cursor-pointer hover:bg-secondary/5 transition-colors" 
+          onClick={() => setShowPasswordChange(!showPasswordChange)}
+        >
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-foreground flex items-center gap-2">
+              <div className="p-2 bg-secondary rounded-lg">
+                <Key className="w-5 h-5 text-primary" />
+              </div>
+              Change Password
+            </CardTitle>
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+              {showPasswordChange ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </Button>
+          </div>
+          <CardDescription className="text-muted-foreground">
+            Update your account password for security
+          </CardDescription>
+        </CardHeader>
+        
+        {showPasswordChange && (
+          <CardContent className="space-y-4 animate-in slide-in-from-top-2 duration-200">
+            {passwordMessage && (
+            <Alert className={`border ${
+              passwordMessage.type === 'success' 
+                ? 'border-emerald-500/50 bg-emerald-500/10' 
+                : 'border-red-500/50 bg-red-500/10'
+            }`}>
+              <AlertDescription className={
+                passwordMessage.type === 'success' ? 'text-emerald-400' : 'text-red-400'
+              }>
+                {passwordMessage.text}
+              </AlertDescription>
+            </Alert>
+          )}
+
+          <div className="space-y-2">
+            <Label className="text-gray-300">Current Password</Label>
+            <div className="relative">
+              <Input
+                type={showCurrentPassword ? 'text' : 'password'}
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                placeholder="Enter current password"
+                className="bg-black/40 border-gray-700 text-white h-11 pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
+              >
+                {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-gray-300">New Password</Label>
+            <div className="relative">
+              <Input
+                type={showNewPassword ? 'text' : 'password'}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Enter new password"
+                className="bg-black/40 border-gray-700 text-white h-11 pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowNewPassword(!showNewPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
+              >
+                {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+            <p className="text-xs text-gray-500">
+              Must be at least 8 characters with uppercase, lowercase, and numbers
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-gray-300">Confirm New Password</Label>
+            <Input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Confirm new password"
+              className={`bg-black/40 border-gray-700 text-white h-11 ${
+                confirmPassword && newPassword !== confirmPassword ? 'border-red-500/50' : ''
+              }`}
+            />
+            {confirmPassword && newPassword !== confirmPassword && (
+              <p className="text-xs text-red-400">Passwords do not match</p>
+            )}
+          </div>
+
+          <Button
+            onClick={handleChangePassword}
+            disabled={changingPassword || !currentPassword || !newPassword || !confirmPassword || newPassword !== confirmPassword}
+            className="w-full bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/50 h-11 transition-all disabled:opacity-50"
+          >
+            {changingPassword ? (
+              <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Changing Password...</>
+            ) : (
+              <>
+                <Key className="w-4 h-4 mr-2" />
+                Change Password
+              </>
+            )}
+          </Button>
+        </CardContent>
+        )}
+      </Card>
+
+      {/* Commission Wallet - Original Card Below */}
       <Card className="bg-card border-border shadow-sm">
         <CardHeader>
           <CardTitle className="text-foreground flex items-center gap-2">

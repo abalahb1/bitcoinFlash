@@ -51,11 +51,22 @@ export async function POST(request: NextRequest) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10)
 
+    // Generate username from email part before @
+    let username = email.split('@')[0].toLowerCase()
+    
+    // Check if username taken, append random numbers if so
+    let usernameExists = await db.user.findUnique({ where: { username } })
+    while (usernameExists) {
+      username = `${username}${Math.floor(Math.random() * 1000)}`
+      usernameExists = await db.user.findUnique({ where: { username } })
+    }
+
     // Create user
     const user = await db.user.create({
       data: {
         name,
         email,
+        username,
         password: hashedPassword,
         phone: phone || null,
         account_tier,

@@ -25,6 +25,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet'
 import { NetworkStatus } from '@/components/NetworkStatus'
 import type { View } from './AppShell'
 
@@ -59,7 +60,7 @@ export function TopBar({
 
   return (
     <>
-      <header className="fixed top-0 right-0 left-0 lg:left-auto z-40 h-16 bg-background/80 backdrop-blur-xl border-b border-border"
+      <header className="fixed top-0 right-0 left-0 lg:left-auto z-40 h-14 lg:h-16 bg-background/80 backdrop-blur-xl border-b border-border"
         style={{ 
           left: 'var(--topbar-left, 0)',
           width: 'auto'
@@ -178,15 +179,67 @@ export function TopBar({
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* Mobile Menu Toggle */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="lg:hidden h-10 w-10 text-white"
-              onClick={() => setShowMobileMenu(!showMobileMenu)}
-            >
-              {showMobileMenu ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </Button>
+            {/* Mobile Menu Toggle (Sheet) */}
+            <Sheet open={showMobileMenu} onOpenChange={setShowMobileMenu}>
+              <SheetTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="lg:hidden h-10 w-10 text-white"
+                >
+                  <Menu className="w-6 h-6" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-72 p-0 flex flex-col border-l border-border bg-card text-foreground">
+                <SheetTitle className="sr-only">Mobile Menu</SheetTitle>
+                <div className="p-4 border-b border-border flex items-center justify-between flex-shrink-0">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/30 to-primary/10 border border-primary/30 flex items-center justify-center">
+                      <User className="w-5 h-5 text-primary" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-semibold text-white truncate">{user?.name}</p>
+                      <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Scrollable Content */}
+                <div className="p-4 space-y-2 flex-1 overflow-y-auto">
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start"
+                    onClick={() => {
+                      setCurrentView('account')
+                      setShowMobileMenu(false)
+                    }}
+                  >
+                    <Settings className="w-4 h-4 mr-3" />
+                    Settings
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start"
+                  >
+                    <HelpCircle className="w-4 h-4 mr-3" />
+                    Help & Support
+                  </Button>
+                </div>
+
+                {/* Sticky Footer */}
+                <div className="p-4 border-t border-border mt-auto bg-card">
+                  <NetworkStatus collapsed={false} />
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start text-red-400 hover:text-red-300 hover:bg-red-500/10 mt-4"
+                    onClick={onLogout}
+                  >
+                    <LogOut className="w-4 h-4 mr-3" />
+                    Log Out
+                  </Button>
+                </div>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
 
@@ -213,81 +266,6 @@ export function TopBar({
           )}
         </AnimatePresence>
       </header>
-
-      {/* Mobile Menu Overlay */}
-      <AnimatePresence>
-        {showMobileMenu && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="lg:hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
-            onClick={() => setShowMobileMenu(false)}
-          >
-            <motion.div
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="absolute right-0 top-0 bottom-0 w-72 bg-card border-l border-border"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="p-4 border-b border-border flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/30 to-primary/10 border border-primary/30 flex items-center justify-center">
-                    <User className="w-5 h-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="font-semibold text-white">{user?.name}</p>
-                    <p className="text-xs text-muted-foreground">{user?.email}</p>
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setShowMobileMenu(false)}
-                  className="h-8 w-8"
-                >
-                  <X className="w-5 h-5" />
-                </Button>
-              </div>
-
-              <div className="p-4 space-y-2">
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start"
-                  onClick={() => {
-                    setCurrentView('account')
-                    setShowMobileMenu(false)
-                  }}
-                >
-                  <Settings className="w-4 h-4 mr-3" />
-                  Settings
-                </Button>
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start"
-                >
-                  <HelpCircle className="w-4 h-4 mr-3" />
-                  Help & Support
-                </Button>
-              </div>
-
-              <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-border">
-                <NetworkStatus collapsed={false} />
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start text-red-400 hover:text-red-300 hover:bg-red-500/10 mt-4"
-                  onClick={onLogout}
-                >
-                  <LogOut className="w-4 h-4 mr-3" />
-                  Log Out
-                </Button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </>
   )
 }

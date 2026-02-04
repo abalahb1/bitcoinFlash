@@ -221,25 +221,30 @@ function StatsCard({ title, value, subtitle, icon: Icon, color }: {
   color: 'blue' | 'yellow' | 'orange' | 'green'
 }) {
   const colorClasses = {
-    blue: 'from-blue-500/10 to-cyan-500/10 border-blue-500/30 text-blue-400',
-    yellow: 'from-yellow-500/10 to-orange-500/10 border-yellow-500/30 text-yellow-400',
-    orange: 'from-orange-500/10 to-red-500/10 border-orange-500/30 text-orange-400',
-    green: 'from-emerald-500/10 to-teal-500/10 border-emerald-500/30 text-emerald-400'
+    blue: 'border-blue-500/20 text-blue-400 bg-blue-500/5 group-hover:border-blue-500/50',
+    yellow: 'border-yellow-500/20 text-yellow-400 bg-yellow-500/5 group-hover:border-yellow-500/50',
+    orange: 'border-orange-500/20 text-orange-400 bg-orange-500/5 group-hover:border-orange-500/50',
+    green: 'border-emerald-500/20 text-emerald-400 bg-emerald-500/5 group-hover:border-emerald-500/50'
   }
 
   return (
-    <Card className={`bg-gradient-to-br ${colorClasses[color]} border`}>
-      <CardContent className="p-6">
+    <Card className={`border backdrop-blur-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1 group relative overflow-hidden ${colorClasses[color]}`}>
+      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-white/10 to-transparent rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 group-hover:opacity-100 opacity-50 transition-opacity" />
+      
+      <CardContent className="p-6 relative z-10">
         <div className="flex items-start justify-between mb-4">
-          <div className="p-2 rounded-lg bg-white/10">
-            <Icon className="w-5 h-5" />
+          <div>
+            <p className="text-muted-foreground text-sm font-medium mb-1 tracking-wide uppercase">{title}</p>
+            <p className="text-3xl font-black tracking-tight text-white mb-1">{value}</p>
+          </div>
+          <div className={`p-3 rounded-xl bg-white/5 border border-white/5 shadow-inner group-hover:scale-110 transition-transform duration-300`}>
+            <Icon className="w-6 h-6" />
           </div>
         </div>
-        <div>
-          <p className="text-gray-400 text-sm mb-1">{title}</p>
-          <p className="text-3xl font-bold text-white mb-1">{value}</p>
-          <p className="text-xs text-gray-500">{subtitle}</p>
-        </div>
+        <p className="text-xs text-muted-foreground font-medium flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-current opacity-75" />
+          {subtitle}
+        </p>
       </CardContent>
     </Card>
   )

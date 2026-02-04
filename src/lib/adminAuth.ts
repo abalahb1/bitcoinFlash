@@ -3,30 +3,36 @@ import { jwtVerify } from 'jose'
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'your-secret-key-change-in-production')
 const ADMIN_EMAIL = 'mohmmaed211@gmail.com'
+const ADMIN_USERNAME = 'admin'
 
-export async function checkAdminAccess(request: NextRequest): Promise<{ isAdmin: boolean; userId: string | null; email: string | null }> {
+export async function checkAdminAccess(request: NextRequest): Promise<{ isAdmin: boolean; userId: string | null; email: string | null; username: string | null }> {
   try {
     const token = request.cookies.get('auth-token')?.value
     if (!token) {
-      return { isAdmin: false, userId: null, email: null }
+      return { isAdmin: false, userId: null, email: null, username: null }
     }
 
     const { payload } = await jwtVerify(token, JWT_SECRET)
-    const email = payload.email as string
+    const email = payload.email as string || null
+    const username = payload.username as string || null
     const userId = payload.userId as string
 
+    // Check if user is admin by email OR username
+    const isAdmin = (email === ADMIN_EMAIL) || (username === ADMIN_USERNAME)
+
     return {
-      isAdmin: email === ADMIN_EMAIL,
+      isAdmin,
       userId,
-      email
+      email,
+      username
     }
   } catch {
-    return { isAdmin: false, userId: null, email: null }
+    return { isAdmin: false, userId: null, email: null, username: null }
   }
 }
 
 export async function requireAdmin(request: NextRequest) {
-  const { isAdmin, email } = await checkAdminAccess(request)
+  const { isAdmin } = await checkAdminAccess(request)
   
   if (!isAdmin) {
     return NextResponse.json(

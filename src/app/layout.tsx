@@ -53,6 +53,12 @@ export const metadata: Metadata = {
       "Generate Flash BTC instantly correctly visualized on major exchanges like Binance and Coinbase.",
     images: [ICON_URL],
   },
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+  },
 };
 
 export default function RootLayout({

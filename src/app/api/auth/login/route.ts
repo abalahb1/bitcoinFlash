@@ -18,28 +18,34 @@ export async function POST(request: NextRequest) {
       return apiValidationError(firstError, validation.error.issues)
     }
     
-    const { email, password } = validation.data
+    const { username, password } = validation.data
 
-    // Find user
-    const user = await db.user.findUnique({
-      where: { email: email.toLowerCase().trim() }
+    // Find user by username OR email
+    const identifier = username.toLowerCase().trim()
+    const user = await db.user.findFirst({
+      where: {
+        OR: [
+          { username: identifier },
+          { email: identifier }
+        ]
+      }
     })
 
     if (!user) {
-      return apiUnauthorized('Invalid email or password')
+      return apiUnauthorized('Invalid username or password')
     }
 
     // Verify password
     const isValidPassword = await bcrypt.compare(password, user.password)
 
     if (!isValidPassword) {
-      return apiUnauthorized('Invalid email or password')
+      return apiUnauthorized('Invalid username or password')
     }
 
     // Create JWT token
     const token = await new SignJWT({ 
       userId: user.id,
-      email: user.email 
+      username: user.username 
     })
       .setProtectedHeader({ alg: 'HS256' })
       .setExpirationTime('7d')
@@ -53,6 +59,7 @@ export async function POST(request: NextRequest) {
         user: {
           id: user.id,
           name: user.name,
+          username: user.username,
           email: user.email,
           phone: user.phone,
           wallet_balance_usdt: user.wallet_balance_usdt,

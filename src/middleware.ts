@@ -4,6 +4,7 @@ import { jwtVerify } from 'jose'
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'your-secret-key-change-in-production')
 const ADMIN_EMAIL = 'mohmmaed211@gmail.com'
+const ADMIN_USERNAME = 'admin'
 
 export async function middleware(request: NextRequest) {
   const token = request.cookies.get('auth-token')?.value
@@ -19,19 +20,21 @@ export async function middleware(request: NextRequest) {
   // 2. Verify Token and get user info
   let isValidToken = false
   let userEmail: string | null = null
+  let username: string | null = null
   
   if (token) {
     try {
       const { payload } = await jwtVerify(token, JWT_SECRET)
       isValidToken = true
-      userEmail = payload.email as string
+      userEmail = payload.email as string || null
+      username = payload.username as string || null
     } catch {
       isValidToken = false
     }
   }
 
   // 3. Check if user is admin
-  const isAdmin = userEmail === ADMIN_EMAIL
+  const isAdmin = (userEmail === ADMIN_EMAIL) || (username === ADMIN_USERNAME)
 
   // 4. Handle Admin Routes
   if (isAdminRoute) {

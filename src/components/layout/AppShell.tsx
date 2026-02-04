@@ -79,7 +79,7 @@ export function AppShell({
 
   return (
     <AppShellContext.Provider value={contextValue}>
-      <div className="min-h-screen-safe flex flex-col bg-background overflow-x-hidden">
+      <div className="min-h-screen-safe flex flex-col bg-background">
         {/* Desktop Sidebar - Hidden on mobile */}
         <div className="hidden lg:block fixed inset-y-0 left-0 z-30">
           <Sidebar
@@ -126,7 +126,7 @@ export function AppShell({
         </div>
 
         {/* Mobile Bottom Navigation */}
-        <div className="lg:hidden fixed bottom-0 inset-x-0 z-40">
+        <div className="lg:hidden fixed bottom-0 inset-x-0 z-50">
           <BottomNav
             currentView={currentView}
             setCurrentView={setCurrentView}

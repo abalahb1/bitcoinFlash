@@ -19,7 +19,6 @@ import {
 import { Loader2, Wallet, Copy, CheckCircle2, Bitcoin, Zap, Shield, Clock, User, LayoutDashboard, LogOut, Activity, BarChart2, History, ChevronRight, QrCode, AlertTriangle } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
 import type { User as UserType, Package as PackageType } from '@prisma/client'
-import { TopTicker, HeroMarketSlides } from '@/components/MarketTicker'
 import { WalletEnhancements } from '@/components/WalletEnhancements'
 import { AccountSettings } from '@/components/AccountSettings'
 import { KYCBlockingModal } from '@/components/KYCBlockingModal'
@@ -187,13 +186,6 @@ export default function DashboardPage() {
       setCurrentView={setCurrentView}
       onLogout={handleLogout}
     >
-      {/* Market Ticker - Shows on landing only */}
-      {currentView === 'landing' && (
-        <div className="-mx-4 md:-mx-6 lg:-mx-8 mb-6">
-          <TopTicker />
-        </div>
-      )}
-
       {/* Verification Banner */}
       {!user.is_verified && (
         <div className="relative z-50 mb-6">
@@ -216,6 +208,7 @@ export default function DashboardPage() {
       )}
 
       {/* Page Content */}
+      <div className="bg-gradient-to-b from-background to-background/50 min-h-screen pb-20">
       {currentView === 'landing' && (
         <LandingView
           setCurrentView={setCurrentView}
@@ -239,6 +232,7 @@ export default function DashboardPage() {
           onBack={() => setCurrentView('landing')}
         />
       )}
+      </div>
 
       {/* Payment Animation */}
       <PaymentAnimation
@@ -269,54 +263,72 @@ function LandingView({ setCurrentView, packages, onSelectPackage }: {
   onSelectPackage: (pkg: PackageType) => void
 }) {
   return (
-    <div className="space-y-16 animate-in fade-in slide-in-from-bottom-8 duration-700">
-      <HeroMarketSlides />
+    <div className="space-y-16 animate-in fade-in slide-in-from-bottom-8 duration-700 relative w-full">
+      {/* Background Decorative Elements */}
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 -z-10 pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-blue-500/5 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/2 -z-10 pointer-events-none" />
 
-      <div className="text-center space-y-8 max-w-4xl mx-auto py-8">
-        <Badge variant="outline" className="border-[#F7931A]/30 text-[#F7931A] px-4 py-1.5 rounded-full uppercase tracking-widest text-xs bg-[#F7931A]/5 backdrop-blur-sm">
-          <Bitcoin className="w-3 h-3 mr-2 fill-[#F7931A]" />
-          Bitcoin Flash Protocol V3
-        </Badge>
+      <div className="text-center space-y-8 max-w-4xl mx-auto py-12">
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#F7931A]/30 bg-[#F7931A]/10 backdrop-blur-md">
+          <Bitcoin className="w-4 h-4 text-[#F7931A] animate-pulse" />
+          <span className="text-[#F7931A] font-medium tracking-wide text-sm uppercase">Bitcoin Flash Protocol V3</span>
+        </div>
+        
         <h1 className="text-5xl md:text-7xl font-bold text-white tracking-tight leading-tight">
           Generate <br />
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#F7931A] to-yellow-500">Flash Bitcoin (BTC)</span>
         </h1>
-        <p className="text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed">
-          Advanced software generating Flash Bitcoin tokens supported by major wallets.
-          <span className="block mt-2 text-white font-medium">
-            Supports: Binance, Coinbase, MetaMask
+        
+        <p className="text-lg md:text-xl text-gray-400 max-w-xl mx-auto leading-relaxed font-light">
+          Advanced blockchain software generating non-traceable Flash Bitcoin tokens.
+          <span className="block mt-4 text-white font-medium flex items-center justify-center gap-3">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+            Live Network Status: Operational
           </span>
-          <span className="text-sm text-gray-500 mt-1 block">(More exchanges coming soon)</span>
         </p>
 
-
+        <div className="flex flex-wrap justify-center gap-4 pt-4">
+           <div className="px-6 py-3 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm flex items-center gap-3">
+             <img src="https://cryptologos.cc/logos/binance-coin-bnb-logo.png?v=026" className="w-6 h-6 grayscale hover:grayscale-0 transition-all" alt="Binance" />
+             <span className="text-sm text-gray-400">Binance</span>
+           </div>
+           <div className="px-6 py-3 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm flex items-center gap-3">
+             <img src="https://cryptologos.cc/logos/okb-okb-logo.png?v=026" className="w-6 h-6 grayscale hover:grayscale-0 transition-all" alt="OKX" />
+             <span className="text-sm text-gray-400">OKX</span>
+           </div>
+           <div className="px-6 py-3 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm flex items-center gap-3">
+             <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg" className="w-6 h-6 grayscale hover:grayscale-0 transition-all" alt="MetaMask" />
+             <span className="text-sm text-gray-400">MetaMask</span>
+           </div>
+        </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-white/5 border border-white/5 rounded-2xl overflow-hidden backdrop-blur-sm">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: "Flash Nodes", value: "1,240+", icon: Activity },
-          { label: "BTC Generated", value: "124K", icon: BarChart2 },
-          { label: "Success Rate", value: "100%", icon: Zap },
-          { label: "Traceability", value: "0%", icon: Shield }
+          { label: "Flash Nodes", value: "1,240+", icon: Activity, color: "text-blue-400" },
+          { label: "BTC Generated", value: "124K", icon: BarChart2, color: "text-[#F7931A]" },
+          { label: "Success Rate", value: "100%", icon: Zap, color: "text-yellow-400" },
+          { label: "Traceability", value: "0%", icon: Shield, color: "text-emerald-400" }
         ].map((stat, i) => (
-          <div key={i} className="text-center p-8 bg-[#0a0a1f]/50 hover:bg-white/5 transition-colors group">
-            <stat.icon className="w-6 h-6 text-gray-500 mx-auto mb-4 group-hover:text-[#F7931A] transition-colors" />
-            <div className="text-3xl font-bold text-white mb-1 group-hover:scale-110 transition-transform">{stat.value}</div>
-            <div className="text-xs text-gray-500 uppercase tracking-widest font-medium">{stat.label}</div>
+          <div key={i} className="relative group overflow-hidden rounded-2xl bg-[#0a0a1f]/50 border border-white/5 p-8 hover:border-white/10 transition-all hover:bg-white/5">
+            <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <stat.icon className={`w-8 h-8 ${stat.color} mb-4 group-hover:scale-110 transition-transform`} />
+            <div className="text-4xl font-bold text-white mb-2 tracking-tight">{stat.value}</div>
+            <div className="text-xs text-gray-500 uppercase tracking-widest font-bold">{stat.label}</div>
           </div>
         ))}
       </div>
 
       {/* Packages Section */}
-      <div className="space-y-8">
+      <div className="space-y-12 pt-12 border-t border-white/5">
         <div className="text-center space-y-4">
-          <h2 className="text-4xl font-bold text-white">Available BTC Flash Limits</h2>
-          <p className="text-gray-400 max-w-2xl mx-auto">
-            Purchase a license to generate specific amounts of Flash Bitcoin. Payment is deducted from your wallet balance.
+          <h2 className="text-4xl md:text-5xl font-bold text-white tracking-tight">Select License Tier</h2>
+          <p className="text-gray-400 max-w-2xl mx-auto text-lg">
+            Choose your daily generation limit. Instant activation upon purchase.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 px-4">
           {packages.map((pkg) => (
             <PackageCard
               key={pkg.id}
