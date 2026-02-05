@@ -101,11 +101,21 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       {/* Page Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-white">Dashboard</h1>
-        <p className="text-gray-400 mt-1">Overview of your Bitcoin Flash platform</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-mono mb-2">
+            <Shield className="w-3 h-3" />
+            ADMIN_CONSOLE_V1
+          </div>
+          <h1 className="text-3xl font-bold text-white tracking-tight">System Overview</h1>
+          <p className="text-gray-400 mt-1">Monitor platform metrics and user activity.</p>
+        </div>
+        <div className="flex items-center gap-2 text-xs text-gray-500 font-mono">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          SYSTEM_ONLINE
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -113,28 +123,28 @@ export default function AdminDashboard() {
           <StatsCard
             title="Total Users"
             value={stats?.totalUsers || 0}
-            subtitle={`${stats?.verifiedUsers || 0} verified`}
+            subtitle={`${stats?.verifiedUsers || 0} VERIFIED`}
             icon={Users}
             color="blue"
           />
           <StatsCard
             title="Pending KYC"
             value={stats?.pendingKYC || 0}
-            subtitle="Awaiting review"
+            subtitle="ACTION_REQUIRED"
             icon={FileCheck}
             color="yellow"
           />
           <StatsCard
             title="Pending Withdrawals"
             value={stats?.pendingWithdrawals || 0}
-            subtitle="Requires action"
+            subtitle="AWAITING_APPROVAL"
             icon={Clock}
             color="orange"
           />
           <StatsCard
             title="Total Revenue"
             value={`$${(stats?.totalRevenue || 0).toLocaleString()}`}
-            subtitle={`${stats?.completedTransactions || 0} transactions`}
+            subtitle={`${stats?.completedTransactions || 0} TRANSACTIONS`}
             icon={TrendingUp}
             color="green"
           />
@@ -143,71 +153,83 @@ export default function AdminDashboard() {
         {/* Recent Activity */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Recent Transactions */}
-          <Card className="bg-[#0e0e24] border-white/10">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
-                <Activity className="w-5 h-5 text-emerald-500" />
-                Recent Transactions
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
+          <div className="bg-[#0c0c0e] border border-white/10 rounded-xl overflow-hidden">
+            <div className="bg-white/5 border-b border-white/5 p-4 flex items-center justify-between">
+              <h3 className="text-white font-bold flex items-center gap-2">
+                <Activity className="w-4 h-4 text-emerald-500" />
+                Live Transactions
+              </h3>
+              <Badge variant="outline" className="border-white/10 text-gray-400 text-[10px] font-mono">
+                LATEST_ENTRIES
+              </Badge>
+            </div>
+            <div className="p-4 space-y-2">
                 {recentTransactions.length === 0 ? (
-                  <p className="text-gray-500 text-center py-8">No transactions yet</p>
+                  <p className="text-gray-500 text-center py-8 font-mono text-xs">NO_DATA_AVAILABLE</p>
                 ) : (
                   recentTransactions.map((tx) => (
-                    <div key={tx.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/10">
+                    <div key={tx.id} className="flex items-center justify-between p-3 bg-[#050505] hover:bg-white/5 transition-colors rounded-lg border border-white/5 group">
                       <div className="flex-1">
-                        <p className="text-white font-medium text-sm">{tx.user.name}</p>
-                        <p className="text-gray-400 text-xs">{tx.package.name}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-white font-mono text-xs font-bold">{tx.user.name}</p>
+                          <span className="text-[10px] text-gray-500 font-mono">ID:{tx.id.substring(0,6)}</span>
+                        </div>
+                        <p className="text-gray-500 text-[10px] uppercase tracking-wider mt-0.5">{tx.package.name}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-emerald-400 font-bold">${tx.amount.toFixed(2)}</p>
-                        <Badge variant="outline" className="text-xs border-emerald-500/30 text-emerald-400">
+                        <p className="text-emerald-400 font-mono font-bold text-sm">${tx.amount.toLocaleString()}</p>
+                        <Badge variant="outline" className="text-[10px] border-emerald-500/30 text-emerald-500 bg-emerald-500/5 px-1.5 py-0 rounded-sm mt-1 uppercase">
                           {tx.status}
                         </Badge>
                       </div>
                     </div>
                   ))
                 )}
-              </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Recent Users */}
-          <Card className="bg-[#0e0e24] border-white/10">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
-                <UserCog className="w-5 h-5 text-cyan-500" />
-                Recent Users
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
+          <div className="bg-[#0c0c0e] border border-white/10 rounded-xl overflow-hidden">
+            <div className="bg-white/5 border-b border-white/5 p-4 flex items-center justify-between">
+              <h3 className="text-white font-bold flex items-center gap-2">
+                <UserCog className="w-4 h-4 text-cyan-500" />
+                New Registrations
+              </h3>
+              <Badge variant="outline" className="border-white/10 text-gray-400 text-[10px] font-mono">
+                USER_LOG
+              </Badge>
+            </div>
+            <div className="p-4 space-y-2">
                 {recentUsers.length === 0 ? (
-                  <p className="text-gray-500 text-center py-8">No users yet</p>
+                  <p className="text-gray-500 text-center py-8 font-mono text-xs">NO_USERS_FOUND</p>
                 ) : (
                   recentUsers.map((user) => (
-                    <div key={user.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/10">
+                    <div key={user.id} className="flex items-center justify-between p-3 bg-[#050505] hover:bg-white/5 transition-colors rounded-lg border border-white/5 group">
                       <div className="flex-1">
-                        <p className="text-white font-medium text-sm">{user.name}</p>
-                        <p className="text-gray-400 text-xs">{user.email}</p>
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 rounded-full bg-cyan-500/20 text-cyan-500 flex items-center justify-center text-xs font-bold">
+                            {user.name.charAt(0)}
+                          </div>
+                          <div>
+                            <p className="text-white font-mono text-xs font-bold">{user.name}</p>
+                            <p className="text-gray-500 text-[10px]">{user.email}</p>
+                          </div>
+                        </div>
                       </div>
                       <div className="flex items-center gap-2">
                         {user.is_verified ? (
-                          <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                          <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 text-[10px]">VERIFIED</Badge>
                         ) : user.kyc_status === 'pending' ? (
-                          <Clock className="w-4 h-4 text-yellow-500" />
+                          <Badge className="bg-yellow-500/10 text-yellow-500 border-yellow-500/20 text-[10px]">REVIEW</Badge>
                         ) : (
-                          <XCircle className="w-4 h-4 text-gray-500" />
+                          <Badge variant="outline" className="text-gray-500 text-[10px]">UNVERIFIED</Badge>
                         )}
                       </div>
                     </div>
                   ))
                 )}
-              </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
     </div>
   )
@@ -228,23 +250,26 @@ function StatsCard({ title, value, subtitle, icon: Icon, color }: {
   }
 
   return (
-    <Card className={`border backdrop-blur-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1 group relative overflow-hidden ${colorClasses[color]}`}>
-      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-white/10 to-transparent rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 group-hover:opacity-100 opacity-50 transition-opacity" />
+    <Card className={`border backdrop-blur-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1 group relative overflow-hidden bg-[#0c0c0e] ${colorClasses[color]}`}>
+      {/* Glow Effect */}
+      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-white/5 to-transparent rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 group-hover:opacity-100 opacity-0 transition-opacity" />
       
       <CardContent className="p-6 relative z-10">
         <div className="flex items-start justify-between mb-4">
           <div>
-            <p className="text-muted-foreground text-sm font-medium mb-1 tracking-wide uppercase">{title}</p>
-            <p className="text-3xl font-black tracking-tight text-white mb-1">{value}</p>
+            <p className="text-gray-500 text-[10px] font-mono font-bold mb-1 tracking-widest uppercase">{title}</p>
+            <p className="text-3xl font-mono font-bold tracking-tight text-white mb-1">{value}</p>
           </div>
-          <div className={`p-3 rounded-xl bg-white/5 border border-white/5 shadow-inner group-hover:scale-110 transition-transform duration-300`}>
-            <Icon className="w-6 h-6" />
+          <div className={`p-2 rounded-lg bg-black/20 border border-white/5 group-hover:scale-110 transition-transform duration-300`}>
+            <Icon className="w-5 h-5" />
           </div>
         </div>
-        <p className="text-xs text-muted-foreground font-medium flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-current opacity-75" />
-          {subtitle}
-        </p>
+        <div className="flex items-center gap-2">
+          <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
+          <p className="text-[10px] font-mono uppercase tracking-wider opacity-80">
+            {subtitle}
+          </p>
+        </div>
       </CardContent>
     </Card>
   )

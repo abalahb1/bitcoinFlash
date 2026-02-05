@@ -418,10 +418,10 @@ export default function KYCPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#050510] relative overflow-hidden">
+    <div className="min-h-screen flex flex-col relative overflow-hidden bg-[#050510] text-white">
       {/* Background Elements */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#02020a] to-[#0a0a1f] z-0" />
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-emerald-500/5 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(16,185,129,0.14),transparent_35%),radial-gradient(circle_at_80%_0%,rgba(34,211,238,0.12),transparent_35%)] pointer-events-none" />
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:100px_100px] opacity-50 [mask-image:linear-gradient(to_bottom,black_40%,transparent_100%)]" />
 
       <div className="relative z-10">
         <TopTicker />
@@ -430,22 +430,22 @@ export default function KYCPage() {
 
           {/* Header */}
           <div className="text-center mb-8 space-y-2">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-emerald-400 text-sm font-medium mb-4">
-              <Shield className="w-4 h-4" /> Secure Verification Protocol
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-sm font-mono tracking-[0.2em] mb-4">
+              <Shield className="w-4 h-4" /> SECURE VERIFICATION PROTOCOL
             </div>
             <h1 className="text-3xl md:text-4xl font-bold text-white">Identity Verification</h1>
             <p className="text-gray-400 max-w-md mx-auto">
-              To comply with international regulations and ensure platform security, we require identity verification for all agents.
+              Verify your identity to unlock all dashboard features with the new unified Flash BTC identity.
             </p>
           </div>
 
           {/* Wizard Card */}
-          <Card className="w-full max-w-2xl bg-[#0e0e24]/80 backdrop-blur-xl border-white/10 shadow-2xl relative overflow-hidden">
+          <Card className="w-full max-w-2xl bg-black/60 backdrop-blur-xl border border-white/10 shadow-[0_0_40px_rgba(16,185,129,0.15)] relative overflow-hidden">
 
             {/* Progress Bar */}
             <div className="absolute top-0 left-0 right-0 h-1 bg-white/5">
               <motion.div
-                className="h-full bg-gradient-to-r from-emerald-500 to-teal-400"
+                className="h-full bg-gradient-to-r from-emerald-500 to-cyan-500"
                 initial={{ width: '0%' }}
                 animate={{
                   width: currentStep === 'intro' ? '20%' :
@@ -470,15 +470,15 @@ export default function KYCPage() {
                   >
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="p-6 rounded-2xl bg-white/5 border border-white/10 flex flex-col items-center text-center space-y-4">
-                        <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center">
-                          <FileText className="w-6 h-6 text-blue-400" />
+                        <div className="w-12 h-12 rounded-full bg-emerald-500/10 flex items-center justify-center">
+                          <FileText className="w-6 h-6 text-emerald-400" />
                         </div>
                         <h3 className="text-white font-semibold">Government ID</h3>
                         <p className="text-sm text-gray-400">Valid Passport, ID Card, or Driver's License</p>
                       </div>
                       <div className="p-6 rounded-2xl bg-white/5 border border-white/10 flex flex-col items-center text-center space-y-4">
-                        <div className="w-12 h-12 rounded-full bg-purple-500/10 flex items-center justify-center">
-                          <Camera className="w-6 h-6 text-purple-400" />
+                        <div className="w-12 h-12 rounded-full bg-cyan-500/10 flex items-center justify-center">
+                          <Camera className="w-6 h-6 text-cyan-400" />
                         </div>
                         <h3 className="text-white font-semibold">Selfie Photo</h3>
                         <p className="text-sm text-gray-400">Clear photo of your face for liveness check</p>
@@ -495,7 +495,7 @@ export default function KYCPage() {
 
                     <Button
                       onClick={() => setCurrentStep('passport')}
-                      className="w-full h-12 text-lg bg-emerald-600 hover:bg-emerald-500 text-white"
+                      className="w-full h-12 text-lg bg-gradient-to-r from-emerald-500 to-cyan-500 text-black font-semibold border-none shadow-[0_0_30px_rgba(16,185,129,0.35)]"
                     >
                       Start Verification <ChevronRight className="w-5 h-5 ml-2" />
                     </Button>
@@ -548,13 +548,13 @@ export default function KYCPage() {
                     )}
 
                     <div className="flex gap-4">
-                      <Button variant="outline" onClick={() => setCurrentStep('intro')} className="border-white/10 text-white hover:bg-white/5">
+                      <Button variant="outline" onClick={() => setCurrentStep('intro')} className="border-white/10 text-white hover:border-emerald-400/50 hover:bg-white/5">
                         Back
                       </Button>
                       <Button
                         onClick={() => setCurrentStep('selfie')}
                         disabled={!passportFile}
-                        className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white"
+                        className="flex-1 bg-gradient-to-r from-emerald-500 to-cyan-500 text-black font-semibold disabled:opacity-60"
                       >
                         Continue <ChevronRight className="w-4 h-4 ml-2" />
                       </Button>
@@ -594,13 +594,13 @@ export default function KYCPage() {
                     )}
 
                     <div className="flex gap-4">
-                      <Button variant="outline" onClick={() => setCurrentStep('passport')} className="border-white/10 text-white hover:bg-white/5">
+                      <Button variant="outline" onClick={() => setCurrentStep('passport')} className="border-white/10 text-white hover:border-emerald-400/50 hover:bg-white/5">
                         Back
                       </Button>
                       <Button
                         onClick={handleSubmit}
                         disabled={!selfieFile || uploading}
-                        className="flex-1 bg-purple-600 hover:bg-purple-500 text-white"
+                        className="flex-1 bg-gradient-to-r from-emerald-500 to-cyan-500 text-black font-semibold disabled:opacity-60"
                       >
                         {uploading ? (
                           <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Uploading...</>

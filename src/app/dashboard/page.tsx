@@ -16,11 +16,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Loader2, Wallet, Copy, CheckCircle2, Bitcoin, Zap, Shield, Clock, User, LayoutDashboard, LogOut, Activity, BarChart2, History, ChevronRight, QrCode, AlertTriangle } from 'lucide-react'
+import { Loader2, Wallet, Copy, CheckCircle2, Bitcoin, Zap, Shield, Clock, User, LayoutDashboard, LogOut, Activity, BarChart2, History, ChevronRight, QrCode, AlertTriangle, Search } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
 import type { User as UserType, Package as PackageType } from '@prisma/client'
 import { WalletEnhancements } from '@/components/WalletEnhancements'
 import { AccountSettings } from '@/components/AccountSettings'
+import { LiveTerminal } from '@/components/LiveTerminal'
+import { NetworkMap } from '@/components/NetworkMap'
 import { KYCBlockingModal } from '@/components/KYCBlockingModal'
 import { WalletHistory } from '@/components/WalletHistory'
 import { TierBadge } from '@/components/TierBadge'
@@ -70,7 +72,7 @@ export default function DashboardPage() {
   }
 
   // Mobile text size utility
-  const mobileTextBase = "text-base md:text-sm lg:text-base"
+  const mobileTextBase = "text-base md:text-sm lg:text-base font-mono"
 
   const fetchPackages = async () => {
     try {
@@ -207,8 +209,14 @@ export default function DashboardPage() {
         </Alert>
       )}
 
-      {/* Page Content */}
-      <div className="bg-gradient-to-b from-background to-background/50 min-h-screen pb-20">
+      {/* Page Content - Ultra Modern Tech Mode */}
+      <div className="min-h-full pb-20 relative overflow-hidden selection:bg-emerald-500/20">
+        {/* Hero Glow */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[400px] bg-emerald-500/5 rounded-[100%] blur-[100px] pointer-events-none" />
+        
+        {/* Tech Grid */}
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(16,185,129,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(16,185,129,0.03)_1px,transparent_1px)] bg-[size:100px_100px] [mask-image:linear-gradient(to_bottom,black_40%,transparent_100%)] pointer-events-none" />
+
       {currentView === 'landing' && (
         <LandingView
           setCurrentView={setCurrentView}
@@ -255,6 +263,250 @@ export default function DashboardPage() {
 
 // ===== SUB-COMPONENTS =====
 
+function PaymentView({
+  pkg,
+  user,
+  onSubmit,
+  loading,
+  onBack,
+}: {
+  pkg: PackageType
+  user: ExtendedUserType
+  onSubmit: (bitcoinAddress: string) => Promise<void> | void
+  loading: boolean
+  onBack: () => void
+}) {
+  const [address, setAddress] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [addressType, setAddressType] = useState<string>('')
+
+  const walletBalance = Number(user?.wallet_balance_usdt || 0)
+  const price = Number(pkg.price_usd || 0)
+  const commission = price * 0.1
+  const net = price - commission
+  const hasBalance = walletBalance >= price
+
+  const detectAddressType = (addr: string) => {
+    const trimmed = addr.trim()
+    if (/^bc1[a-z0-9]{39,59}$/i.test(trimmed)) return 'Bitcoin (bech32)'
+    if (/^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/.test(trimmed)) return 'Bitcoin (legacy/segwit)'
+    return trimmed.length ? 'Unsupported address (only Bitcoin allowed)' : ''
+  }
+
+  useEffect(() => {
+    setAddress('')
+    setAddressType('')
+  }, [user?.wallet_ref])
+
+  const handlePay = async () => {
+    const trimmed = address.trim()
+    const isBtc = /^bc1[a-z0-9]{39,59}$/i.test(trimmed) || /^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/.test(trimmed)
+    if (!trimmed || !isBtc) {
+      setError('Only Bitcoin addresses are accepted')
+      return
+    }
+    setError(null)
+    await onSubmit(trimmed)
+  }
+
+  const recommendedWallets = [
+    'Binance',
+    'Coinbase',
+    'OKX',
+    'Kraken',
+    'KuCoin',
+    'Bybit',
+    'Bitfinex',
+    'Gate.io',
+    'HTX (Huobi)',
+    'Bitstamp',
+  ]
+
+  return (
+    <div className="relative pb-20">
+      <div className="absolute inset-0 -z-10 overflow-hidden rounded-3xl border border-white/5 bg-gradient-to-b from-emerald-500/5 via-[#050510] to-black/80">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(16,185,129,0.18),transparent_35%),radial-gradient(circle_at_80%_0%,rgba(34,211,238,0.15),transparent_35%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[size:80px_80px] opacity-40" />
+      </div>
+
+      <div className="flex items-center justify-between gap-4 mb-8">
+        <div className="space-y-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 font-mono text-[10px] uppercase tracking-[0.2em]">
+            SECURE_PAYMENT_CHANNEL
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+          </div>
+          <h2 className="text-3xl md:text-4xl font-bold text-white tracking-tight">Complete Your Flash BTC Purchase</h2>
+          <p className="text-gray-400">Unified visual identity across packages, payment, and receipts.</p>
+        </div>
+        <Button variant="outline" onClick={onBack} className="border-white/10 text-gray-300 hover:text-white hover:border-emerald-400/60">
+          Back
+        </Button>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Package summary */}
+        <div className="group relative bg-[#0c0c0e] border border-white/5 hover:border-emerald-500/50 transition-all duration-300 overflow-hidden rounded-2xl shadow-[0_0_30px_rgba(16,185,129,0.08)]">
+          <div className="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 border-white/10 group-hover:border-emerald-400 transition-colors" />
+          <div className="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 border-white/10 group-hover:border-emerald-400 transition-colors" />
+          <div className="absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 border-white/10 group-hover:border-emerald-400 transition-colors" />
+          <div className="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 border-white/10 group-hover:border-emerald-400 transition-colors" />
+          <div className="absolute inset-0 bg-[linear-gradient(transparent_0%,rgba(16,185,129,0.05)_50%,transparent_100%)] bg-[length:100%_200%] animate-scanline opacity-0 group-hover:opacity-100 pointer-events-none" />
+
+          <div className="p-6 space-y-5 relative z-10">
+            <div className="flex items-center justify-between">
+              <div className="space-y-2">
+                <div className="text-[10px] font-mono text-emerald-500 uppercase tracking-[0.25em] bg-emerald-500/10 px-2 py-1 inline-flex items-center gap-2 rounded-sm">
+                  <Zap className="w-3 h-3" /> STARTER PACKAGE
+                </div>
+                <div className="text-3xl md:text-4xl font-bold text-white flex items-baseline gap-2">
+                  {pkg.btc_amount} <span className="text-sm text-gray-500 font-normal">BTC</span>
+                </div>
+                <div className="text-gray-400 text-sm font-mono uppercase tracking-[0.2em]">Flash Bitcoin License</div>
+              </div>
+              <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/40 flex items-center justify-center">
+                <Bitcoin className="w-5 h-5 text-emerald-400" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-px bg-white/5 border border-white/5 rounded-md overflow-hidden">
+              {[{ label: 'Price', value: `$${price.toLocaleString()}` }, { label: 'USDT', value: `${pkg.usdt_amount} USDT` }, { label: 'Duration', value: `${pkg.duration} Days` }, { label: 'Transfers', value: `${pkg.transfers} / Day` }].map((item, idx) => (
+                <div key={idx} className="p-3 bg-[#050505] flex flex-col gap-1">
+                  <span className="text-[10px] uppercase tracking-[0.2em] text-gray-500 font-mono">{item.label}</span>
+                  <span className="text-white font-semibold">{item.value}</span>
+                </div>
+              ))}
+              <div className="col-span-2 p-3 bg-[#050505] flex items-center justify-between">
+                <span className="text-[10px] uppercase tracking-[0.2em] text-gray-500 font-mono">Divisible</span>
+                <span className="text-emerald-400 font-semibold">Yes</span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-xs text-gray-400 font-mono uppercase tracking-[0.2em]">
+                Recommended Wallets to Use
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {recommendedWallets.map((item) => (
+                  <div key={item} className="flex items-center gap-2 text-sm text-gray-200 bg-white/5 border border-white/10 rounded-lg px-3 py-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                    <span>{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Payment form */}
+        <div className="lg:col-span-2 space-y-6">
+          <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/40 backdrop-blur-xl">
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-cyan-500/10 to-transparent opacity-70" />
+            <div className="relative p-6 md:p-8 space-y-6">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-emerald-400 text-xs font-mono tracking-[0.25em]">PAYMENT SUMMARY</p>
+                  <h3 className="text-2xl font-bold text-white mt-2">RECIPIENT WALLET ADDRESS</h3>
+                  <p className="text-gray-400 text-sm mt-1">Secure transaction • Instant activation • 24/7 support</p>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-emerald-300 font-mono bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/30">
+                  <Shield className="w-3 h-3" />
+                  VERIFIED
+                </div>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="p-4 rounded-xl border border-white/10 bg-white/5 flex flex-col gap-3">
+                  <p className="text-xs text-gray-400 font-mono uppercase tracking-[0.2em]">PAYMENT SUMMARY</p>
+                  <div className="text-sm text-gray-300">Flash BTC license purchase. Funds will be debited from your balance and activated instantly.</div>
+                  <div className="flex items-center justify-between text-xs text-gray-400 font-mono">
+                    <span>Daily Capacity</span>
+                    <span className="text-white">{pkg.btc_amount} BTC</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-gray-400 font-mono">
+                    <span>Duration</span>
+                    <span className="text-white">{pkg.duration} Days</span>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-xl border border-white/10 bg-white/5 flex flex-col gap-3">
+                  <div className="flex items-center justify-between text-xs font-mono uppercase tracking-[0.2em] text-gray-400">
+                    <span>Your Wallet Balance</span>
+                    <span className="text-white">${walletBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm text-gray-300">
+                    <span className="flex items-center gap-2">Status</span>
+                    <Badge variant="outline" className={hasBalance ? 'border-emerald-500/50 text-emerald-400 bg-emerald-500/10' : 'border-red-500/50 text-red-400 bg-red-500/10'}>
+                      {hasBalance ? '✓ Sufficient' : 'Insufficient'}
+                    </Badge>
+                  </div>
+                  <div className="border-t border-white/10 pt-3 space-y-1 text-sm font-mono">
+                    <div className="flex justify-between text-gray-300">
+                      <span>Package Price</span>
+                      <span className="text-red-400">-${price.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between text-gray-300">
+                      <span>Commission (10%) Instant Reward</span>
+                      <span className="text-emerald-400">+${commission.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {error && (
+                <div className="flex items-center gap-2 text-red-400 text-sm bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
+                  <AlertTriangle className="w-4 h-4" />
+                  {error}
+                </div>
+              )}
+
+              <div className="grid gap-4 md:grid-cols-[1.4fr_1fr]">
+                <div className="p-4 rounded-xl border border-white/10 bg-[#050505] space-y-3">
+                  <div className="flex items-center gap-2 text-xs text-gray-400 font-mono">
+                    <Wallet className="w-4 h-4 text-emerald-400" />
+                    RECIPIENT BTC ADDRESS
+                  </div>
+                  <Input
+                    value={address}
+                    onChange={(e) => {
+                      setAddress(e.target.value)
+                      setAddressType(detectAddressType(e.target.value))
+                    }}
+                    placeholder="bc1..."
+                    className="bg-black/50 border-white/10 text-white placeholder:text-gray-600"
+                  />
+                  <div className="text-xs text-gray-400 font-mono">
+                    {addressType || 'Only Bitcoin addresses are accepted'}
+                  </div>
+                  <div className="flex justify-center">
+                    <Button
+                      type="button"
+                      onClick={handlePay}
+                      disabled={loading}
+                      className="w-full md:w-auto px-10 bg-gradient-to-r from-emerald-500 to-cyan-500 text-black font-semibold border-none shadow-[0_0_30px_rgba(16,185,129,0.45)]"
+                    >
+                      {loading ? 'Processing...' : 'Pay'}
+                    </Button>
+                  </div>
+                </div>
+                <div className="p-4 rounded-xl border border-white/10 bg-[#050505] space-y-3">
+                  <div className="flex items-center gap-2 text-xs text-gray-400 font-mono">
+                    <Activity className="w-4 h-4 text-emerald-400" />
+                    LIVE PROTOCOL FEED
+                  </div>
+                  <div className="space-y-2 text-sm text-gray-300 font-mono">
+                    <div className="flex items-center justify-between"><span>Consensus</span><span className="text-emerald-400">BIP-340</span></div>
+                    <div className="flex items-center justify-between"><span>Propagation</span><span className="text-cyan-300">Ultra-fast</span></div>
+                    <div className="flex items-center justify-between"><span>Visual Sync</span><span className="text-white">Binance · OKX · Coinbase</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 
 function LandingView({ setCurrentView, packages, onSelectPackage }: {
@@ -268,15 +520,15 @@ function LandingView({ setCurrentView, packages, onSelectPackage }: {
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 -z-10 pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-blue-500/5 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/2 -z-10 pointer-events-none" />
 
-      <div className="text-center space-y-8 max-w-4xl mx-auto py-12">
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#F7931A]/30 bg-[#F7931A]/10 backdrop-blur-md">
-          <Bitcoin className="w-4 h-4 text-[#F7931A] animate-pulse" />
-          <span className="text-[#F7931A] font-medium tracking-wide text-sm uppercase">Bitcoin Flash Protocol V3</span>
+      <div className="text-center space-y-8 max-w-4xl mx-auto py-12 relative z-10">
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/5 backdrop-blur-md">
+          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="text-emerald-500 font-mono tracking-widest text-xs uppercase">SYSTEM STATUS: ONLINE</span>
         </div>
         
         <h1 className="text-5xl md:text-7xl font-bold text-white tracking-tight leading-tight">
           Generate <br />
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#F7931A] to-yellow-500">Flash Bitcoin (BTC)</span>
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-500 animate-pulse-glow">Flash Bitcoin (BTC)</span>
         </h1>
         
         <p className="text-lg md:text-xl text-gray-400 max-w-xl mx-auto leading-relaxed font-light">
@@ -286,6 +538,11 @@ function LandingView({ setCurrentView, packages, onSelectPackage }: {
             Live Network Status: Operational
           </span>
         </p>
+
+        {/* Network Map */}
+        <div className="py-8">
+          <NetworkMap />
+        </div>
 
         <div className="flex flex-wrap justify-center gap-4 pt-4">
            <div className="px-6 py-3 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm flex items-center gap-3">
@@ -303,21 +560,7 @@ function LandingView({ setCurrentView, packages, onSelectPackage }: {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { label: "Flash Nodes", value: "1,240+", icon: Activity, color: "text-blue-400" },
-          { label: "BTC Generated", value: "124K", icon: BarChart2, color: "text-[#F7931A]" },
-          { label: "Success Rate", value: "100%", icon: Zap, color: "text-yellow-400" },
-          { label: "Traceability", value: "0%", icon: Shield, color: "text-emerald-400" }
-        ].map((stat, i) => (
-          <div key={i} className="relative group overflow-hidden rounded-2xl bg-[#0a0a1f]/50 border border-white/5 p-8 hover:border-white/10 transition-all hover:bg-white/5">
-            <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-            <stat.icon className={`w-8 h-8 ${stat.color} mb-4 group-hover:scale-110 transition-transform`} />
-            <div className="text-4xl font-bold text-white mb-2 tracking-tight">{stat.value}</div>
-            <div className="text-xs text-gray-500 uppercase tracking-widest font-bold">{stat.label}</div>
-          </div>
-        ))}
-      </div>
+      {/* System Monitoring Grid - REMOVED */}
 
       {/* Packages Section */}
       <div className="space-y-12 pt-12 border-t border-white/5">
@@ -338,6 +581,8 @@ function LandingView({ setCurrentView, packages, onSelectPackage }: {
           ))}
         </div>
       </div>
+
+      {/* Live Terminal Section - REMOVED */}
     </div>
   )
 }
@@ -388,68 +633,69 @@ function PackageCard({ pkg, onSelect }: {
   onSelect: () => void
 }) {
   return (
-    <Card className="bg-card border-border hover:border-primary transition-all duration-300 group relative overflow-hidden flex flex-col h-full shadow-none hover:shadow-md">
-      <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-emerald-500 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+    <div className="group relative bg-[#0c0c0e] border border-white/5 hover:border-emerald-500/50 transition-all duration-300 overflow-hidden flex flex-col h-full hover:shadow-[0_0_30px_rgba(16,185,129,0.1)] rounded-lg">
+      {/* Cyber Corners */}
+      <div className="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 border-white/10 group-hover:border-emerald-500 transition-colors" />
+      <div className="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 border-white/10 group-hover:border-emerald-500 transition-colors" />
+      <div className="absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 border-white/10 group-hover:border-emerald-500 transition-colors" />
+      <div className="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 border-white/10 group-hover:border-emerald-500 transition-colors" />
+      
+      {/* Scanline Overlay */}
+      <div className="absolute inset-0 bg-[linear-gradient(transparent_0%,rgba(16,185,129,0.05)_50%,transparent_100%)] bg-[length:100%_200%] animate-scanline pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity" />
 
-      <CardHeader>
-        <div className="text-sm font-medium text-muted-foreground uppercase tracking-widest mb-2 flex items-center gap-2">
-          <Bitcoin className="w-4 h-4 text-primary" /> {pkg.name} License
-        </div>
-        <div className="text-4xl font-bold text-foreground flex items-baseline gap-1">
-          {pkg.btc_amount} <span className="text-lg text-gray-500 font-normal">BTC</span>
-        </div>
-        <div className="text-primary font-semibold mt-1">
-          Price: ${pkg.price_usd.toLocaleString()} USDT
-        </div>
-      </CardHeader>
-
-      <CardContent className="space-y-6 flex-1">
-        <div className="space-y-3 pt-4 border-t border-border">
-          <div className="flex justify-between items-center text-sm">
-            <span className="text-muted-foreground">Unit Price</span>
-            <span className="text-foreground font-medium">${(pkg.price_usd / Number(pkg.btc_amount)).toFixed(2)}/BTC</span>
+      <div className="p-6 flex-1 flex flex-col relative z-10">
+        {/* Header */}
+        <div className="flex justify-between items-start mb-6">
+          <div className="space-y-1">
+            <div className="text-[10px] font-mono text-emerald-500 uppercase tracking-widest bg-emerald-500/10 px-2 py-1 inline-block rounded-sm">
+              MODULE: {pkg.name}
+            </div>
+            <div className="text-4xl font-mono font-bold text-white flex items-baseline gap-2 mt-2">
+              {pkg.btc_amount} <span className="text-sm text-gray-500 font-sans font-normal">BTC</span>
+            </div>
           </div>
-          <div className="flex justify-between items-center text-sm">
-            <span className="text-gray-400">License Duration</span>
-            <span className="text-white font-medium">{pkg.duration} Days</span>
-          </div>
-          <div className="flex justify-between items-center text-sm">
-            <span className="text-gray-400">Daily Injections</span>
-            <span className="text-white font-medium">{pkg.transfers}</span>
+          <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center border border-white/10 group-hover:border-emerald-500/50 group-hover:bg-emerald-500/10 transition-colors">
+             <Bitcoin className="w-4 h-4 text-gray-400 group-hover:text-emerald-400 transition-colors" />
           </div>
         </div>
 
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 text-sm text-gray-400">
-            <CheckCircle2 className="w-4 h-4 text-orange-500" />
-            <span>Bitcoin Core Support</span>
-          </div>
-          <div className="flex items-center gap-2 text-sm text-gray-400">
-            <CheckCircle2 className="w-4 h-4 text-orange-500" />
-            <span>Full Blockchain Confirmation</span>
-          </div>
-          <div className="flex items-center gap-2 text-sm text-gray-400">
-            <CheckCircle2 className="w-4 h-4 text-orange-500" />
-            <span>Instant Wallet Credit</span>
-          </div>
+        {/* Specs Grid */}
+        <div className="grid grid-cols-2 gap-px bg-white/5 border border-white/5 rounded-sm overflow-hidden mb-6">
+           <div className="bg-[#0c0c0e] p-3 text-center group-hover:bg-[#0f1512] transition-colors">
+             <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Duration</div>
+             <div className="text-sm font-mono text-white">{pkg.duration} Days</div>
+           </div>
+           <div className="bg-[#0c0c0e] p-3 text-center group-hover:bg-[#0f1512] transition-colors">
+             <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Rate</div>
+             <div className="text-sm font-mono text-white">{pkg.transfers}/Day</div>
+           </div>
+           <div className="bg-[#0c0c0e] p-3 text-center col-span-2 border-t border-white/5 group-hover:bg-[#0f1512] transition-colors">
+             <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Unit Cost</div>
+             <div className="text-sm font-mono text-emerald-400">${(pkg.price_usd / Number(pkg.btc_amount)).toFixed(2)} / BTC</div>
+           </div>
         </div>
-      </CardContent>
 
-      <CardFooter>
-        <Button
-          className="w-full bg-secondary hover:bg-primary hover:text-primary-foreground text-foreground border border-border hover:border-primary transition-all h-12"
-          onClick={onSelect}
-        >
-          Purchase License
-        </Button>
-      </CardFooter>
-    </Card>
+        {/* Price & Action */}
+        <div className="mt-auto space-y-4">
+          <div className="flex justify-between items-end border-b border-white/10 pb-4">
+            <div className="text-xs text-gray-500 font-mono">TOTAL_COST_USDT</div>
+            <div className="text-xl font-mono font-bold text-white">${pkg.price_usd.toLocaleString()}</div>
+          </div>
+          
+          <Button
+            className="w-full bg-white text-black hover:bg-emerald-500 hover:text-white font-mono uppercase tracking-widest text-xs h-12 rounded-none transition-all duration-300 relative overflow-hidden group/btn"
+            onClick={onSelect}
+          >
+            <span className="relative z-10">Initialize Protocol</span>
+            <div className="absolute inset-0 bg-emerald-600 transform scale-x-0 group-hover/btn:scale-x-100 transition-transform origin-left duration-300" />
+          </Button>
+        </div>
+      </div>
+    </div>
   )
 }
 
 function WalletView({ user }: { user: UserType | null }) {
-  if (!user) return null
-
   const [activeTab, setActiveTab] = useState<'deposit' | 'withdraw'>('deposit')
   const [withdrawAmount, setWithdrawAmount] = useState('')
   const [withdrawAddress, setWithdrawAddress] = useState('')
@@ -461,11 +707,6 @@ function WalletView({ user }: { user: UserType | null }) {
     network: string
     error: string
   } | null>(null)
-
-
-
-  // Calculate total value
-  const totalValueUSD = user.wallet_balance_usdt
 
   // Validate withdrawal address
   const validateWithdrawAddress = (address: string) => {
@@ -530,6 +771,13 @@ function WalletView({ user }: { user: UserType | null }) {
     }
   }, [withdrawNetwork])
 
+  if (!user) {
+    return null
+  }
+
+  // Calculate total value
+  const totalValueUSD = user.wallet_balance_usdt
+
   const handleWithdrawSubmit = async () => {
     if (!withdrawAmount || !withdrawAddress || !addressValidation?.isValid) return
 
@@ -571,164 +819,148 @@ function WalletView({ user }: { user: UserType | null }) {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-2xl md:text-3xl font-bold text-white">Welcome back, {user?.name}</h1>
+           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono mb-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            WALLET_CONNECT_ACTIVE
           </div>
-          <p className="text-muted-foreground mt-1 text-sm md:text-base">Manage your flash transactions and wallet</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className="border-primary/50 text-primary bg-primary/10 px-4 py-2 self-start md:self-auto">
-            <Activity className="w-3 h-3 mr-2" />
-            Active
-          </Badge>
+          <h1 className="text-3xl font-bold text-white tracking-tight">Wallet Overview</h1>
+          <p className="text-gray-400 text-sm mt-1">Manage your digital assets and flash liquidity.</p>
         </div>
       </div>
 
       {/* Total Balance Card */}
-      <Card className="bg-card border-border overflow-hidden relative">
-        <CardContent className="p-8 relative z-10">
-          <div className="flex items-start justify-between mb-6">
+      <div className="relative group bg-[#0c0c0e] border border-white/10 hover:border-emerald-500/30 transition-all duration-300 p-8 overflow-hidden rounded-xl">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl -mr-16 -mt-16" />
+        
+        <div className="relative z-10 flex items-start justify-between">
             <div>
-              <p className="text-gray-400 text-sm uppercase tracking-wider mb-2">Total Balance</p>
-              <div className="text-5xl font-bold text-white mb-2">
+              <p className="text-emerald-500 text-xs font-mono uppercase tracking-widest mb-3">Total Asset Value</p>
+              <div className="text-5xl md:text-6xl font-mono font-bold text-white tracking-tighter mb-2">
                 ${totalValueUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </div>
-              <p className="text-emerald-400 text-sm flex items-center gap-1">
-                <Activity className="w-3 h-3" />
-                USDT
+              <p className="text-gray-500 text-sm flex items-center gap-2 font-mono">
+                <span className="text-emerald-400">● USDT</span>
+                <span>TRC20 / ERC20</span>
               </p>
             </div>
-            <div className="w-16 h-16 rounded-full bg-[#F7931A]/20 flex items-center justify-center">
-              <Wallet className="w-8 h-8 text-[#F7931A]" />
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 flex items-center justify-center border border-white/5 shadow-lg">
+              <Wallet className="w-8 h-8 text-emerald-400" />
             </div>
-          </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Deposit / Withdraw Tabs */}
-      <Card className="bg-card border-border">
-        <CardContent className="p-0">
+      <div className="bg-[#0c0c0e] border border-white/10 rounded-xl overflow-hidden">
           {/* Tab Headers */}
-          <div className="flex border-b border-white/10">
+          <div className="flex border-b border-white/5">
             <button
               onClick={() => setActiveTab('deposit')}
-              className={`flex-1 px-6 py-4 text-sm font-semibold transition-all ${activeTab === 'deposit'
-                ? 'text-primary border-b-2 border-primary bg-primary/5'
-                : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
+              className={`flex-1 px-6 py-4 text-sm font-mono tracking-wider transition-all relative overflow-hidden ${activeTab === 'deposit'
+                ? 'text-emerald-400 bg-emerald-500/5'
+                : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'
                 }`}
             >
+              {activeTab === 'deposit' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-500" />}
               <div className="flex items-center justify-center gap-2">
                 <Activity className="w-4 h-4" />
-                Deposit
+                DEPOSIT_ASSETS
               </div>
             </button>
             <button
               onClick={() => setActiveTab('withdraw')}
-              className={`flex-1 px-6 py-4 text-sm font-semibold transition-all ${activeTab === 'withdraw'
-                ? 'text-blue-500 border-b-2 border-blue-500 bg-blue-500/5'
-                : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
+              className={`flex-1 px-6 py-4 text-sm font-mono tracking-wider transition-all relative overflow-hidden ${activeTab === 'withdraw'
+                ? 'text-cyan-400 bg-cyan-500/5'
+                : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'
                 }`}
             >
+              {activeTab === 'withdraw' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-cyan-500" />}
               <div className="flex items-center justify-center gap-2">
                 <Zap className="w-4 h-4" />
-                Withdraw
+                WITHDRAW_FUNDS
               </div>
             </button>
           </div>
 
           {/* Tab Content */}
-          <div className="p-6">
+          <div className="p-6 md:p-8">
             {activeTab === 'deposit' ? (
-              <div className="space-y-6">
+              <div className="space-y-8">
                 <div>
-                  <h3 className="text-xl font-bold text-white mb-2">Deposit USDT</h3>
-                  <p className="text-gray-400 text-sm">Send USDT (ERC20) to your wallet address</p>
+                  <h3 className="text-xl font-bold text-white mb-2">Deposit Assets</h3>
+                  <p className="text-gray-400 text-sm">Securely transfer USDT to your dedicated wallet address.</p>
                 </div>
 
-                <Alert className="border-cyan-500/30 bg-cyan-500/5">
-                  <AlertDescription className="text-sm text-gray-400">
-                    <strong className="text-cyan-400">Important:</strong> Only send USDT on the Ethereum (ERC20) network to this address. Sending other assets or using different networks may result in permanent loss.
-                  </AlertDescription>
-                </Alert>
-
                 {/* USDT ERC20 Wallet Section */}
-                <Card className="bg-gradient-to-br from-emerald-500/10 to-cyan-500/5 border-emerald-500/30">
-                  <CardContent className="p-6">
-                    <div className="flex items-center gap-2 mb-4">
-                      <Wallet className="w-5 h-5 text-emerald-400" />
-                      <h4 className="text-lg font-bold text-white">USDT Deposit Address (ERC20)</h4>
+                <div className="bg-[#050505] border border-emerald-500/20 rounded-xl p-6 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-20 h-20 bg-emerald-500/10 rounded-bl-full" />
+                    
+                    <div className="flex items-center gap-3 mb-8">
+                      <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
+                         <QrCode className="w-5 h-5 text-emerald-400" />
+                      </div>
+                      <div>
+                         <h4 className="text-white font-medium">USDT Deposit Address</h4>
+                         <span className="text-xs text-emerald-500 font-mono">NETWORK: ETHEREUM (ERC20)</span>
+                      </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                       {/* USDT QR Code */}
-                      <div className="flex flex-col items-center justify-center p-4 bg-white rounded-lg">
+                      <div className="flex flex-col items-center justify-center p-6 bg-white rounded-xl shadow-xl shadow-black/50">
                         <img
                           src="/wallet.png"
                           alt="USDT Wallet QR Code"
-                          className="w-48 h-48 object-contain"
+                          className="w-40 h-40 object-contain mix-blend-multiply"
                         />
-                        <p className="text-gray-600 text-xs mt-3 text-center font-medium">Scan to deposit USDT (ERC20)</p>
+                        <p className="text-black/60 text-[10px] mt-4 font-mono tracking-widest text-center uppercase">Scan for ERC20 Deposit</p>
                       </div>
 
                       {/* USDT Address */}
-                      <div className="space-y-4">
-                        <div>
-                          <Label className="text-gray-300 mb-2 block text-sm">USDT Address (ERC20)</Label>
-                          <div className="p-4 bg-black/20 border border-emerald-500/20 rounded-lg">
-                            <p className="text-emerald-400 font-mono text-xs break-all">
+                      <div className="space-y-6 flex flex-col justify-center">
+                        <div className="space-y-2">
+                          <Label className="text-gray-500 text-xs uppercase tracking-wider">Wallet Address</Label>
+                          <div className="flex gap-2">
+                            <div className="flex-1 p-4 bg-white/5 border border-white/10 rounded-lg font-mono text-xs md:text-sm text-gray-300 break-all">
                               0xffE27BE1db0c29Be881f570b3d9961712b22C287
-                            </p>
+                            </div>
+                            <Button
+                              onClick={() => {
+                                navigator.clipboard.writeText('0xffE27BE1db0c29Be881f570b3d9961712b22C287')
+                              }}
+                              className="h-auto bg-emerald-600 hover:bg-emerald-500 text-white"
+                            >
+                              <Copy className="w-4 h-4" />
+                            </Button>
                           </div>
                         </div>
 
-                        <Button
-                          onClick={() => {
-                            navigator.clipboard.writeText('0xffE27BE1db0c29Be881f570b3d9961712b22C287')
-                          }}
-                          className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold"
-                        >
-                          <Copy className="w-4 h-4 mr-2" />
-                          Copy USDT Address
-                        </Button>
-
-                        <div className="pt-4 border-t border-emerald-500/20 space-y-2">
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-gray-400">Network</span>
-                            <span className="text-white font-medium">Ethereum (ERC20)</span>
+                        <div className="space-y-3 pt-4 border-t border-white/5">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-500">Network Status</span>
+                            <span className="text-emerald-400 flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"/> Online</span>
                           </div>
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-gray-400">Min Deposit</span>
-                            <span className="text-white font-medium">10 USDT</span>
-                          </div>
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-gray-400">Confirmations</span>
-                            <span className="text-white font-medium">12 blocks</span>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-500">Min. Deposit</span>
+                            <span className="text-white font-mono">10.00 USDT</span>
                           </div>
                         </div>
 
-                        <Alert className="border-yellow-500/30 bg-yellow-500/5">
-                          <AlertDescription className="text-xs text-gray-400">
-                            <strong className="text-yellow-400">Note:</strong> Send only USDT on ERC20 network. Gas fees apply on Ethereum network.
+                        <Alert className="border-amber-500/20 bg-amber-500/5 p-3">
+                          <AlertDescription className="text-xs text-amber-400/80 flex items-start gap-2">
+                            <AlertTriangle className="w-4 h-4 shrink-0" />
+                            Send only USDT (ERC20). Other assets may be permanently lost.
                           </AlertDescription>
                         </Alert>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-
+                </div>
               </div>
             ) : (
-              <div className="space-y-6">
+              <div className="space-y-8">
                 <div>
-                  <h3 className="text-xl font-bold text-white mb-2">Withdraw USDT</h3>
-                  <p className="text-gray-400 text-sm">Send USDT from your wallet to another address</p>
+                  <h3 className="text-xl font-bold text-white mb-2">Withdraw Funds</h3>
+                  <p className="text-gray-400 text-sm">Transfer your earnings to an external wallet.</p>
                 </div>
-
-                <Alert className="border-yellow-500/30 bg-yellow-500/5">
-                  <AlertDescription className="text-sm text-gray-400">
-                    <strong className="text-yellow-400">Notice:</strong> Withdrawals are processed manually by admin. Please allow 1-24 hours for processing.
-                  </AlertDescription>
-                </Alert>
 
                 {withdrawMessage && (
                   <Alert className={`border ${withdrawMessage.type === 'success'
@@ -741,129 +973,89 @@ function WalletView({ user }: { user: UserType | null }) {
                   </Alert>
                 )}
 
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="withdraw-amount" className="text-gray-300 mb-2 block">
-                      Amount (USDT)
-                    </Label>
-                    <Input
-                      id="withdraw-amount"
-                      type="number"
-                      value={withdrawAmount}
-                      onChange={(e) => setWithdrawAmount(e.target.value)}
-                      placeholder="0.00"
-                      className="bg-[#1a1a2e] border-white/10 text-white h-12"
-                    />
-                    <div className="flex items-center justify-between mt-2 text-xs">
-                      <span className="text-gray-500">Available: {user.wallet_balance_usdt.toFixed(2)} USDT</span>
-                      <button
-                        onClick={() => setWithdrawAmount(user.wallet_balance_usdt.toString())}
-                        className="text-cyan-400 hover:text-cyan-300"
-                      >
-                        Max
-                      </button>
-                    </div>
-                  </div>
-
+                <div className="space-y-6">
                   {/* Network Selector */}
-                  <div>
-                    <Label className="text-gray-300 mb-2 block">
-                      Select Network
-                    </Label>
-                    <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-2 gap-4">
                       <button
                         onClick={() => setWithdrawNetwork('TRC20')}
-                        className={`p-4 rounded-lg border-2 transition-all ${withdrawNetwork === 'TRC20'
-                          ? 'border-emerald-500 bg-emerald-500/10'
-                          : 'border-white/10 bg-white/5 hover:border-white/20'
+                        className={`p-4 rounded-xl border transition-all text-left ${withdrawNetwork === 'TRC20'
+                          ? 'border-emerald-500/50 bg-emerald-500/5'
+                          : 'border-white/10 bg-[#050505] hover:border-white/20'
                           }`}
                       >
-                        <div className="flex items-center justify-center gap-2 mb-2">
-                          <div className={`w-3 h-3 rounded-full ${withdrawNetwork === 'TRC20' ? 'bg-emerald-500' : 'bg-gray-500'
-                            }`} />
-                          <span className={`font-bold ${withdrawNetwork === 'TRC20' ? 'text-emerald-400' : 'text-gray-400'
-                            }`}>TRC20</span>
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className={`w-2 h-2 rounded-full ${withdrawNetwork === 'TRC20' ? 'bg-emerald-500' : 'bg-gray-600'}`} />
+                          <span className={`font-mono text-sm font-bold ${withdrawNetwork === 'TRC20' ? 'text-emerald-400' : 'text-gray-400'}`}>TRC20</span>
                         </div>
-                        <div className="text-xs text-gray-500">Tron Network</div>
-                        <div className="text-xs text-gray-400 mt-1">Low fees (~1 USDT)</div>
+                        <div className="text-[10px] text-gray-500 uppercase tracking-wider">Tron Network</div>
                       </button>
 
                       <button
                         onClick={() => setWithdrawNetwork('ERC20')}
-                        className={`p-4 rounded-lg border-2 transition-all ${withdrawNetwork === 'ERC20'
-                          ? 'border-blue-500 bg-blue-500/10'
-                          : 'border-white/10 bg-white/5 hover:border-white/20'
+                        className={`p-4 rounded-xl border transition-all text-left ${withdrawNetwork === 'ERC20'
+                          ? 'border-blue-500/50 bg-blue-500/5'
+                          : 'border-white/10 bg-[#050505] hover:border-white/20'
                           }`}
                       >
-                        <div className="flex items-center justify-center gap-2 mb-2">
-                          <div className={`w-3 h-3 rounded-full ${withdrawNetwork === 'ERC20' ? 'bg-blue-500' : 'bg-gray-500'
-                            }`} />
-                          <span className={`font-bold ${withdrawNetwork === 'ERC20' ? 'text-blue-400' : 'text-gray-400'
-                            }`}>ERC20</span>
+                         <div className="flex items-center gap-2 mb-2">
+                          <div className={`w-2 h-2 rounded-full ${withdrawNetwork === 'ERC20' ? 'bg-blue-500' : 'bg-gray-600'}`} />
+                          <span className={`font-mono text-sm font-bold ${withdrawNetwork === 'ERC20' ? 'text-blue-400' : 'text-gray-400'}`}>ERC20</span>
                         </div>
-                        <div className="text-xs text-gray-500">Ethereum Network</div>
-                        <div className="text-xs text-gray-400 mt-1">Higher fees (~5-20 USDT)</div>
+                        <div className="text-[10px] text-gray-500 uppercase tracking-wider">Ethereum Network</div>
                       </button>
                     </div>
-                  </div>
 
-                  <div>
-                    <Label htmlFor="withdraw-address" className="text-gray-300 mb-2 block">
-                      Recipient Address ({withdrawNetwork})
-                    </Label>
-                    <Input
-                      id="withdraw-address"
-                      value={withdrawAddress}
-                      onChange={handleWithdrawAddressChange}
-                      placeholder={withdrawNetwork === 'TRC20' ? 'T...' : '0x...'}
-                      className={`bg-[#1a1a2e] border-white/10 text-white h-12 ${addressValidation?.isValid ? 'border-emerald-500/50' :
-                        addressValidation?.error ? 'border-red-500/50' : ''
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                        <Label className="text-gray-500 text-xs uppercase tracking-wider">Withdrawal Amount</Label>
+                        <div className="relative">
+                            <Input
+                            type="number"
+                            value={withdrawAmount}
+                            onChange={(e) => setWithdrawAmount(e.target.value)}
+                            placeholder="0.00"
+                            className="bg-[#050505] border-white/10 text-white h-14 pl-4 text-lg font-mono focus:border-cyan-500/50"
+                            />
+                            <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-3">
+                                <span className="text-gray-500 text-sm font-mono">USDT</span>
+                                <button 
+                                    onClick={() => setWithdrawAmount(user.wallet_balance_usdt.toString())}
+                                    className="text-cyan-500 text-xs font-bold hover:text-cyan-400 uppercase border border-cyan-500/30 px-2 py-1 rounded hover:bg-cyan-500/10 transition-colors"
+                                >
+                                    MAX
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label className="text-gray-500 text-xs uppercase tracking-wider">Destination Address</Label>
+                        <Input
+                        value={withdrawAddress}
+                        onChange={handleWithdrawAddressChange}
+                        placeholder={withdrawNetwork === 'TRC20' ? 'T...' : '0x...'}
+                        className={`bg-[#050505] border-white/10 text-white h-12 font-mono text-sm ${
+                            addressValidation?.isValid ? 'border-emerald-500/50 text-emerald-400' : 
+                            addressValidation?.error ? 'border-red-500/50' : ''
                         }`}
-                    />
-
-                    {/* Address Validation Feedback */}
-                    {addressValidation && (
-                      <div className={`mt-2 p-3 rounded-lg border ${addressValidation.isValid
-                        ? 'bg-emerald-500/10 border-emerald-500/30'
-                        : 'bg-red-500/10 border-red-500/30'
-                        }`}>
-                        {addressValidation.isValid ? (
-                          <div className="flex items-center gap-2">
-                            <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                            <div className="flex-1">
-                              <div className="text-sm font-semibold text-emerald-400">Valid Address</div>
-                              <div className="text-xs text-gray-400 mt-0.5">
-                                Network: <span className="text-white font-medium">{addressValidation.network}</span>
-                              </div>
+                        />
+                        {addressValidation && (
+                            <div className={`text-xs flex items-center gap-1.5 ${addressValidation.isValid ? 'text-emerald-500' : 'text-red-500'}`}>
+                                {addressValidation.isValid ? <CheckCircle2 className="w-3 h-3" /> : <AlertTriangle className="w-3 h-3" />}
+                                {addressValidation.isValid ? 'Valid wallet address' : addressValidation.error}
                             </div>
-                          </div>
-                        ) : (
-                          <div className="flex items-start gap-2">
-                            <Shield className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
-                            <div className="flex-1">
-                              <div className="text-sm font-semibold text-red-400">
-                                {addressValidation.network !== 'Unknown' ? `${addressValidation.network} Detected` : 'Invalid Address'}
-                              </div>
-                              <div className="text-xs text-gray-400 mt-0.5">{addressValidation.error}</div>
-                            </div>
-                          </div>
                         )}
-                      </div>
-                    )}
+                    </div>
                   </div>
 
-                  <div className="p-4 bg-white/5 rounded-lg border border-white/10 space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-400">Withdrawal Amount</span>
-                      <span className="text-white font-medium">{withdrawAmount || '0.00'} USDT</span>
+                  <div className="p-4 bg-white/5 rounded-lg border border-white/5 space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">Network Fee</span>
+                      <span className="text-white font-mono">1.00 USDT</span>
                     </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-400">Network Fee</span>
-                      <span className="text-white font-medium">~1 USDT</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm pt-2 border-t border-white/10">
-                      <span className="text-white font-semibold">You will receive</span>
-                      <span className="text-emerald-400 font-bold">
+                    <div className="flex justify-between text-sm pt-2 border-t border-white/5">
+                      <span className="text-gray-400">Total Receive</span>
+                      <span className="text-cyan-400 font-mono font-bold">
                         {withdrawAmount ? (parseFloat(withdrawAmount) - 1).toFixed(2) : '0.00'} USDT
                       </span>
                     </div>
@@ -872,21 +1064,16 @@ function WalletView({ user }: { user: UserType | null }) {
                   <Button
                     onClick={handleWithdrawSubmit}
                     disabled={!withdrawAmount || !withdrawAddress || parseFloat(withdrawAmount) < 10 || !addressValidation?.isValid || withdrawing}
-                    className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white h-12 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full bg-cyan-600 hover:bg-cyan-500 text-white h-12 font-mono uppercase tracking-widest text-sm"
                   >
                     {withdrawing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Zap className="w-4 h-4 mr-2" />}
-                    {withdrawing ? 'Processing...' : 'Request Withdrawal'}
+                    {withdrawing ? 'PROCESSING_REQUEST...' : 'INITIATE_WITHDRAWAL'}
                   </Button>
-
-                  <p className="text-xs text-gray-500 text-center">
-                    Minimum withdrawal: 10 USDT • Processing time: 1-24 hours
-                  </p>
                 </div>
               </div>
             )}
           </div>
-        </CardContent>
-      </Card>
+      </div>
     </div>
   )
 }
@@ -915,34 +1102,41 @@ function AccountView({ user }: { user: UserType | null }) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold text-white">Agent Profile</h2>
-          <p className="text-gray-400 mt-1">Manage your account and verification</p>
+           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono mb-2">
+            <User className="w-3 h-3" />
+            AGENT_IDENTITY
+          </div>
+          <h2 className="text-3xl font-bold text-white tracking-tight">Agent Profile</h2>
+          <p className="text-gray-400 text-sm mt-1">Manage your secure identity and security settings.</p>
         </div>
-        <Badge
-          variant="outline"
-          className={`px-4 py-2 ${isVerified
-            ? 'border-emerald-500/30 text-emerald-400 bg-emerald-500/5'
+        <div className={`px-4 py-2 rounded-full border text-xs font-mono uppercase tracking-wider flex items-center gap-2 ${isVerified
+            ? 'border-emerald-500/30 text-emerald-400 bg-emerald-500/5 shadow-[0_0_10px_rgba(16,185,129,0.2)]'
             : 'border-yellow-500/30 text-yellow-400 bg-yellow-500/5'
-            }`}
-        >
-          <Shield className="w-3 h-3 mr-2" />
-          {isVerified ? 'Verified Agent' : 'Pending Verification'}
-        </Badge>
+            }`}>
+          <Shield className="w-3 h-3" />
+          {isVerified ? 'VERIFIED_OPERATOR' : 'PENDING_VERIFICATION'}
+        </div>
       </div>
 
       {/* Profile Card */}
-      <Card className="bg-card border-border overflow-hidden relative shadow-xs">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-        <CardContent className="p-6 md:p-8 relative z-10">
-          <div className="flex flex-col md:flex-row items-center gap-6 md:gap-8">
+      <div className="relative group bg-[#0c0c0e] border border-white/10 hover:border-emerald-500/30 transition-all duration-300 p-8 overflow-hidden rounded-xl">
+        {/* Cyber Corners */}
+        <div className="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 border-white/10 group-hover:border-emerald-500 transition-colors" />
+        <div className="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 border-white/10 group-hover:border-emerald-500 transition-colors" />
+        <div className="absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 border-white/10 group-hover:border-emerald-500 transition-colors" />
+        <div className="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 border-white/10 group-hover:border-emerald-500 transition-colors" />
+
+        <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+
+        <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
             {/* Avatar */}
             <div className="relative shrink-0">
-              <div className="w-24 h-24 md:w-32 md:h-32 rounded-2xl bg-secondary border border-border flex items-center justify-center text-4xl md:text-5xl font-bold text-primary shadow-sm">
+              <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-[#050505] border border-white/10 flex items-center justify-center text-4xl md:text-5xl font-mono font-bold text-emerald-500 shadow-[0_0_30px_rgba(16,185,129,0.15)] ring-1 ring-white/5">
                 {localUser.name.charAt(0).toUpperCase()}
               </div>
               {isVerified && (
-                <div className="absolute -bottom-2 -right-2 w-8 h-8 md:w-10 md:h-10 bg-emerald-500 rounded-full flex items-center justify-center border-4 border-card">
-                  <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-white" />
+                <div className="absolute bottom-0 right-0 w-8 h-8 md:w-10 md:h-10 bg-[#0c0c0e] rounded-full flex items-center justify-center border border-emerald-500/50 shadow-lg">
+                  <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-emerald-500" />
                 </div>
               )}
             </div>
@@ -950,28 +1144,37 @@ function AccountView({ user }: { user: UserType | null }) {
             {/* Info */}
             <div className="flex-1 text-center md:text-left space-y-4 w-full">
               <div>
-                <h3 className="text-2xl md:text-3xl font-bold text-foreground mb-2 truncate">{localUser.name}</h3>
+                <h3 className="text-2xl md:text-4xl font-bold text-white mb-3 tracking-tight">{localUser.name}</h3>
                 <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
-                  <span className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/50 border border-border text-muted-foreground text-sm max-w-full truncate">
-                    <User className="w-4 h-4 text-primary" />
-                    <span className="truncate">{localUser.email}</span>
+                  <span className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-gray-300 text-xs font-mono hover:bg-white/10 transition-colors cursor-default">
+                    <User className="w-3 h-3 text-emerald-500" />
+                    {localUser.email}
                   </span>
-                  <span className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/50 border border-border text-muted-foreground text-sm whitespace-nowrap">
-                    <Shield className="w-4 h-4 text-primary" />
-                    REF: {localUser.wallet_ref}
+                  <span className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-gray-300 text-xs font-mono hover:bg-white/10 transition-colors cursor-default">
+                    <Shield className="w-3 h-3 text-emerald-500" />
+                    REF_ID: <span className="text-emerald-400">{localUser.wallet_ref}</span>
                   </span>
                 </div>
               </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Account Settings */}
-      <AccountSettings
-        user={localUser as any}
-        onUpdate={refreshUser}
-      />
+      <div className="bg-[#0c0c0e] border border-white/10 rounded-xl overflow-hidden relative">
+        <div className="bg-white/5 border-b border-white/5 p-6">
+           <h3 className="text-lg font-bold text-white flex items-center gap-2">
+            <Zap className="w-4 h-4 text-emerald-500" />
+            Security Configuration
+          </h3>
+        </div>
+        <div className="p-6 md:p-8">
+          <AccountSettings
+            user={localUser as any}
+            onUpdate={refreshUser}
+          />
+        </div>
+      </div>
     </div>
   )
 }
@@ -1009,115 +1212,141 @@ function HistoryView({ user }: { user: UserType | null }) {
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <h2 className="text-3xl font-bold text-white">Transactions Log</h2>
-          <Badge variant="secondary" className="text-xs">
-            {loading ? '...' : transactions.length}
-          </Badge>
+          <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+            <History className="w-6 h-6 text-emerald-500" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-white tracking-tight">Transactions Log</h2>
+            <div className="flex items-center gap-2 text-xs text-gray-400 font-mono mt-1">
+               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+               LIVE_LEDGER_SYNC
+            </div>
+          </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={fetchHistory} disabled={loading}>
-            <span className={loading ? "animate-spin mr-2" : "mr-2"}>⟳</span> Refresh
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={fetchHistory} 
+            disabled={loading}
+            className="border-white/10 bg-[#0c0c0e] hover:bg-white/5 text-gray-300 hover:text-white font-mono text-xs uppercase tracking-wider"
+          >
+            <span className={loading ? "animate-spin mr-2" : "mr-2"}>⟳</span> REFRESH_DATA
           </Button>
-          <Badge variant="outline" className="border-primary/30 text-primary bg-primary/5">
-            Verified Ledger
-          </Badge>
         </div>
       </div>
 
-      {/* Mobile View - Explicitly Separate Container */}
+      {/* Mobile View */}
       <div className="md:hidden space-y-4">
-        <div className="text-xs text-muted-foreground px-1">
-          {loading ? 'Loading...' : `Found ${transactions.length} records`}
-        </div>
-
         {loading ? (
-          <div className="text-center text-muted-foreground py-8">Loading records...</div>
+          <div className="text-center text-gray-500 py-12 font-mono text-xs animate-pulse">
+            <Loader2 className="w-6 h-6 mx-auto mb-3 text-emerald-500 animate-spin" />
+            INITIALIZING_DATA_STREAM...
+          </div>
         ) : transactions.length === 0 ? (
-          <div className="text-center text-muted-foreground py-8">No transactions found</div>
+          <div className="text-center text-gray-500 py-12 font-mono text-xs border border-white/5 rounded-xl bg-[#0c0c0e]">
+            NO_TRANSACTIONS_FOUND_ON_CHAIN
+          </div>
         ) : (
           transactions.map((tx) => (
-            <Card key={tx.id} className="bg-card border-border mb-4">
-              <CardContent className="p-4 space-y-3">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <div className="font-bold text-foreground">{String(tx.package || 'Unknown Package')}</div>
-                    <div className="text-xs text-muted-foreground font-mono mt-1 w-32 truncate">{tx.buyer_wallet}</div>
+            <div key={tx.id} className="bg-[#0c0c0e] border border-white/10 rounded-xl p-5 space-y-4 relative overflow-hidden group hover:border-emerald-500/30 transition-all">
+               {/* Decorative Gradient */}
+               <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-emerald-500/10 to-transparent rounded-full blur-xl -mr-10 -mt-10 pointer-events-none opacity-50" />
+               
+                <div className="flex justify-between items-start relative z-10">
+                  <div className="space-y-1">
+                    <div className="font-bold text-white text-sm tracking-tight">{String(tx.package || 'Unknown Package')}</div>
+                    <div className="text-[10px] text-gray-500 font-mono w-32 truncate bg-white/5 px-2 py-1 rounded border border-white/5">{tx.buyer_wallet}</div>
                   </div>
                   <Badge variant="outline" className={`
-                       ${tx.status === 'completed' ? 'border-emerald-500/30 text-emerald-500 bg-emerald-500/10' : ''}
-                       ${tx.status === 'pending' ? 'border-yellow-500/30 text-yellow-500 bg-yellow-500/10' : ''}
-                       ${tx.status === 'failed' ? 'border-red-500/30 text-red-500 bg-red-500/10' : ''}
-                       uppercase text-[10px]
+                       ${tx.status === 'completed' ? 'border-emerald-500/30 text-emerald-400 bg-emerald-500/5' : ''}
+                       ${tx.status === 'pending' ? 'border-yellow-500/30 text-yellow-400 bg-yellow-500/5' : ''}
+                       ${tx.status === 'failed' ? 'border-red-500/30 text-red-400 bg-red-500/5' : ''}
+                       uppercase text-[10px] tracking-widest font-mono
                      `}>
                     {tx.status}
                   </Badge>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 text-sm pt-2 border-t border-border/50">
+                <div className="grid grid-cols-2 gap-4 text-xs pt-4 border-t border-white/5 relative z-10">
                   <div className="min-w-0">
-                    <div className="text-muted-foreground text-[10px] mb-0.5">Amount</div>
-                    <div className="text-foreground font-medium text-xs break-words">{Number(tx.amount).toLocaleString()} USDT</div>
+                    <div className="text-gray-500 text-[10px] mb-1 uppercase tracking-wider font-mono">Amount</div>
+                    <div className="text-white font-mono break-words text-sm">{Number(tx.amount).toLocaleString()} USDT</div>
                   </div>
                   <div className="text-right min-w-0">
-                    <div className="text-muted-foreground text-[10px] mb-0.5">Commission</div>
-                    <div className="text-emerald-500 font-medium text-xs break-words">+{Number(tx.commission).toLocaleString()} USDT</div>
+                    <div className="text-gray-500 text-[10px] mb-1 uppercase tracking-wider font-mono">Commission</div>
+                    <div className="text-emerald-400 font-mono break-words text-sm">+{Number(tx.commission).toLocaleString()} USDT</div>
                   </div>
                   <div className="min-w-0">
-                    <div className="text-muted-foreground text-[10px] mb-0.5">BTC Amount</div>
-                    <div className="text-orange-500 font-medium text-xs truncate">{tx.btc_amount || 'N/A'}</div>
+                    <div className="text-gray-500 text-[10px] mb-1 uppercase tracking-wider font-mono">BTC Value</div>
+                    <div className="text-white font-mono truncate text-sm flex items-center gap-1">
+                      <Bitcoin className="w-3 h-3 text-[#F7931A]" />
+                      {tx.btc_amount || 'N/A'}
+                    </div>
                   </div>
                   <div className="text-right min-w-0">
-                    <div className="text-muted-foreground text-[10px] mb-0.5">Date</div>
-                    <div className="text-muted-foreground text-xs">{new Date(tx.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
+                    <div className="text-gray-500 text-[10px] mb-1 uppercase tracking-wider font-mono">Timestamp</div>
+                    <div className="text-gray-400 font-mono text-sm">{new Date(tx.date).toLocaleDateString()}</div>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+            </div>
           ))
         )}
       </div>
 
-      {/* Desktop View (Table) - Explicitly Hidden on Mobile */}
-      <Card className="hidden md:block bg-card border-border">
-        <CardContent className="p-0">
+      {/* Desktop View */}
+      <div className="hidden md:block bg-[#0c0c0e] border border-white/10 rounded-xl overflow-hidden shadow-2xl relative">
+          {/* Top Line */}
+          <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent opacity-50" />
+
           <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead className="bg-secondary/50 border-b border-border text-muted-foreground font-medium text-sm">
+            <table className="w-full text-left border-collapse">
+              <thead className="bg-white/5 border-b border-white/10 text-gray-400 font-mono text-xs uppercase tracking-wider">
                 <tr>
-                  <th className="p-4">Package</th>
-                  <th className="p-4">Bitcoin Wallet</th>
-                  <th className="p-4">Amount</th>
-                  <th className="p-4">BTC Amount</th>
-                  <th className="p-4">Commission</th>
-                  <th className="p-4">Status</th>
-                  <th className="p-4">Date</th>
+                  <th className="p-5 font-medium">Package</th>
+                  <th className="p-5 font-medium">Bitcoin Wallet</th>
+                  <th className="p-5 font-medium">Amount</th>
+                  <th className="p-5 font-medium">BTC Amount</th>
+                  <th className="p-5 font-medium">Commission</th>
+                  <th className="p-5 font-medium">Status</th>
+                  <th className="p-5 font-medium">Date</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border">
+              <tbody className="divide-y divide-white/5 text-sm">
                 {loading ? (
-                  <tr><td colSpan={7} className="p-8 text-center text-muted-foreground">Loading records...</td></tr>
+                  <tr><td colSpan={7} className="p-12 text-center text-gray-500 font-mono text-xs animate-pulse">INITIALIZING_DATA_STREAM...</td></tr>
                 ) : transactions.length === 0 ? (
-                  <tr><td colSpan={7} className="p-8 text-center text-muted-foreground">No transactions found</td></tr>
+                  <tr><td colSpan={7} className="p-12 text-center text-gray-500 font-mono text-xs">NO_TRANSACTIONS_FOUND_ON_CHAIN</td></tr>
                 ) : (
                   transactions.map((tx) => (
-                    <tr key={tx.id} className="hover:bg-secondary/50 transition-colors">
-                      <td className="p-4 text-foreground font-medium">{String(tx.package || 'Unknown Package')}</td>
-                      <td className="p-4 text-muted-foreground font-mono text-xs max-w-[150px] truncate" title={tx.buyer_wallet}>{tx.buyer_wallet}</td>
-                      <td className="p-4 text-foreground">{Number(tx.amount).toLocaleString()} USDT</td>
-                      <td className="p-4 text-primary font-bold">{tx.btc_amount || 'N/A'}</td>
-                      <td className="p-4 text-emerald-500 font-bold">+{Number(tx.commission).toLocaleString()} USDT</td>
-                      <td className="p-4">
+                    <tr key={tx.id} className="hover:bg-white/[0.02] transition-colors group">
+                      <td className="p-5 text-white font-medium flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-emerald-500/50"></div>
+                        {String(tx.package || 'Unknown Package')}
+                      </td>
+                      <td className="p-5 text-gray-500 font-mono text-xs">
+                        <span className="bg-[#050505] px-3 py-1.5 rounded border border-white/10 group-hover:border-emerald-500/30 group-hover:text-emerald-400 transition-all cursor-default select-all" title={tx.buyer_wallet}>
+                          {tx.buyer_wallet && tx.buyer_wallet.length > 16 ? `${tx.buyer_wallet.substring(0, 8)}...${tx.buyer_wallet.substring(tx.buyer_wallet.length - 8)}` : tx.buyer_wallet}
+                        </span>
+                      </td>
+                      <td className="p-5 text-white font-mono">{Number(tx.amount).toLocaleString()} USDT</td>
+                      <td className="p-5 text-white font-mono flex items-center gap-1.5">
+                        <Bitcoin className="w-3 h-3 text-[#F7931A]" />
+                        {tx.btc_amount || 'N/A'}
+                      </td>
+                      <td className="p-5 text-emerald-400 font-mono font-bold">+{Number(tx.commission).toLocaleString()} USDT</td>
+                      <td className="p-5">
                         <Badge variant="outline" className={`
-                           ${tx.status === 'completed' ? 'border-emerald-500/30 text-emerald-500 bg-emerald-500/10' : ''}
-                           ${tx.status === 'pending' ? 'border-yellow-500/30 text-yellow-500 bg-yellow-500/10' : ''}
-                           ${tx.status === 'failed' ? 'border-red-500/30 text-red-500 bg-red-500/10' : ''}
-                           uppercase text-xs
+                           ${tx.status === 'completed' ? 'border-emerald-500/30 text-emerald-400 bg-emerald-500/5' : ''}
+                           ${tx.status === 'pending' ? 'border-yellow-500/30 text-yellow-400 bg-yellow-500/5' : ''}
+                           ${tx.status === 'failed' ? 'border-red-500/30 text-red-400 bg-red-500/5' : ''}
+                           uppercase text-[10px] tracking-widest font-mono rounded-sm px-2 py-0.5
                          `}>
                           {tx.status}
                         </Badge>
                       </td>
-                      <td className="p-4 text-muted-foreground text-sm">
-                        {new Date(tx.date).toLocaleDateString()}
+                      <td className="p-5 text-gray-500 font-mono text-xs">
+                        {new Date(tx.date).toLocaleString()}
                       </td>
                     </tr>
                   ))
@@ -1125,394 +1354,7 @@ function HistoryView({ user }: { user: UserType | null }) {
               </tbody>
             </table>
           </div>
-        </CardContent>
-      </Card>
-    </div>
-  )
-}
-
-
-function PaymentView({ pkg, user, onSubmit, loading, onBack }: {
-  pkg: PackageType
-  user: UserType | null
-  onSubmit: (bitcoinAddress: string) => void
-  loading: boolean
-  onBack?: () => void
-}) {
-  if (!user) return null
-
-  const [recipientAddress, setRecipientAddress] = useState('')
-  const [addressValidation, setAddressValidation] = useState<{
-    isValid: boolean
-    network: string
-    error: string
-  } | null>(null)
-
-  const hasEnoughBalance = user.wallet_balance_usdt >= pkg.price_usd
-  const shortage = pkg.price_usd - user.wallet_balance_usdt
-  const commission = pkg.price_usd * 0.1
-  const finalBalance = user.wallet_balance_usdt - pkg.price_usd + commission
-
-  // Wallet address validation algorithm
-  const validateWalletAddress = (address: string) => {
-    if (!address || address.trim() === '') {
-      setAddressValidation(null)
-      return
-    }
-
-    const trimmedAddress = address.trim()
-    let isValid = false
-    let network = 'Unknown'
-    let error = ''
-    let isBitcoin = false
-
-    // Bitcoin (BTC) validation
-    // Legacy (P2PKH): starts with 1, 26-35 characters
-    // SegWit (P2SH): starts with 3, 26-35 characters  
-    // Native SegWit (Bech32): starts with bc1, 42-62 characters
-    if (/^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/.test(trimmedAddress)) {
-      network = 'Bitcoin (Legacy/SegWit)'
-      isBitcoin = true
-      isValid = true
-    } else if (/^bc1[a-z0-9]{39,59}$/.test(trimmedAddress)) {
-      network = 'Bitcoin (Native SegWit)'
-      isBitcoin = true
-      isValid = true
-    }
-    // Ethereum (ETH) validation: starts with 0x, 42 characters total
-    else if (/^0x[a-fA-F0-9]{40}$/.test(trimmedAddress)) {
-      network = 'Ethereum (ERC20)'
-      error = 'Only Bitcoin (BTC) addresses are accepted. Please use a Bitcoin wallet address.'
-    }
-    // Tron (TRX) validation: starts with T, 34 characters
-    else if (/^T[A-Za-z1-9]{33}$/.test(trimmedAddress)) {
-      network = 'Tron (TRC20)'
-      error = 'Only Bitcoin (BTC) addresses are accepted. Please use a Bitcoin wallet address.'
-    }
-    // Solana (SOL) validation: base58, 32-44 characters
-    else if (/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(trimmedAddress) && !trimmedAddress.startsWith('T') && !trimmedAddress.startsWith('1') && !trimmedAddress.startsWith('3')) {
-      network = 'Solana'
-      error = 'Only Bitcoin (BTC) addresses are accepted. Please use a Bitcoin wallet address.'
-    }
-    // Litecoin (LTC) validation: starts with L or M, 26-35 characters
-    else if (/^[LM][a-km-zA-HJ-NP-Z1-9]{26,33}$/.test(trimmedAddress)) {
-      network = 'Litecoin'
-      error = 'Only Bitcoin (BTC) addresses are accepted. Please use a Bitcoin wallet address.'
-    }
-    // Dogecoin (DOGE) validation: starts with D, 34 characters
-    else if (/^D{1}[5-9A-HJ-NP-U]{1}[1-9A-HJ-NP-Za-km-z]{32}$/.test(trimmedAddress)) {
-      network = 'Dogecoin'
-      error = 'Only Bitcoin (BTC) addresses are accepted. Please use a Bitcoin wallet address.'
-    }
-    // Ripple (XRP) validation: starts with r, 25-35 characters
-    else if (/^r[0-9a-zA-Z]{24,34}$/.test(trimmedAddress)) {
-      network = 'Ripple (XRP)'
-      error = 'Only Bitcoin (BTC) addresses are accepted. Please use a Bitcoin wallet address.'
-    }
-    else {
-      error = 'Invalid wallet address format. Please enter a valid Bitcoin (BTC) address.'
-    }
-
-    setAddressValidation({ isValid, network, error })
-  }
-
-  const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value
-    setRecipientAddress(value)
-    validateWalletAddress(value)
-  }
-
-  const canPurchase = hasEnoughBalance && recipientAddress.trim() !== '' && addressValidation?.isValid
-
-  return (
-    <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-8 duration-700">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <Button
-          variant="ghost"
-          onClick={() => onBack ? onBack() : window.location.reload()}
-          className="text-muted-foreground hover:text-white -ml-2 h-11"
-        >
-          <ChevronRight className="w-4 h-4 mr-1 rotate-180" /> Back
-        </Button>
-        <Badge variant="outline" className="border-white/20 text-gray-400">
-          Checkout
-        </Badge>
       </div>
-
-      {/* Main Card */}
-      <Card className="bg-card border-border overflow-hidden shadow-none">
-        {/* Package Header */}
-        <div className="bg-secondary/50 border-b border-border p-6">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <div className="flex items-center gap-2 text-sm text-gray-400 uppercase tracking-wider mb-2">
-                <Bitcoin className="w-4 h-4 text-[#F7931A]" />
-                {pkg.name}
-              </div>
-              <div className="text-5xl font-bold text-white mb-1">
-                {pkg.btc_amount} <span className="text-2xl text-gray-500 font-normal">BTC</span>
-              </div>
-              <p className="text-gray-400 text-sm">Flash Bitcoin License</p>
-            </div>
-            <div className="text-right">
-              <div className="text-sm text-gray-500 mb-1">Price</div>
-              <div className="text-3xl font-bold text-white">
-                ${pkg.price_usd.toLocaleString()}
-              </div>
-              <div className="text-sm text-gray-400">USDT</div>
-            </div>
-          </div>
-        </div>
-
-        <CardContent className="p-4 md:p-6 space-y-6">
-          {/* Package Features */}
-          {/* Package Features */}
-          <div>
-            <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">License Includes</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary border border-border">
-                <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
-                  <Zap className="w-5 h-5 text-emerald-500" />
-                </div>
-                <div>
-                  <div className="text-xs text-muted-foreground">Daily Capacity</div>
-                  <div className="text-foreground font-semibold">{pkg.btc_amount} BTC</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary border border-border">
-                <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center flex-shrink-0">
-                  <Clock className="w-5 h-5 text-blue-500" />
-                </div>
-                <div>
-                  <div className="text-xs text-muted-foreground">Duration</div>
-                  <div className="text-foreground font-semibold">{pkg.duration} Days</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary border border-border">
-                <div className="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center flex-shrink-0">
-                  <Activity className="w-5 h-5 text-purple-500" />
-                </div>
-                <div>
-                  <div className="text-xs text-muted-foreground">Transfers</div>
-                  <div className="text-foreground font-semibold">{pkg.transfers}</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary border border-border">
-                <div className="w-10 h-10 rounded-full bg-orange-500/10 flex items-center justify-center flex-shrink-0">
-                  <CheckCircle2 className="w-5 h-5 text-primary" />
-                </div>
-                <div className="flex-1">
-                  <div className="text-xs text-muted-foreground mb-1">Divisible</div>
-                  <div className="text-foreground font-semibold text-sm">Yes</div>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-6">
-              <Dialog>
-                <DialogTrigger className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border shadow-xs h-9 px-4 py-2 w-full border-primary/20 text-primary hover:bg-primary/10 bg-background">
-                  <Wallet className="w-4 h-4 mr-2" />
-                  Recommended Wallets to Use
-                </DialogTrigger>
-                <DialogContent className="bg-card border-border text-foreground sm:max-w-md">
-                  <DialogHeader>
-                    <DialogTitle className="text-xl font-bold flex items-center gap-2">
-                      <Bitcoin className="w-6 h-6 text-primary" />
-                      Bitcoin Flash Supported Wallets
-                    </DialogTitle>
-                    <DialogDescription className="text-muted-foreground">
-                      Our Flash protocol is fully compatible with these major providers.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="grid gap-6 py-4">
-                    {/* Decentralized */}
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2 pb-2 border-b border-border/50">
-                        <Shield className="w-4 h-4 text-emerald-500" />
-                        <span className="font-semibold text-sm uppercase tracking-wider text-muted-foreground">Decentralized (Web3)</span>
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        {['Trust Wallet', 'Exodus', 'BlueWallet', 'Atomic', 'Trezor', 'Ledger', 'MetaMask', 'Phantom'].map(wallet => (
-                          <div key={wallet} className="flex items-center gap-2 p-2 rounded-md bg-secondary/50 border border-border/50 hover:border-primary/30 transition-colors">
-                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
-                            <span className="text-sm font-medium">{wallet}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Centralized */}
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2 pb-2 border-b border-border/50">
-                        <Wallet className="w-4 h-4 text-blue-500" />
-                        <span className="font-semibold text-sm uppercase tracking-wider text-muted-foreground">Centralized (Exchanges)</span>
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        {['Binance', 'Coinbase', 'Bybit', 'KuCoin', 'OKX', 'Kraken', 'Bitget', 'Gate.io', 'HTX', 'MEXC'].map(wallet => (
-                          <div key={wallet} className="flex items-center gap-2 p-2 rounded-md bg-secondary/50 border border-border/50 hover:border-blue-500/30 transition-colors">
-                            <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div>
-                            <span className="text-sm font-medium">{wallet}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            </div>
-          </div>
-
-          {/* Divider */}
-          <div className="border-t border-white/5"></div>
-
-          {/* Payment Summary */}
-          <div>
-            <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Payment Summary</h3>
-
-            {/* Current Balance */}
-            <div className={`p-4 rounded-lg mb-4 border-2 ${hasEnoughBalance ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-red-500/5 border-red-500/20'}`}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Wallet className={`w-5 h-5 ${hasEnoughBalance ? 'text-emerald-400' : 'text-red-400'}`} />
-                  <div>
-                    <div className="text-xs text-gray-500">Your Wallet Balance</div>
-                    <div className="text-2xl font-bold text-white">
-                      ${user.wallet_balance_usdt.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </div>
-                  </div>
-                </div>
-                <Badge className={hasEnoughBalance ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-red-500/20 text-red-400 border-red-500/30'}>
-                  {hasEnoughBalance ? '✓ Sufficient' : '✗ Insufficient'}
-                </Badge>
-              </div>
-            </div>
-
-            {/* Price Breakdown */}
-            <div className="space-y-3 bg-white/5 rounded-lg p-4">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-400">Package Price</span>
-                <span className="text-white font-semibold">-${pkg.price_usd.toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-400 flex items-center gap-2">
-                  Commission (10%)
-                  <span className="text-xs text-emerald-400">Instant Reward</span>
-                </span>
-                <span className="text-emerald-400 font-semibold">+${commission.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Recipient Wallet Address */}
-          <div>
-            <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Recipient Wallet Address</h3>
-            <div className="space-y-3">
-              <div>
-                <Label htmlFor="recipient-address" className="text-gray-300 mb-2 block">
-                  Enter wallet address to receive Flash Bitcoin
-                </Label>
-                <Input
-                  id="recipient-address"
-                  value={recipientAddress}
-                  onChange={handleAddressChange}
-                  placeholder="Enter your wallet address..."
-                  className={`bg-[#0e0e24] border-white/10 text-white focus:border-cyan-500 h-12 ${addressValidation?.isValid ? 'border-emerald-500/50' :
-                    addressValidation?.error ? 'border-red-500/50' : ''
-                    }`}
-                />
-              </div>
-
-              {/* Validation Feedback */}
-              {addressValidation && (
-                <div className={`p-3 rounded-lg border ${addressValidation.isValid
-                  ? 'bg-emerald-500/10 border-emerald-500/30'
-                  : 'bg-red-500/10 border-red-500/30'
-                  }`}>
-                  {addressValidation.isValid ? (
-                    <div className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                      <div className="flex-1">
-                        <div className="text-sm font-semibold text-emerald-400">Valid Address</div>
-                        <div className="text-xs text-gray-400 mt-0.5">
-                          Network: <span className="text-white font-medium">{addressValidation.network}</span>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex items-start gap-2">
-                      <Shield className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
-                      <div className="flex-1">
-                        <div className="text-sm font-semibold text-red-400">Invalid Address</div>
-                        <div className="text-xs text-gray-400 mt-0.5">{addressValidation.error}</div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Insufficient Balance Warning */}
-          {!hasEnoughBalance && (
-            <Alert className="border-red-500/30 bg-red-500/10">
-              <AlertDescription className="flex items-start gap-3">
-                <Shield className="w-5 h-5 text-red-400 mt-0.5 flex-shrink-0" />
-                <div className="flex-1">
-                  <div className="font-semibold text-red-400 mb-1">Insufficient Balance</div>
-                  <div className="text-sm text-gray-400">
-                    You need <strong className="text-white">${shortage.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT</strong> more to complete this purchase.
-                  </div>
-                  <div className="text-xs text-gray-500 mt-2">
-                    💡 Please deposit funds to your wallet to complete this purchase.
-                  </div>
-                </div>
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {/* Purchase Button */}
-          <Button
-            onClick={() => onSubmit(recipientAddress)}
-            disabled={loading || !canPurchase}
-            className="w-full min-h-[3.5rem] h-auto py-3 text-base md:text-lg font-semibold bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-lg shadow-emerald-900/20 disabled:opacity-50 disabled:cursor-not-allowed disabled:from-gray-600 disabled:to-gray-600 whitespace-normal"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                Processing...
-              </>
-            ) : !hasEnoughBalance ? (
-              <>
-                <Shield className="w-5 h-5 mr-2 shrink-0" />
-                <span className="md:hidden">Top Up Required</span>
-                <span className="hidden md:inline">Insufficient Balance - Top Up Required</span>
-              </>
-            ) : !recipientAddress.trim() ? (
-              <>
-                <Wallet className="w-5 h-5 mr-2 shrink-0" />
-                Enter Recipient Address
-              </>
-            ) : !addressValidation?.isValid ? (
-              <>
-                <Shield className="w-5 h-5 mr-2 shrink-0" />
-                Invalid Wallet Address
-              </>
-            ) : (
-              <>
-                <CheckCircle2 className="w-5 h-5 mr-2 shrink-0" />
-                Confirm - ${pkg.price_usd.toLocaleString()}
-              </>
-            )}
-          </Button>
-
-          {/* Security Note */}
-          <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
-            <Shield className="w-3 h-3" />
-            <span>Secure transaction • Instant activation • 24/7 support</span>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   )
 }
@@ -1545,8 +1387,6 @@ function CommissionHistoryView({ user }: { user: UserType }) {
           // Filter for transactions that have commission > 0
           const commissions = data.filter((t: any) => {
             const comm = Number(t.commission)
-            // Debug log for each transaction's commission
-            // console.log(`Tx ${t.id} commission:`, t.commission, 'Parsed:', comm)
             return comm > 0
           })
           console.log('[Dashboard] Filtered commissions:', commissions)
@@ -1566,116 +1406,132 @@ function CommissionHistoryView({ user }: { user: UserType }) {
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold text-foreground">Agent Commissions</h2>
-        <Badge variant="outline" className="border-primary/30 text-primary bg-primary/5">
-          Revenue Log
-        </Badge>
+        <div>
+           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono mb-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            REVENUE_STREAM_ACTIVE
+          </div>
+          <h2 className="text-3xl font-bold text-white tracking-tight">Commission Log</h2>
+          <p className="text-gray-400 text-sm mt-1">Track your affiliate earnings and performance.</p>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="bg-card border-border">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Revenue</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-emerald-500">
-              ${transactions.reduce((acc, curr) => acc + (Number(curr.commission) || 0), 0).toLocaleString()} USDT
+        <div className="bg-[#0c0c0e] border border-white/10 rounded-xl p-6 relative overflow-hidden group hover:border-emerald-500/30 transition-all duration-300">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl -mr-16 -mt-16" />
+          <div className="relative z-10">
+            <div className="flex items-center gap-2 mb-4">
+               <div className="p-2 rounded-lg bg-[#050505] border border-white/10">
+                 <Wallet className="w-4 h-4 text-emerald-500" />
+               </div>
+               <span className="text-xs font-mono text-emerald-500 uppercase tracking-widest">Total Earnings</span>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">Total commissions earned</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card border-border">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Sales Count</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-primary">
-              {transactions.length}
+            <div className="text-4xl font-mono font-bold text-white tracking-tight mb-1">
+              ${transactions.reduce((acc, curr) => acc + (Number(curr.commission) || 0), 0).toLocaleString()} <span className="text-sm text-gray-500 font-normal">USDT</span>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">Total packages sold</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Mobile View - Explicitly Separate Container */}
-      <div className="md:hidden space-y-4">
-        <div className="text-xs text-muted-foreground px-1">
-          {loading ? 'Loading...' : `Found ${transactions.length} commissions`}
+          </div>
         </div>
 
+        <div className="bg-[#0c0c0e] border border-white/10 rounded-xl p-6 relative overflow-hidden group hover:border-blue-500/30 transition-all duration-300">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl -mr-16 -mt-16" />
+          <div className="relative z-10">
+             <div className="flex items-center gap-2 mb-4">
+               <div className="p-2 rounded-lg bg-[#050505] border border-white/10">
+                 <Activity className="w-4 h-4 text-blue-500" />
+               </div>
+               <span className="text-xs font-mono text-blue-500 uppercase tracking-widest">Total Sales</span>
+            </div>
+             <div className="text-4xl font-mono font-bold text-white tracking-tight mb-1">
+               {transactions.length}
+             </div>
+             <span className="text-sm text-gray-500 font-mono">CONVERSIONS</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile View */}
+      <div className="md:hidden space-y-4">
         {loading ? (
-          <div className="text-center text-muted-foreground py-8">Loading records...</div>
+          <div className="text-center text-gray-500 py-12 font-mono text-xs animate-pulse">LOADING_REVENUE_DATA...</div>
         ) : transactions.length === 0 ? (
-          <div className="text-center text-muted-foreground py-8">No commissions found</div>
+           <div className="text-center text-gray-500 py-12 font-mono text-xs border border-white/5 rounded-xl bg-[#0c0c0e]">NO_COMMISSIONS_FOUND</div>
         ) : (
           transactions.map((tx) => (
-            <Card key={tx.id} className="bg-card border-border mb-4">
-              <CardContent className="p-4 space-y-3">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <div className="font-bold text-foreground">{String(tx.package || 'Unknown Package')}</div>
-                    <div className="text-xs text-muted-foreground font-mono mt-1 w-32 truncate">{tx.buyer_wallet}</div>
+            <div key={tx.id} className="bg-[#0c0c0e] border border-white/10 rounded-xl p-5 space-y-4 relative overflow-hidden">
+               {/* Gradient */}
+               <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500/50" />
+
+               <div className="flex justify-between items-start">
+                  <div className="space-y-1">
+                    <div className="font-bold text-white text-sm tracking-tight">{String(tx.package || 'Unknown Package')}</div>
+                    <div className="text-[10px] text-gray-500 font-mono bg-white/5 px-2 py-1 rounded border border-white/5 w-32 truncate">{tx.buyer_wallet}</div>
                   </div>
-                  <Badge variant="outline" className="border-emerald-500/30 text-emerald-500 bg-emerald-500/10 uppercase text-[10px]">
-                    Earned
+                  <Badge variant="outline" className="border-emerald-500/30 text-emerald-400 bg-emerald-500/5 uppercase text-[10px] tracking-widest font-mono">
+                    EARNED
                   </Badge>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 text-sm pt-2 border-t border-border/50">
+                <div className="grid grid-cols-2 gap-4 text-xs pt-4 border-t border-white/5">
                   <div>
-                    <div className="text-muted-foreground text-xs">Sale Amount</div>
-                    <div className="text-foreground font-medium">{Number(tx.amount).toLocaleString()} USDT</div>
+                    <div className="text-gray-500 text-[10px] mb-1 uppercase tracking-wider font-mono">Sale Amount</div>
+                    <div className="text-white font-mono text-sm">{Number(tx.amount).toLocaleString()} USDT</div>
                   </div>
                   <div className="text-right">
-                    <div className="text-muted-foreground text-xs">Your Commission</div>
-                    <div className="text-emerald-500 font-bold">+{Number(tx.commission).toLocaleString()} USDT</div>
+                    <div className="text-gray-500 text-[10px] mb-1 uppercase tracking-wider font-mono">Your Cut</div>
+                    <div className="text-emerald-400 font-mono font-bold text-sm">+{Number(tx.commission).toLocaleString()} USDT</div>
                   </div>
                   <div className="col-span-2 text-right">
-                    <div className="text-muted-foreground text-xs">Date</div>
-                    <div className="text-muted-foreground">{new Date(tx.date).toLocaleDateString()}</div>
+                    <div className="text-gray-500 text-[10px] mb-1 uppercase tracking-wider font-mono">Date</div>
+                    <div className="text-gray-400 font-mono text-sm">{new Date(tx.date).toLocaleDateString()}</div>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+            </div>
           ))
         )}
       </div>
 
-      {/* Desktop View (Table) - Explicitly Hidden on Mobile */}
-      <Card className="hidden md:block bg-card border-border">
-        <CardContent className="p-0">
+      {/* Desktop View */}
+      <div className="hidden md:block bg-[#0c0c0e] border border-white/10 rounded-xl overflow-hidden shadow-2xl relative">
+          <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent opacity-50" />
+          
           <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead className="bg-secondary/50 border-b border-border text-muted-foreground font-medium text-sm">
+            <table className="w-full text-left border-collapse">
+              <thead className="bg-white/5 border-b border-white/10 text-gray-400 font-mono text-xs uppercase tracking-wider">
                 <tr>
-                  <th className="p-4">Package</th>
-                  <th className="p-4">USDT Wallet (TRC20)</th>
-                  <th className="p-4">Sale Amount</th>
-                  <th className="p-4">Commission Earned</th>
-                  <th className="p-4">Status</th>
-                  <th className="p-4">Date</th>
+                  <th className="p-5 font-medium">Package</th>
+                  <th className="p-5 font-medium">USDT Wallet (TRC20)</th>
+                  <th className="p-5 font-medium">Sale Amount</th>
+                  <th className="p-5 font-medium">Commission Earned</th>
+                  <th className="p-5 font-medium">Status</th>
+                  <th className="p-5 font-medium">Date</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border">
+              <tbody className="divide-y divide-white/5 text-sm">
                 {loading ? (
-                  <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">Loading records...</td></tr>
+                  <tr><td colSpan={6} className="p-12 text-center text-gray-500 font-mono text-xs animate-pulse">LOADING_REVENUE_DATA...</td></tr>
                 ) : transactions.length === 0 ? (
-                  <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">No commissions found</td></tr>
+                  <tr><td colSpan={6} className="p-12 text-center text-gray-500 font-mono text-xs">NO_COMMISSIONS_FOUND</td></tr>
                 ) : (
                   transactions.map((tx) => (
-                    <tr key={tx.id} className="hover:bg-secondary/50 transition-colors">
-                      <td className="p-4 text-foreground font-medium">{String(tx.package || 'Unknown Package')}</td>
-                      <td className="p-4 text-muted-foreground font-mono text-xs max-w-[150px] truncate" title={tx.buyer_wallet}>{tx.buyer_wallet}</td>
-                      <td className="p-4 text-foreground">{Number(tx.amount).toLocaleString()} USDT</td>
-                      <td className="p-4 text-emerald-500 font-bold">+{Number(tx.commission).toLocaleString()} USDT</td>
-                      <td className="p-4">
-                        <Badge variant="outline" className="border-emerald-500/30 text-emerald-500 bg-emerald-500/10 uppercase text-xs">
+                    <tr key={tx.id} className="hover:bg-white/[0.02] transition-colors group">
+                      <td className="p-5 text-white font-medium flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-emerald-500/50"></div>
+                        {String(tx.package || 'Unknown Package')}
+                      </td>
+                      <td className="p-5 text-gray-500 font-mono text-xs">
+                        <span className="bg-[#050505] px-3 py-1.5 rounded border border-white/10 group-hover:border-emerald-500/30 group-hover:text-emerald-400 transition-all cursor-default select-all" title={tx.buyer_wallet}>
+                          {tx.buyer_wallet && tx.buyer_wallet.length > 16 ? `${tx.buyer_wallet.substring(0, 8)}...${tx.buyer_wallet.substring(tx.buyer_wallet.length - 8)}` : tx.buyer_wallet}
+                        </span>
+                      </td>
+                      <td className="p-5 text-white font-mono">{Number(tx.amount).toLocaleString()} USDT</td>
+                      <td className="p-5 text-emerald-400 font-mono font-bold">+{Number(tx.commission).toLocaleString()} USDT</td>
+                      <td className="p-5">
+                        <Badge variant="outline" className="border-emerald-500/30 text-emerald-400 bg-emerald-500/5 uppercase text-[10px] tracking-widest font-mono rounded-sm px-2 py-0.5">
                           Paid
                         </Badge>
                       </td>
-                      <td className="p-4 text-muted-foreground text-sm">
-                        {new Date(tx.date).toLocaleDateString()}
+                      <td className="p-5 text-gray-500 font-mono text-xs">
+                        {new Date(tx.date).toLocaleString()}
                       </td>
                     </tr>
                   ))
@@ -1683,8 +1539,7 @@ function CommissionHistoryView({ user }: { user: UserType }) {
               </tbody>
             </table>
           </div>
-        </CardContent>
-      </Card>
+      </div>
     </div>
   )
 }

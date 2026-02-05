@@ -97,74 +97,78 @@ export default function AgentPage() {
   const currentTierIndex = allTiers.findIndex(t => t.tier === user.account_tier)
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#050510] via-[#0a0a1f] to-[#050510]">
+    <div className="relative min-h-screen bg-[#050510] text-white overflow-hidden font-[var(--font-outfit)]">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(16,185,129,0.12),transparent_35%),radial-gradient(circle_at_80%_0%,rgba(34,211,238,0.12),transparent_35%)]" />
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[size:100px_100px] opacity-30" />
+
       {/* Header */}
-      <header className="border-b border-white/10 bg-[#0a0a1f]/80 backdrop-blur-md sticky top-0 z-50">
+      <header className="relative border-b border-white/10 bg-black/40 backdrop-blur-md sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center gap-4">
           <Link href="/dashboard">
-            <Button variant="ghost" size="icon" className="text-gray-400 hover:text-white">
+            <Button variant="ghost" size="icon" className="text-gray-300 hover:text-white hover:border hover:border-emerald-400/50">
               <ArrowLeft className="w-5 h-5" />
             </Button>
           </Link>
           <div className="flex items-center gap-3 flex-1">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-yellow-500 to-orange-600 flex items-center justify-center">
-              <Briefcase className="w-6 h-6 text-white" />
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center border border-emerald-500/40 shadow-[0_0_20px_rgba(16,185,129,0.3)]">
+              <Briefcase className="w-6 h-6 text-black" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-white">Agent Program</h1>
+              <h1 className="text-xl font-bold text-white tracking-tight">Agent Program</h1>
               <p className="text-xs text-gray-400">Earn commissions on every sale</p>
             </div>
           </div>
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-8 space-y-6">
+      <div className="relative container mx-auto px-4 py-8 space-y-6 z-10">
         {/* Current Tier Card */}
-        <Card className="bg-gradient-to-br from-[#0e0e24] to-[#1a1a2e] border-yellow-500/30">
+        <Card className="bg-gradient-to-br from-[#050510] via-[#0b161d] to-[#050510] border border-emerald-500/20 shadow-[0_0_35px_rgba(16,185,129,0.18)]">
           <CardHeader>
             <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-white text-2xl mb-2">Your Agent Status</CardTitle>
-                <div className="flex items-center gap-3">
+              <div className="space-y-2">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-[11px] font-mono tracking-[0.2em]">AGENT STATUS</div>
+                <CardTitle className="text-white text-2xl">{tierConfig.name} Member</CardTitle>
+                <p className="text-gray-400 text-sm">Commission Rate: <span className="text-emerald-300 font-semibold">{(tierConfig.commissionRate * 100).toFixed(0)}%</span></p>
+                <div className="flex items-center gap-3 pt-2">
                   <TierBadge tier={user.account_tier} size="lg" />
-                  <div>
-                    <p className="text-2xl font-bold text-white">{tierConfig.name} Member</p>
-                    <p className="text-yellow-400 font-semibold">{(tierConfig.commissionRate * 100).toFixed(0)}% Commission Rate</p>
-                  </div>
+                  <Badge className="bg-emerald-500/10 text-emerald-300 border-emerald-500/40">Tier: {user.account_tier}</Badge>
                 </div>
               </div>
-              <Award className="w-16 h-16 text-yellow-400 opacity-20" />
+              <div className="w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/40 flex items-center justify-center">
+                <Award className="w-9 h-9 text-emerald-400" />
+              </div>
             </div>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="p-4 bg-white/5 rounded-lg">
+              <div className="p-4 bg-white/5 rounded-lg border border-white/10">
                 <div className="flex items-center gap-2 text-gray-400 text-sm mb-1">
                   <DollarSign className="w-4 h-4" />
                   Total Earned
                 </div>
                 <p className="text-2xl font-bold text-emerald-400">${commissionStats.totalEarned.toFixed(2)}</p>
               </div>
-              <div className="p-4 bg-white/5 rounded-lg">
+              <div className="p-4 bg-white/5 rounded-lg border border-white/10">
                 <div className="flex items-center gap-2 text-gray-400 text-sm mb-1">
                   <TrendingUp className="w-4 h-4" />
                   This Month
                 </div>
-                <p className="text-2xl font-bold text-blue-400">${commissionStats.thisMonth.toFixed(2)}</p>
+                <p className="text-2xl font-bold text-cyan-300">${commissionStats.thisMonth.toFixed(2)}</p>
               </div>
-              <div className="p-4 bg-white/5 rounded-lg">
+              <div className="p-4 bg-white/5 rounded-lg border border-white/10">
                 <div className="flex items-center gap-2 text-gray-400 text-sm mb-1">
                   <Users className="w-4 h-4" />
                   Total Sales
                 </div>
-                <p className="text-2xl font-bold text-purple-400">{commissionStats.totalTransactions}</p>
+                <p className="text-2xl font-bold text-white">{commissionStats.totalTransactions}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Benefits */}
-        <Card className="bg-[#0e0e24] border-white/10">
+        <Card className="bg-[#050510]/80 border border-white/10 shadow-[0_0_25px_rgba(16,185,129,0.1)]">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
               <Gift className="w-5 h-5 text-yellow-400" />
@@ -184,35 +188,35 @@ export default function AgentPage() {
         </Card>
 
         {/* Tier Comparison */}
-        <Card className="bg-[#0e0e24] border-white/10">
+        <Card className="bg-[#050510]/80 border border-white/10 shadow-[0_0_25px_rgba(16,185,129,0.1)]">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
-              <Zap className="w-5 h-5 text-yellow-400" />
+              <Zap className="w-5 h-5 text-emerald-400" />
               Membership Tiers
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {allTiers.map((tier, index) => (
+              {allTiers.map((tier) => (
                 <div
                   key={tier.tier}
                   className={`p-6 rounded-xl border-2 transition-all ${
                     tier.tier === user.account_tier
-                      ? 'border-yellow-500 bg-yellow-500/10'
+                      ? 'border-emerald-500/60 bg-emerald-500/10 shadow-[0_0_25px_rgba(16,185,129,0.2)]'
                       : 'border-white/10 bg-white/5'
                   }`}
                 >
-                  <div className="text-center mb-4">
+                  <div className="text-center mb-4 space-y-2">
                     <TierBadge tier={tier.tier} size="lg" />
-                    <h3 className="text-xl font-bold text-white mt-2">{tier.name}</h3>
-                    <p className="text-3xl font-bold text-yellow-400 mt-2">
+                    <h3 className="text-xl font-bold text-white">{tier.name}</h3>
+                    <p className="text-3xl font-bold text-emerald-300">
                       {(tier.commissionRate * 100).toFixed(0)}%
                     </p>
                     <p className="text-gray-400 text-sm">Commission Rate</p>
                   </div>
                   
                   {tier.tier === user.account_tier && (
-                    <Badge className="w-full justify-center bg-yellow-500/20 text-yellow-400 border-yellow-500/30 mb-3">
+                    <Badge className="w-full justify-center bg-emerald-500/10 text-emerald-300 border-emerald-500/40 mb-3">
                       <Shield className="w-3 h-3 mr-1" />
                       Current Tier
                     </Badge>

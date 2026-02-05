@@ -53,12 +53,13 @@ export const metadata: Metadata = {
       "Generate Flash BTC instantly correctly visualized on major exchanges like Binance and Coinbase.",
     images: [ICON_URL],
   },
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-  },
+};
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({
@@ -69,7 +70,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${outfit.variable} font-sans antialiased bg-background text-foreground selection:bg-emerald-500/30 selection:text-emerald-200`}
+        className={`${outfit.variable} font-mono antialiased bg-background text-foreground selection:bg-emerald-500/30 selection:text-emerald-200`}
       >
         <Providers>
           {children}

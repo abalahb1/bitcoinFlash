@@ -26,9 +26,9 @@ type User = {
 }
 
 const TIER_BENEFITS: Record<string, { commission: string, features: string[], color: string }> = {
-  'bronze': { commission: '5%', features: ['Standard Support', 'Basic Withdrawal Limit', 'Community Access'], color: 'text-orange-400' },
-  'silver': { commission: '7%', features: ['Priority Support', 'Higher Withdrawal Limit', 'Exclusive Webinars'], color: 'text-gray-300' },
-  'gold': { commission: '10%', features: ['Dedicated Manager', 'Instant Withdrawals', 'Beta Features Access'], color: 'text-yellow-400' },
+  'bronze': { commission: '5%', features: ['Standard Support', 'Basic Withdrawal Limit', 'Community Access'], color: 'text-emerald-300' },
+  'silver': { commission: '7%', features: ['Priority Support', 'Higher Withdrawal Limit', 'Exclusive Webinars'], color: 'text-cyan-300' },
+  'gold': { commission: '10%', features: ['Dedicated Manager', 'Instant Withdrawals', 'Beta Features Access'], color: 'text-emerald-200' },
 }
 
 export function AccountSettings({ user, onUpdate }: {
@@ -112,26 +112,6 @@ export function AccountSettings({ user, onUpdate }: {
       setTimeout(() => setPasswordMessage(null), 4000)
     }
   }
-
-  // Validate commission wallet address
-  // ... (keep validation logic same, just re-declaring for context in this replacement block if needed, but tool replaces contiguous block)
-  // Logic omitted to focus on replacement area, ensuring we don't accidentally cut functions.
-  // Actually, I can't skip lines in replace_file_content. I must include everything I am replacing.
-  // I will target only the top imports/type/function Start up to the rendered JSX to serve the new state.
-
-  // Wait, replace_file_content replaces a SINGLE CONTIGUOUS BLOCK. 
-  // I will split this into two edits: 
-  // 1. Update Type and Constants 
-  // 2. Add the UI element.
-
-  // This tool call will ONLY update the Type and render the new UI section.
-
-  // Actually, let's use multi_replace for safety if I need to touch multiple spots, but here user type is at top and render is at bottom.
-  // Let's stick to replace_file_content for the render part first? No, I need the type updated first.
-
-  // Let's try to do it all if possible or use multi.
-  // I'll use multi_replace to be safe and clean.
-
 
   // Validate commission wallet address
   const validateWalletAddress = (address: string) => {
@@ -218,7 +198,7 @@ export function AccountSettings({ user, onUpdate }: {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 font-[var(--font-outfit)]">
       {message && (
         <Alert className="border-cyan-500/50 bg-cyan-500/10">
           <AlertDescription className="text-cyan-400 font-medium">{message}</AlertDescription>
@@ -226,19 +206,19 @@ export function AccountSettings({ user, onUpdate }: {
       )}
 
       {/* Agent Dashboard Card - Modern Global Design */}
-      <Card className="bg-card border-border overflow-hidden relative shadow-md">
+      <Card className="bg-[#050510]/80 border border-white/10 overflow-hidden relative shadow-[0_0_25px_rgba(16,185,129,0.15)]">
         <CardContent className="p-8 relative z-10">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-2xl bg-secondary flex items-center justify-center border border-border">
-                <Briefcase className="w-8 h-8 text-primary" />
+              <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/40 shadow-[0_0_25px_rgba(16,185,129,0.25)]">
+                <Briefcase className="w-8 h-8 text-emerald-300" />
               </div>
               <div>
-                <h3 className="text-2xl font-bold text-foreground">Agent Program</h3>
-                <p className="text-muted-foreground text-sm">Earn commissions on every sale</p>
+                <h3 className="text-2xl font-bold text-white tracking-tight">Agent Program</h3>
+                <p className="text-gray-400 text-sm">Earn commissions on every sale</p>
               </div>
             </div>
-            <Badge variant="outline" className="border-primary/50 text-primary bg-primary/10 px-4 py-2">
+            <Badge variant="outline" className="border-emerald-500/50 text-emerald-300 bg-emerald-500/10 px-4 py-2">
               <Percent className="w-3 h-3 mr-1" />
               10% Commission
             </Badge>
@@ -248,13 +228,13 @@ export function AccountSettings({ user, onUpdate }: {
             <div className="bg-white/5 rounded-xl p-4 border border-white/10">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-gray-400 text-sm">Verification Status</span>
-                <ShieldCheck className="w-4 h-4 text-cyan-400" />
+                <ShieldCheck className="w-4 h-4 text-cyan-300" />
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-xl font-bold text-white capitalize">{user.kyc_status}</span>
                 <Badge
                   variant={user.kyc_status === 'approved' ? 'default' : 'secondary'}
-                  className={user.kyc_status === 'approved' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'}
+                  className={user.kyc_status === 'approved' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30'}
                 >
                   {user.kyc_status === 'approved' ? 'Active' : 'Pending'}
                 </Badge>
@@ -264,10 +244,10 @@ export function AccountSettings({ user, onUpdate }: {
             <div className="bg-white/5 rounded-xl p-4 border border-white/10">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-gray-400 text-sm">Commission Rate</span>
-                <Percent className="w-4 h-4 text-yellow-400" />
+                <Percent className="w-4 h-4 text-emerald-300" />
               </div>
-              <div className="text-3xl font-bold text-white">
-                10<span className="text-yellow-400 text-xl">%</span>
+              <div className="text-3xl font-mono font-bold text-white">
+                10<span className="text-gray-300 text-xl">%</span>
                 <span className="text-gray-500 text-sm ml-2">per sale</span>
               </div>
             </div>
@@ -275,9 +255,9 @@ export function AccountSettings({ user, onUpdate }: {
         </CardContent>
       </Card>
 
-      {/* Tier Benefits Feature - Requested by User */}
-      <Card className="bg-card border-border relative overflow-hidden">
-        <div className="absolute top-0 right-0 p-32 bg-gradient-to-br from-yellow-500/10 to-transparent rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+      {/* Tier Benefits Feature */}
+      <Card className="bg-[#050510]/80 border border-white/10 relative overflow-hidden">
+        <div className="absolute top-0 right-0 p-32 bg-gradient-to-br from-emerald-500/10 to-transparent rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
@@ -320,7 +300,7 @@ export function AccountSettings({ user, onUpdate }: {
                     <span className={`font-bold capitalize ${info.color}`}>{tier}</span>
                     {tier === currentTier && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
                   </div>
-                  <div className="text-2xl font-bold text-white mb-4">{info.commission} <span className="text-xs text-gray-500 font-normal">comm.</span></div>
+                  <div className="text-2xl font-bold text-emerald-300 mb-4">{info.commission} <span className="text-xs text-gray-500 font-normal">comm.</span></div>
                   <ul className="space-y-2">
                     {info.features.map((feature, i) => (
                       <li key={i} className="text-xs text-gray-300 flex items-center gap-2">
@@ -451,7 +431,7 @@ export function AccountSettings({ user, onUpdate }: {
         )}
       </Card>
 
-      {/* Commission Wallet - Original Card Below */}
+      {/* Commission Wallet */}
       <Card className="bg-card border-border shadow-sm">
         <CardHeader>
           <CardTitle className="text-foreground flex items-center gap-2">

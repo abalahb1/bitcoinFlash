@@ -6,7 +6,7 @@ const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'your-secr
 const ADMIN_EMAIL = 'mohmmaed211@gmail.com'
 const ADMIN_USERNAME = 'admin'
 
-export async function middleware(request: NextRequest) {
+export default async function proxy(request: NextRequest) {
   const token = request.cookies.get('auth-token')?.value
   const { pathname } = request.nextUrl
 
@@ -26,8 +26,8 @@ export async function middleware(request: NextRequest) {
     try {
       const { payload } = await jwtVerify(token, JWT_SECRET)
       isValidToken = true
-      userEmail = payload.email as string || null
-      username = payload.username as string || null
+      userEmail = (payload.email as string) || null
+      username = (payload.username as string) || null
     } catch {
       isValidToken = false
     }
@@ -83,7 +83,7 @@ export async function middleware(request: NextRequest) {
   return NextResponse.next()
 }
 
-// Configure paths that trigger middleware
+// Configure paths that trigger proxy
 export const config = {
   matcher: [
     '/((?!api|_next/static|_next/image|favicon.ico|.*\\..*).*)',

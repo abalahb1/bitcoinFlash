@@ -11,7 +11,8 @@
   /* Core semantic colors */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'JetBrains Mono', 'Fira Code', monospace; /* unified to mono */
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace; /* unified to mono */
 
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
@@ -47,7 +48,7 @@
 
 :root {
   /* ===== Base Radius ===== */
-  --radius: 0.75rem;
+  --radius: 0.5rem; /* Sharper but not square */
 
   /* ===== Color Palette ===== */
   /* Core Background */
@@ -55,20 +56,20 @@
   --foreground: #ffffff;
 
   /* Surface Colors */
-  --card: #09090b;
-  --card-foreground: #ffffff;
-  --popover: #09090b;
-  --popover-foreground: #ffffff;
+  --card: #0c0c0e;
+  --card-foreground: #e4e4e7;
+  --popover: #0c0c0e;
+  --popover-foreground: #e4e4e7;
 
-  /* Brand - Bitcoin Orange */
-  --primary: #f7931a;
+  /* Brand - Cyber Emerald */
+  --primary: #10b981; /* Emerald 500 */
   --primary-foreground: #000000;
 
   /* Secondary & Muted */
-  --secondary: #18181b;
-  --secondary-foreground: #ffffff;
-  --muted: #18181b;
-  --muted-foreground: #a1a1aa;
+  --secondary: #18181b; /* Zinc 900 */
+  --secondary-foreground: #a1a1aa;
+  --muted: #27272a; /* Zinc 800 */
+  --muted-foreground: #71717a;
 
   /* Accent */
   --accent: #27272a;
