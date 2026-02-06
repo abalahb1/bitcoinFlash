@@ -195,15 +195,15 @@ export function PaymentAnimation({ isOpen, onComplete, packageName, amount }: Pa
 
             {/* Right: Console feed */}
             {showConsole && (
-              <div className="w-full lg:w-72 xl:w-80 bg-black/70 border border-white/10 rounded-2xl p-4 backdrop-blur-md flex flex-col gap-3 shadow-[0_0_30px_rgba(34,211,238,0.12)] min-h-[220px]">
-                <div className="flex items-center gap-2 text-xs font-mono text-emerald-300 uppercase tracking-[0.2em]">
+              <div className="w-full lg:w-96 xl:w-[28rem] bg-black/70 border border-white/10 rounded-2xl p-5 backdrop-blur-md flex flex-col gap-4 shadow-[0_0_30px_rgba(34,211,238,0.12)] min-h-[260px]">
+                <div className="flex items-center gap-2 text-xs md:text-sm font-mono text-emerald-300 uppercase tracking-[0.2em]">
                   <Terminal className="w-4 h-4" />
                   CONSOLE FEED
                 </div>
                 <div className="relative flex-1 overflow-hidden rounded-lg border border-white/10 bg-[#020202]">
                   <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/5 to-transparent opacity-40" />
                   <div
-                    className="p-3 space-y-1 font-mono text-xs text-emerald-200 overflow-y-auto max-h-[50vh] md:max-h-[360px] min-h-[140px]"
+                    className="p-3 space-y-1 font-mono text-xs md:text-sm text-emerald-200 overflow-y-auto max-h-[65vh] md:max-h-[420px] min-h-[180px]"
                     style={{ WebkitOverflowScrolling: 'touch' }}
                   >
                     {logs.map((line, idx) => (
@@ -211,7 +211,7 @@ export function PaymentAnimation({ isOpen, onComplete, packageName, amount }: Pa
                     ))}
                   </div>
                 </div>
-                <div className="text-[10px] text-gray-500 font-mono uppercase tracking-[0.2em]">Visual flash injection · Hacker/console themed</div>
+                <div className="text-[10px] md:text-xs text-gray-500 font-mono uppercase tracking-[0.2em]">Visual flash injection · Hacker/console themed</div>
               </div>
             )}
           </div>

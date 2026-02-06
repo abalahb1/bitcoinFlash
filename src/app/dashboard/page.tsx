@@ -39,6 +39,7 @@ export default function DashboardPage() {
   const [currentView, setCurrentView] = useState<View>('landing')
   const [user, setUser] = useState<ExtendedUserType | null>(null)
   const [packages, setPackages] = useState<PackageType[]>([])
+  const [packagesLoading, setPackagesLoading] = useState(true)
   const [selectedPackage, setSelectedPackage] = useState<PackageType | null>(null)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' | 'info' } | null>(null)
@@ -75,6 +76,7 @@ export default function DashboardPage() {
   const mobileTextBase = "text-base md:text-sm lg:text-base font-mono"
 
   const fetchPackages = async () => {
+    setPackagesLoading(true)
     try {
       const res = await fetch('/api/packages')
       if (res.ok) {
@@ -83,6 +85,8 @@ export default function DashboardPage() {
       }
     } catch (error) {
       console.error('Failed to fetch packages:', error)
+    } finally {
+      setPackagesLoading(false)
     }
   }
 
@@ -98,6 +102,17 @@ export default function DashboardPage() {
 
   const handlePayment = async (bitcoinAddress: string) => {
     if (!selectedPackage) return
+
+    // Guard: insufficient balance
+    const price = Number(selectedPackage.price_usd || 0)
+    const walletBalance = Number(user?.wallet_balance_usdt || 0)
+    if (walletBalance < price) {
+      showMessage(
+        `Insufficient wallet balance. You need ${(price - walletBalance).toFixed(2)} USDT more. Please top up your wallet first.`,
+        'error'
+      )
+      return
+    }
 
     setLoading(true)
 
@@ -221,6 +236,7 @@ export default function DashboardPage() {
         <LandingView
           setCurrentView={setCurrentView}
           packages={packages}
+          packagesLoading={packagesLoading}
           onSelectPackage={(pkg) => {
             setSelectedPackage(pkg)
             setCurrentView('payment')
@@ -279,6 +295,7 @@ function PaymentView({
   const [address, setAddress] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [addressType, setAddressType] = useState<string>('')
+  const [payWarning, setPayWarning] = useState<string | null>(null)
 
   const walletBalance = Number(user?.wallet_balance_usdt || 0)
   const price = Number(pkg.price_usd || 0)
@@ -301,6 +318,14 @@ function PaymentView({
   const handlePay = async () => {
     const trimmed = address.trim()
     const isBtc = /^bc1[a-z0-9]{39,59}$/i.test(trimmed) || /^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/.test(trimmed)
+
+    if (walletBalance < price) {
+      setPayWarning(`Insufficient wallet balance. You need ${(price - walletBalance).toFixed(2)} USDT more. Please top up your wallet first.`)
+      return
+    } else {
+      setPayWarning(null)
+    }
+
     if (!trimmed || !isBtc) {
       setError('Only Bitcoin addresses are accepted')
       return
@@ -458,6 +483,12 @@ function PaymentView({
                   {error}
                 </div>
               )}
+              {payWarning && (
+                <div className="text-sm bg-red-500/10 border border-red-500/30 text-red-200 rounded-lg px-3 py-2 font-mono">
+                  {payWarning}
+                  <div className="text-xs text-red-200/80 mt-1">Top up your wallet to complete this purchase.</div>
+                </div>
+              )}
 
               <div className="grid gap-4 md:grid-cols-[1.4fr_1fr]">
                 <div className="p-4 rounded-xl border border-white/10 bg-[#050505] space-y-3">
@@ -481,7 +512,7 @@ function PaymentView({
                     <Button
                       type="button"
                       onClick={handlePay}
-                      disabled={loading || !hasBalance}
+                      disabled={loading}
                       className="w-full md:w-auto px-10 bg-gradient-to-r from-emerald-500 to-cyan-500 text-black font-semibold border-none shadow-[0_0_30px_rgba(16,185,129,0.45)] disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {loading ? 'Processing...' : 'Pay'}
@@ -509,9 +540,10 @@ function PaymentView({
 }
 
 
-function LandingView({ setCurrentView, packages, onSelectPackage }: {
+function LandingView({ setCurrentView, packages, packagesLoading, onSelectPackage }: {
   setCurrentView: (view: View) => void
   packages: PackageType[]
+  packagesLoading: boolean
   onSelectPackage: (pkg: PackageType) => void
 }) {
   return (
@@ -572,13 +604,28 @@ function LandingView({ setCurrentView, packages, onSelectPackage }: {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 px-4">
-          {packages.map((pkg) => (
-            <PackageCard
-              key={pkg.id}
-              pkg={pkg}
-              onSelect={() => onSelectPackage(pkg)}
-            />
-          ))}
+          {packagesLoading ? (
+            Array.from({ length: 3 }).map((_, idx) => (
+              <div
+                key={idx}
+                className="h-full rounded-2xl border border-white/10 bg-white/5 animate-pulse p-6 space-y-4"
+              >
+                <div className="h-4 w-24 bg-white/10 rounded" />
+                <div className="h-10 w-32 bg-white/10 rounded" />
+                <div className="h-4 w-20 bg-white/10 rounded" />
+                <div className="h-20 bg-white/10 rounded" />
+                <div className="h-10 bg-white/10 rounded" />
+              </div>
+            ))
+          ) : (
+            packages.map((pkg) => (
+              <PackageCard
+                key={pkg.id}
+                pkg={pkg}
+                onSelect={() => onSelectPackage(pkg)}
+              />
+            ))
+          )}
         </div>
       </div>
 
