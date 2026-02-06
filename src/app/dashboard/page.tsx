@@ -481,8 +481,8 @@ function PaymentView({
                     <Button
                       type="button"
                       onClick={handlePay}
-                      disabled={loading}
-                      className="w-full md:w-auto px-10 bg-gradient-to-r from-emerald-500 to-cyan-500 text-black font-semibold border-none shadow-[0_0_30px_rgba(16,185,129,0.45)]"
+                      disabled={loading || !hasBalance}
+                      className="w-full md:w-auto px-10 bg-gradient-to-r from-emerald-500 to-cyan-500 text-black font-semibold border-none shadow-[0_0_30px_rgba(16,185,129,0.45)] disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {loading ? 'Processing...' : 'Pay'}
                     </Button>

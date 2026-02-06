@@ -30,14 +30,14 @@ type Step = {
 }
 
 const steps: Step[] = [
-  { label: 'Booting Flash Core', detail: 'Shader pipelines online, entropy seeded', icon: Zap, duration: 2200 },
-  { label: 'Key Exchange & TLS 1.3', detail: 'Forward secrecy negotiated with relay cluster', icon: Lock, duration: 2200 },
-  { label: 'Network Sync', detail: 'Peers: Binance · OKX · Coinbase · Kraken', icon: Radio, duration: 2200 },
-  { label: 'Chain Simulation', detail: 'Merkle root seeded, flash UTXOs staged', icon: Hash, duration: 2200 },
-  { label: 'Node Consensus', detail: 'Quorum > 92%, validators green', icon: Server, duration: 2200 },
-  { label: 'Visual Injection', detail: 'CEX surfaces synchronized for display', icon: Activity, duration: 2200 },
-  { label: 'Holo Render', detail: 'GPU pass for holographic overlays', icon: Cpu, duration: 2200 },
-  { label: 'Finalize & Seal', detail: 'Immutable snapshot sealed, audit trail recorded', icon: Shield, duration: 2200 },
+  { label: 'Booting Flash Core', detail: 'Shader pipelines online, entropy seeded', icon: Zap, duration: 22500 },
+  { label: 'Key Exchange & TLS 1.3', detail: 'Forward secrecy negotiated with relay cluster', icon: Lock, duration: 22500 },
+  { label: 'Network Sync', detail: 'Peers: Binance · OKX · Coinbase · Kraken', icon: Radio, duration: 22500 },
+  { label: 'Chain Simulation', detail: 'Merkle root seeded, flash UTXOs staged', icon: Hash, duration: 22500 },
+  { label: 'Node Consensus', detail: 'Quorum > 92%, validators green', icon: Server, duration: 22500 },
+  { label: 'Visual Injection', detail: 'CEX surfaces synchronized for display', icon: Activity, duration: 22500 },
+  { label: 'Holo Render', detail: 'GPU pass for holographic overlays', icon: Cpu, duration: 22500 },
+  { label: 'Finalize & Seal', detail: 'Immutable snapshot sealed, audit trail recorded', icon: Shield, duration: 22500 },
 ]
 
 const consoleSnippets = [
