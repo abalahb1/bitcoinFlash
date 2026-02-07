@@ -26,11 +26,19 @@ model User {
   is_verified         Boolean               @default(false)
   commission_wallet   String?
   account_tier        String                @default("bronze")
+  
+  // Security & 2FA fields
+  two_fa_enabled      Boolean               @default(false)
+  anti_phishing_code  String?
+  session_timeout_mins Int                  @default(30)
+  last_activity_at    DateTime              @default(now())
+  
   createdAt           DateTime              @default(now())
   updatedAt           DateTime              @updatedAt
   deposits            DepositNotification[]
   payments            Payment[]
   withdrawalRequests  WithdrawalRequest[]
+  securityEvents      SecurityEvent[]
 }
 
 model Package {
@@ -41,6 +49,7 @@ model Package {
   price_usd   Float
   duration    Int       @default(45)
   transfers   Int       @default(27)
+  locked      Boolean   @default(false)
   payments    Payment[]
 }
 
@@ -91,4 +100,20 @@ model DepositNotification {
 
   @@index([user_id])
   @@index([status])
+}
+
+model SecurityEvent {
+  id          String   @id @default(uuid())
+  user_id     String
+  event_type  String   // "login", "logout", "withdrawal", "2fa_sent", "password_change", etc.
+  ip_address  String?
+  device_info String?
+  location    String?
+  metadata    String?  // JSON string for additional data
+  created_at  DateTime @default(now())
+  user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([event_type])
+  @@index([created_at])
 }

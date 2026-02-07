@@ -206,6 +206,7 @@
     @apply bg-background text-foreground antialiased;
     min-height: 100dvh;
     overflow-x: hidden;
+    overscroll-behavior-y: contain; /* Prevent iOS bounce/rubber-banding */
   }
 
   /* Typography Hierarchy (Mobile Optimized) */

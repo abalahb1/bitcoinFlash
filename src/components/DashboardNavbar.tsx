@@ -2,13 +2,13 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { 
-  LayoutDashboard, 
-  Wallet, 
-  User, 
-  History, 
-  BarChart2, 
-  LogOut, 
+import {
+  LayoutDashboard,
+  Wallet,
+  User,
+  History,
+  BarChart2,
+  LogOut,
   Bitcoin,
   Menu,
   X,
@@ -19,6 +19,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { NotificationBell } from '@/components/NotificationBell'
 
 export type View = 'landing' | 'wallet' | 'payment' | 'account' | 'history' | 'commissions'
 
@@ -59,12 +60,11 @@ export function DashboardNavbar({ currentView, setCurrentView, onLogout, user }:
 
   return (
     <>
-      <nav 
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          scrolled || isMobileMenuOpen 
-            ? 'bg-black/80 backdrop-blur-xl border-b border-white/10' 
-            : 'bg-transparent border-b border-transparent'
-        }`}
+      <nav
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled || isMobileMenuOpen
+          ? 'bg-black/80 backdrop-blur-xl border-b border-white/10'
+          : 'bg-transparent border-b border-transparent'
+          }`}
       >
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-20">
@@ -110,30 +110,12 @@ export function DashboardNavbar({ currentView, setCurrentView, onLogout, user }:
                       />
                     )}
                     <span className="relative z-10 flex items-center gap-2">
-                       <item.icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-current'}`} />
-                       {item.label}
+                      <item.icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-current'}`} />
+                      {item.label}
                     </span>
                   </button>
                 )
               })}
-            </div>
-
-            {/* Desktop Right Actions - Visible only on Large Screens */}
-            <div className="hidden lg:flex items-center gap-4 shrink-0">
-              <div className="flex flex-col items-end mr-2">
-                <span className="text-sm font-bold text-white">{user?.name}</span>
-                <span className="text-[10px] text-emerald-400 font-mono flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  CONNECTED
-                </span>
-              </div>
-              <Button
-                variant="ghost"
-                onClick={onLogout}
-                className="text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-full px-4"
-              >
-                <LogOut className="w-4 h-4" />
-              </Button>
             </div>
 
             {/* Mobile/Tablet Menu Button - Visible up to Large Screens */}
@@ -198,8 +180,8 @@ export function DashboardNavbar({ currentView, setCurrentView, onLogout, user }:
                       }}
                       className={`
                         w-full p-4 rounded-xl flex items-center justify-between group transition-all duration-200
-                        ${isActive 
-                          ? 'bg-gradient-to-r from-[#F7931A]/20 to-orange-600/10 border border-[#F7931A]/30' 
+                        ${isActive
+                          ? 'bg-gradient-to-r from-[#F7931A]/20 to-orange-600/10 border border-[#F7931A]/30'
                           : 'bg-white/5 border border-white/5 hover:bg-white/10'
                         }
                       `}
@@ -224,7 +206,7 @@ export function DashboardNavbar({ currentView, setCurrentView, onLogout, user }:
               </div>
 
               {/* Footer Actions */}
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.4 }}
@@ -235,7 +217,7 @@ export function DashboardNavbar({ currentView, setCurrentView, onLogout, user }:
                     <ExternalLink className="w-4 h-4" />
                     Support
                   </a>
-                  <button 
+                  <button
                     onClick={onLogout}
                     className="flex items-center justify-center gap-2 p-3 rounded-lg bg-red-500/10 text-sm text-red-400 hover:bg-red-500/20 transition-colors"
                   >
