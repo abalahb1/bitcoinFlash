@@ -14,23 +14,6 @@ const HUBS = [
   { x: 80, y: 75, name: 'Sydney' },
 ]
 
-const CODE_LINES = [
-  "// Flash Network Live Snapshot",
-  "const flashNodes = [",
-  "  { id: 'binance', latency: '24ms', status: 'green' },",
-  "  { id: 'okx', latency: '19ms', status: 'green' },",
-  "  { id: 'coinbase', latency: '31ms', status: 'green' },",
-  "  { id: 'kraken', latency: '27ms', status: 'green' },",
-  "];",
-  "function syncNetwork(nodes) {",
-  "  return nodes.map(n => ({ ...n, synced: true }));",
-  "}",
-  "const auditHash = '7f2c...b91d';",
-  "const flashSpeed = '24ms';",
-  "const syncRatio = '98.4%';",
-  "console.log('flash-network-sync', syncNetwork(flashNodes));",
-]
-
 export function NetworkMap() {
   const [activeConnections, setActiveConnections] = useState<{ start: number, end: number, id: number }[]>([])
 
@@ -53,16 +36,6 @@ export function NetworkMap() {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(16,185,129,0.12),transparent_35%),radial-gradient(circle_at_80%_0%,rgba(34,211,238,0.12),transparent_35%)] opacity-60" />
       {/* Map silhouette */}
       <div className="absolute inset-0 opacity-35 pointer-events-none bg-[url('https://upload.wikimedia.org/wikipedia/commons/8/80/World_map_-_low_resolution.svg')] bg-no-repeat bg-center bg-contain filter invert hue-rotate-180 brightness-90" />
-
-      {/* Scrolling code background */}
-      <motion.div
-        className="absolute inset-0 pointer-events-none text-[10px] md:text-xs font-mono text-emerald-300/15 leading-4 whitespace-pre px-4"
-        initial={{ y: 0 }}
-        animate={{ y: ['0%', '-40%', '0%'] }}
-        transition={{ duration: 18, repeat: Infinity, ease: 'linear' }}
-      >
-        {CODE_LINES.join('\n')}
-      </motion.div>
 
       {/* Nodes */}
       {HUBS.map((hub, i) => (
