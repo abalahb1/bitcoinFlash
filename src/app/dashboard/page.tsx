@@ -685,25 +685,24 @@ function PackageCard({ pkg, onSelect }: {
 
   return (
     <div className={`group relative bg-[#0c0c0e] border border-white/5 transition-all duration-300 overflow-hidden flex flex-col h-full rounded-lg ${isLocked
-        ? 'opacity-60 cursor-not-allowed'
-        : 'hover:border-emerald-500/50 hover:shadow-[0_0_30px_rgba(16,185,129,0.1)]'
+      ? 'opacity-80'
+      : 'hover:border-emerald-500/50 hover:shadow-[0_0_30px_rgba(16,185,129,0.1)]'
       }`}>
-      {/* Locked Overlay */}
+      {/* Locked Overlay - Soft & Subtle */}
       {isLocked && (
-        <div className="absolute inset-0 z-20 bg-black/70 backdrop-blur-sm flex flex-col items-center justify-center">
-          <div className="w-16 h-16 rounded-full bg-red-500/10 border-2 border-red-500/30 flex items-center justify-center mb-4">
-            <Lock className="w-8 h-8 text-red-400" />
+        <div className="absolute inset-0 z-20 bg-black/40 backdrop-blur-[2px] flex flex-col items-center justify-center">
+          <div className="w-12 h-12 rounded-full bg-gray-500/10 border border-gray-500/30 flex items-center justify-center mb-3">
+            <Clock className="w-5 h-5 text-gray-400" />
           </div>
-          <p className="text-red-400 font-bold text-lg">Not Available</p>
-          <p className="text-gray-500 text-sm mt-1">Currently Unavailable</p>
+          <p className="text-gray-400 font-medium text-sm">Temporarily Unavailable</p>
         </div>
       )}
 
       {/* Cyber Corners */}
-      <div className={`absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 transition-colors ${isLocked ? 'border-red-500/30' : 'border-white/10 group-hover:border-emerald-500'}`} />
-      <div className={`absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 transition-colors ${isLocked ? 'border-red-500/30' : 'border-white/10 group-hover:border-emerald-500'}`} />
-      <div className={`absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 transition-colors ${isLocked ? 'border-red-500/30' : 'border-white/10 group-hover:border-emerald-500'}`} />
-      <div className={`absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 transition-colors ${isLocked ? 'border-red-500/30' : 'border-white/10 group-hover:border-emerald-500'}`} />
+      <div className={`absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 transition-colors ${isLocked ? 'border-gray-500/30' : 'border-white/10 group-hover:border-emerald-500'}`} />
+      <div className={`absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 transition-colors ${isLocked ? 'border-gray-500/30' : 'border-white/10 group-hover:border-emerald-500'}`} />
+      <div className={`absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 transition-colors ${isLocked ? 'border-gray-500/30' : 'border-white/10 group-hover:border-emerald-500'}`} />
+      <div className={`absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 transition-colors ${isLocked ? 'border-gray-500/30' : 'border-white/10 group-hover:border-emerald-500'}`} />
 
       {/* Scanline Overlay */}
       {!isLocked && (
@@ -715,8 +714,8 @@ function PackageCard({ pkg, onSelect }: {
         <div className="flex justify-between items-start mb-6">
           <div className="space-y-1">
             <div className={`text-[10px] font-mono uppercase tracking-widest px-2 py-1 inline-block rounded-sm ${isLocked
-                ? 'text-red-400 bg-red-500/10'
-                : 'text-emerald-500 bg-emerald-500/10'
+              ? 'text-gray-400 bg-gray-500/10'
+              : 'text-emerald-500 bg-emerald-500/10'
               }`}>
               MODULE: {pkg.name}
             </div>
@@ -725,8 +724,8 @@ function PackageCard({ pkg, onSelect }: {
             </div>
           </div>
           <div className={`w-8 h-8 rounded-full bg-white/5 flex items-center justify-center border transition-colors ${isLocked
-              ? 'border-red-500/30'
-              : 'border-white/10 group-hover:border-emerald-500/50 group-hover:bg-emerald-500/10'
+            ? 'border-gray-500/30'
+            : 'border-white/10 group-hover:border-emerald-500/50 group-hover:bg-emerald-500/10'
             }`}>
             <Bitcoin className={`w-4 h-4 transition-colors ${isLocked ? 'text-gray-500' : 'text-gray-400 group-hover:text-emerald-400'}`} />
           </div>
@@ -757,13 +756,13 @@ function PackageCard({ pkg, onSelect }: {
 
           <Button
             className={`w-full font-mono uppercase tracking-widest text-xs h-12 rounded-none transition-all duration-300 relative overflow-hidden group/btn ${isLocked
-                ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                : 'bg-white text-black hover:bg-emerald-500 hover:text-white'
+              ? 'bg-gray-800 text-gray-500'
+              : 'bg-white text-black hover:bg-emerald-500 hover:text-white'
               }`}
             onClick={isLocked ? undefined : onSelect}
             disabled={isLocked}
           >
-            <span className="relative z-10">{isLocked ? 'Unavailable' : 'Initialize Protocol'}</span>
+            <span className="relative z-10">{isLocked ? 'Temporarily Unavailable' : 'Initialize Protocol'}</span>
             {!isLocked && (
               <div className="absolute inset-0 bg-emerald-600 transform scale-x-0 group-hover/btn:scale-x-100 transition-transform origin-left duration-300" />
             )}
