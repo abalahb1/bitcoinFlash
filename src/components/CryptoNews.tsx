@@ -100,11 +100,8 @@ export function CryptoNews() {
 
             {/* Main Slideshow */}
             <div className="relative rounded-2xl overflow-hidden group bg-[#0c0c0e] border border-white/5">
-                <a
-                    href={currentNews.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block relative h-[420px]"
+                <div
+                    className="block relative h-[420px] cursor-default"
                 >
                     {/* Background Image */}
                     <div
@@ -157,7 +154,7 @@ export function CryptoNews() {
                             {String(currentIndex + 1).padStart(2, '0')}/{String(slideNews.length).padStart(2, '0')}
                         </span>
                     </div>
-                </a>
+                </div>
 
                 {/* Navigation */}
                 <button
@@ -186,12 +183,9 @@ export function CryptoNews() {
             {cardNews.length > 0 && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     {cardNews.map((item, idx) => (
-                        <a
+                        <div
                             key={item.id}
-                            href={item.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="group relative bg-[#0f0f12] rounded-xl overflow-hidden border border-white/5 hover:border-amber-500/30 transition-all duration-300 hover:shadow-xl hover:shadow-amber-500/5"
+                            className="group relative bg-[#0f0f12] rounded-xl overflow-hidden border border-white/5 hover:border-amber-500/30 transition-all duration-300 hover:shadow-xl hover:shadow-amber-500/5 cursor-default"
                         >
                             {/* Image */}
                             <div className="relative h-36 overflow-hidden">
@@ -231,7 +225,7 @@ export function CryptoNews() {
                             <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
                                 <div className="absolute inset-0 bg-gradient-to-t from-amber-500/5 to-transparent" />
                             </div>
-                        </a>
+                        </div>
                     ))}
                 </div>
             )}
