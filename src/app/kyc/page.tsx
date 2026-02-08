@@ -8,8 +8,8 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Loader2, Upload, CheckCircle2, Shield, User, Camera, FileText, ChevronRight, ChevronLeft, Lock } from 'lucide-react'
-import { TopTicker } from '@/components/MarketTicker'
 
 // Types
 type Step = 'intro' | 'passport' | 'selfie' | 'review' | 'success'
@@ -323,6 +323,10 @@ export default function KYCPage() {
   const [selfiePreview, setSelfiePreview] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
+  // Terms acceptance state
+  const [acceptedPrivacy, setAcceptedPrivacy] = useState(false)
+  const [acceptedTerms, setAcceptedTerms] = useState(false)
+
   // Initial Data Fetch
   useEffect(() => {
     fetch('/api/auth/me')
@@ -424,9 +428,7 @@ export default function KYCPage() {
       <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:100px_100px] opacity-50 [mask-image:linear-gradient(to_bottom,black_40%,transparent_100%)]" />
 
       <div className="relative z-10">
-        <TopTicker />
-
-        <div className="container mx-auto px-4 py-8 min-h-[calc(100vh-40px)] flex flex-col items-center justify-center">
+        <div className="container mx-auto px-4 py-12 min-h-screen flex flex-col items-center justify-center">
 
           {/* Header */}
           <div className="text-center mb-8 space-y-2">
@@ -493,9 +495,77 @@ export default function KYCPage() {
                       </div>
                     </div>
 
+                    {/* Terms Acceptance */}
+                    <div className="space-y-4 p-5 rounded-xl bg-white/5 border border-white/10">
+                      <h4 className="text-white font-medium">Legal Agreements</h4>
+
+                      <div className="space-y-4">
+                        {/* Privacy Policy */}
+                        <label
+                          className="flex items-center gap-4 p-3 rounded-lg bg-black/20 border border-white/5 cursor-pointer hover:bg-white/5 hover:border-emerald-500/30 transition-all group"
+                          onClick={() => setAcceptedPrivacy(!acceptedPrivacy)}
+                        >
+                          <div
+                            className={`w-6 h-6 rounded-md border-2 flex items-center justify-center shrink-0 transition-all ${acceptedPrivacy
+                              ? 'bg-emerald-500 border-emerald-500'
+                              : 'border-white/30 group-hover:border-emerald-400/50'
+                              }`}
+                          >
+                            {acceptedPrivacy && (
+                              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                              </svg>
+                            )}
+                          </div>
+                          <span className="text-sm text-gray-300 group-hover:text-white transition-colors">
+                            I have read and agree to the{' '}
+                            <a
+                              href="/privacy"
+                              target="_blank"
+                              className="text-emerald-400 hover:text-emerald-300 underline underline-offset-2 font-medium"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              Privacy Policy
+                            </a>
+                          </span>
+                        </label>
+
+                        {/* Terms of Service */}
+                        <label
+                          className="flex items-center gap-4 p-3 rounded-lg bg-black/20 border border-white/5 cursor-pointer hover:bg-white/5 hover:border-emerald-500/30 transition-all group"
+                          onClick={() => setAcceptedTerms(!acceptedTerms)}
+                        >
+                          <div
+                            className={`w-6 h-6 rounded-md border-2 flex items-center justify-center shrink-0 transition-all ${acceptedTerms
+                              ? 'bg-emerald-500 border-emerald-500'
+                              : 'border-white/30 group-hover:border-emerald-400/50'
+                              }`}
+                          >
+                            {acceptedTerms && (
+                              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                              </svg>
+                            )}
+                          </div>
+                          <span className="text-sm text-gray-300 group-hover:text-white transition-colors">
+                            I have read and agree to the{' '}
+                            <a
+                              href="/terms"
+                              target="_blank"
+                              className="text-emerald-400 hover:text-emerald-300 underline underline-offset-2 font-medium"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              Terms of Service
+                            </a>
+                          </span>
+                        </label>
+                      </div>
+                    </div>
+
                     <Button
                       onClick={() => setCurrentStep('passport')}
-                      className="w-full h-12 text-lg bg-gradient-to-r from-emerald-500 to-cyan-500 text-black font-semibold border-none shadow-[0_0_30px_rgba(16,185,129,0.35)]"
+                      disabled={!acceptedPrivacy || !acceptedTerms}
+                      className="w-full h-12 text-lg bg-gradient-to-r from-emerald-500 to-cyan-500 text-black font-semibold border-none shadow-[0_0_30px_rgba(16,185,129,0.35)] disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Start Verification <ChevronRight className="w-5 h-5 ml-2" />
                     </Button>

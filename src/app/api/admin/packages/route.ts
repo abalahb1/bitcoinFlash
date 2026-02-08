@@ -57,10 +57,10 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       message: 'Package created successfully',
-      package: pkg 
+      package: pkg
     })
 
   } catch (error) {
@@ -102,10 +102,10 @@ export async function PUT(request: NextRequest) {
       data: parsedUpdates
     })
 
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       message: 'Package updated successfully',
-      package: pkg 
+      package: pkg
     })
 
   } catch (error) {
@@ -137,15 +137,58 @@ export async function DELETE(request: NextRequest) {
       where: { id: packageId }
     })
 
-    return NextResponse.json({ 
-      success: true, 
-      message: 'Package deleted successfully' 
+    return NextResponse.json({
+      success: true,
+      message: 'Package deleted successfully'
     })
 
   } catch (error) {
     console.error('Delete package error:', error)
     return NextResponse.json(
       { error: 'Failed to delete package' },
+      { status: 500 }
+    )
+  }
+}
+
+// PATCH: Lock/Unlock package
+export async function PATCH(request: NextRequest) {
+  const adminCheck = await requireAdmin(request)
+  if (adminCheck) return adminCheck
+
+  try {
+    const body = await request.json()
+    const { packageId, locked } = body
+
+    if (!packageId) {
+      return NextResponse.json(
+        { error: 'Package ID is required' },
+        { status: 400 }
+      )
+    }
+
+    if (typeof locked !== 'boolean') {
+      return NextResponse.json(
+        { error: 'Locked status must be a boolean' },
+        { status: 400 }
+      )
+    }
+
+    const pkg = await db.package.update({
+      where: { id: packageId },
+      data: { locked }
+    })
+
+    return NextResponse.json({
+      success: true,
+      message: `Package ${locked ? 'locked' : 'unlocked'} successfully`,
+      package: pkg
+    })
+
+  } catch (error) {
+    console.error('Lock/Unlock package error:', error)
+    return NextResponse.json(
+      { error: 'Failed to update package lock status' },
       { status: 500 }
     )
   }

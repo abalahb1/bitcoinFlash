@@ -7,9 +7,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { 
-  Package as PackageIcon, Loader2, Plus, Edit, Trash2, 
-  ArrowLeft, DollarSign, Clock, Zap, Bitcoin
+import {
+  Package as PackageIcon, Loader2, Plus, Edit, Trash2,
+  ArrowLeft, DollarSign, Clock, Zap, Bitcoin, Lock, Unlock
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -21,6 +21,7 @@ type Package = {
   price_usd: number
   duration: number
   transfers: number
+  locked: boolean
   _count: {
     payments: number
   }
@@ -65,12 +66,12 @@ export default function AdminPackagesPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     try {
       const url = editingPackage ? '/api/admin/packages' : '/api/admin/packages'
       const method = editingPackage ? 'PUT' : 'POST'
-      
-      const body = editingPackage 
+
+      const body = editingPackage
         ? { packageId: editingPackage.id, updates: formData }
         : formData
 
@@ -172,11 +173,10 @@ export default function AdminPackagesPage() {
 
       <div className="container mx-auto px-4 py-8">
         {message && (
-          <Alert className={`mb-6 border ${
-            message.type === 'success' 
-              ? 'border-emerald-500/50 bg-emerald-500/10' 
+          <Alert className={`mb-6 border ${message.type === 'success'
+              ? 'border-emerald-500/50 bg-emerald-500/10'
               : 'border-red-500/50 bg-red-500/10'
-          }`}>
+            }`}>
             <AlertDescription className={message.type === 'success' ? 'text-emerald-400' : 'text-red-400'}>
               {message.text}
             </AlertDescription>
@@ -197,7 +197,7 @@ export default function AdminPackagesPage() {
                     <Label className="text-gray-300 mb-2 block">Package Name</Label>
                     <Input
                       value={formData.name}
-                      onChange={(e) => setFormData({...formData, name: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       placeholder="Flash Starter"
                       className="bg-[#1a1a2e] border-white/10 text-white"
                       required
@@ -208,7 +208,7 @@ export default function AdminPackagesPage() {
                     <Input
                       type="number"
                       value={formData.price_usd}
-                      onChange={(e) => setFormData({...formData, price_usd: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, price_usd: e.target.value })}
                       placeholder="500"
                       className="bg-[#1a1a2e] border-white/10 text-white"
                       required
@@ -218,7 +218,7 @@ export default function AdminPackagesPage() {
                     <Label className="text-gray-300 mb-2 block">BTC Price (per unit)</Label>
                     <Input
                       value={formData.usdt_amount}
-                      onChange={(e) => setFormData({...formData, usdt_amount: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, usdt_amount: e.target.value })}
                       placeholder="150,000"
                       className="bg-[#1a1a2e] border-white/10 text-white"
                       required
@@ -228,7 +228,7 @@ export default function AdminPackagesPage() {
                     <Label className="text-gray-300 mb-2 block">BTC Amount</Label>
                     <Input
                       value={formData.btc_amount}
-                      onChange={(e) => setFormData({...formData, btc_amount: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, btc_amount: e.target.value })}
                       placeholder="100"
                       className="bg-[#1a1a2e] border-white/10 text-white"
                       required
@@ -239,7 +239,7 @@ export default function AdminPackagesPage() {
                     <Input
                       type="number"
                       value={formData.duration}
-                      onChange={(e) => setFormData({...formData, duration: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
                       placeholder="45"
                       className="bg-[#1a1a2e] border-white/10 text-white"
                       required
@@ -250,7 +250,7 @@ export default function AdminPackagesPage() {
                     <Input
                       type="number"
                       value={formData.transfers}
-                      onChange={(e) => setFormData({...formData, transfers: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, transfers: e.target.value })}
                       placeholder="27"
                       className="bg-[#1a1a2e] border-white/10 text-white"
                       required
@@ -273,7 +273,13 @@ export default function AdminPackagesPage() {
         {/* Packages Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {packages.map((pkg) => (
-            <Card key={pkg.id} className="bg-[#0e0e24] border-white/10 hover:border-emerald-500/50 transition-all">
+            <Card key={pkg.id} className={`bg-[#0e0e24] border-white/10 transition-all relative ${pkg.locked ? 'opacity-70 border-red-500/30' : 'hover:border-emerald-500/50'}`}>
+              {/* Locked Badge */}
+              {pkg.locked && (
+                <div className="absolute top-3 right-3 z-10 px-2 py-1 rounded-full bg-red-500/20 border border-red-500/40 text-red-400 text-xs font-bold flex items-center gap-1">
+                  <Lock className="w-3 h-3" /> LOCKED
+                </div>
+              )}
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div>
@@ -308,13 +314,36 @@ export default function AdminPackagesPage() {
                 </div>
 
                 <div className="flex gap-2 pt-4">
-                  <Button onClick={() => handleEdit(pkg)} size="sm" variant="outline" className="flex-1 border-blue-500/50 text-blue-400 hover:bg-blue-500/10">
-                    <Edit className="w-4 h-4 mr-1" />
-                    Edit
+                  <Button
+                    onClick={async () => {
+                      try {
+                        const res = await fetch('/api/admin/packages', {
+                          method: 'PATCH',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ packageId: pkg.id, locked: !pkg.locked })
+                        })
+                        if (res.ok) {
+                          setMessage({ text: `Package ${pkg.locked ? 'unlocked' : 'locked'} successfully`, type: 'success' })
+                          fetchPackages()
+                        } else {
+                          setMessage({ text: 'Failed to update package', type: 'error' })
+                        }
+                      } catch (err) {
+                        setMessage({ text: 'Failed to update package', type: 'error' })
+                      }
+                    }}
+                    size="sm"
+                    variant="outline"
+                    className={`flex-1 ${pkg.locked ? 'border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/10' : 'border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/10'}`}
+                  >
+                    {pkg.locked ? <Unlock className="w-4 h-4 mr-1" /> : <Lock className="w-4 h-4 mr-1" />}
+                    {pkg.locked ? 'Unlock' : 'Lock'}
                   </Button>
-                  <Button onClick={() => handleDelete(pkg.id, pkg.name)} size="sm" variant="outline" className="flex-1 border-red-500/50 text-red-400 hover:bg-red-500/10">
-                    <Trash2 className="w-4 h-4 mr-1" />
-                    Delete
+                  <Button onClick={() => handleEdit(pkg)} size="sm" variant="outline" className="border-blue-500/50 text-blue-400 hover:bg-blue-500/10">
+                    <Edit className="w-4 h-4" />
+                  </Button>
+                  <Button onClick={() => handleDelete(pkg.id, pkg.name)} size="sm" variant="outline" className="border-red-500/50 text-red-400 hover:bg-red-500/10">
+                    <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
               </CardContent>

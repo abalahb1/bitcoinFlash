@@ -33,6 +33,7 @@ import { extractApiError } from '@/lib/error-utils'
 import { GasFeeWidget } from '@/components/GasFeeWidget'
 import { CryptoNews } from '@/components/CryptoNews'
 import { getTierConfig } from '@/lib/tiers'
+import { UserAvatar, AvatarSelector, useAvatarSelection, getAvatarConfig } from '@/components/AvatarSelector'
 
 // Extend UserType to include account_tier
 type ExtendedUserType = UserType & { account_tier?: string }
@@ -680,46 +681,70 @@ function PackageCard({ pkg, onSelect }: {
   pkg: PackageType
   onSelect: () => void
 }) {
+  const isLocked = pkg.locked
+
   return (
-    <div className="group relative bg-[#0c0c0e] border border-white/5 hover:border-emerald-500/50 transition-all duration-300 overflow-hidden flex flex-col h-full hover:shadow-[0_0_30px_rgba(16,185,129,0.1)] rounded-lg">
+    <div className={`group relative bg-[#0c0c0e] border border-white/5 transition-all duration-300 overflow-hidden flex flex-col h-full rounded-lg ${isLocked
+        ? 'opacity-60 cursor-not-allowed'
+        : 'hover:border-emerald-500/50 hover:shadow-[0_0_30px_rgba(16,185,129,0.1)]'
+      }`}>
+      {/* Locked Overlay */}
+      {isLocked && (
+        <div className="absolute inset-0 z-20 bg-black/70 backdrop-blur-sm flex flex-col items-center justify-center">
+          <div className="w-16 h-16 rounded-full bg-red-500/10 border-2 border-red-500/30 flex items-center justify-center mb-4">
+            <Lock className="w-8 h-8 text-red-400" />
+          </div>
+          <p className="text-red-400 font-bold text-lg">Not Available</p>
+          <p className="text-gray-500 text-sm mt-1">Currently Unavailable</p>
+        </div>
+      )}
+
       {/* Cyber Corners */}
-      <div className="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 border-white/10 group-hover:border-emerald-500 transition-colors" />
-      <div className="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 border-white/10 group-hover:border-emerald-500 transition-colors" />
-      <div className="absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 border-white/10 group-hover:border-emerald-500 transition-colors" />
-      <div className="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 border-white/10 group-hover:border-emerald-500 transition-colors" />
+      <div className={`absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 transition-colors ${isLocked ? 'border-red-500/30' : 'border-white/10 group-hover:border-emerald-500'}`} />
+      <div className={`absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 transition-colors ${isLocked ? 'border-red-500/30' : 'border-white/10 group-hover:border-emerald-500'}`} />
+      <div className={`absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 transition-colors ${isLocked ? 'border-red-500/30' : 'border-white/10 group-hover:border-emerald-500'}`} />
+      <div className={`absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 transition-colors ${isLocked ? 'border-red-500/30' : 'border-white/10 group-hover:border-emerald-500'}`} />
 
       {/* Scanline Overlay */}
-      <div className="absolute inset-0 bg-[linear-gradient(transparent_0%,rgba(16,185,129,0.05)_50%,transparent_100%)] bg-[length:100%_200%] animate-scanline pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity" />
+      {!isLocked && (
+        <div className="absolute inset-0 bg-[linear-gradient(transparent_0%,rgba(16,185,129,0.05)_50%,transparent_100%)] bg-[length:100%_200%] animate-scanline pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity" />
+      )}
 
       <div className="p-6 flex-1 flex flex-col relative z-10">
         {/* Header */}
         <div className="flex justify-between items-start mb-6">
           <div className="space-y-1">
-            <div className="text-[10px] font-mono text-emerald-500 uppercase tracking-widest bg-emerald-500/10 px-2 py-1 inline-block rounded-sm">
+            <div className={`text-[10px] font-mono uppercase tracking-widest px-2 py-1 inline-block rounded-sm ${isLocked
+                ? 'text-red-400 bg-red-500/10'
+                : 'text-emerald-500 bg-emerald-500/10'
+              }`}>
               MODULE: {pkg.name}
             </div>
             <div className="text-4xl font-mono font-bold text-white flex items-baseline gap-2 mt-2">
               {pkg.btc_amount} <span className="text-sm text-gray-500 font-sans font-normal">BTC</span>
             </div>
           </div>
-          <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center border border-white/10 group-hover:border-emerald-500/50 group-hover:bg-emerald-500/10 transition-colors">
-            <Bitcoin className="w-4 h-4 text-gray-400 group-hover:text-emerald-400 transition-colors" />
+          <div className={`w-8 h-8 rounded-full bg-white/5 flex items-center justify-center border transition-colors ${isLocked
+              ? 'border-red-500/30'
+              : 'border-white/10 group-hover:border-emerald-500/50 group-hover:bg-emerald-500/10'
+            }`}>
+            <Bitcoin className={`w-4 h-4 transition-colors ${isLocked ? 'text-gray-500' : 'text-gray-400 group-hover:text-emerald-400'}`} />
           </div>
         </div>
 
         {/* Specs Grid */}
         <div className="grid grid-cols-2 gap-px bg-white/5 border border-white/5 rounded-sm overflow-hidden mb-6">
-          <div className="bg-[#0c0c0e] p-3 text-center group-hover:bg-[#0f1512] transition-colors">
+          <div className={`bg-[#0c0c0e] p-3 text-center transition-colors ${!isLocked && 'group-hover:bg-[#0f1512]'}`}>
             <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Duration</div>
             <div className="text-sm font-mono text-white">{pkg.duration} Days</div>
           </div>
-          <div className="bg-[#0c0c0e] p-3 text-center group-hover:bg-[#0f1512] transition-colors">
+          <div className={`bg-[#0c0c0e] p-3 text-center transition-colors ${!isLocked && 'group-hover:bg-[#0f1512]'}`}>
             <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Rate</div>
             <div className="text-sm font-mono text-white">{pkg.transfers}/Day</div>
           </div>
-          <div className="bg-[#0c0c0e] p-3 text-center col-span-2 border-t border-white/5 group-hover:bg-[#0f1512] transition-colors">
+          <div className={`bg-[#0c0c0e] p-3 text-center col-span-2 border-t border-white/5 transition-colors ${!isLocked && 'group-hover:bg-[#0f1512]'}`}>
             <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Unit Cost</div>
-            <div className="text-sm font-mono text-emerald-400">${(pkg.price_usd / Number(pkg.btc_amount)).toFixed(2)} / BTC</div>
+            <div className={`text-sm font-mono ${isLocked ? 'text-gray-400' : 'text-emerald-400'}`}>${(pkg.price_usd / Number(pkg.btc_amount)).toFixed(2)} / BTC</div>
           </div>
         </div>
 
@@ -731,11 +756,17 @@ function PackageCard({ pkg, onSelect }: {
           </div>
 
           <Button
-            className="w-full bg-white text-black hover:bg-emerald-500 hover:text-white font-mono uppercase tracking-widest text-xs h-12 rounded-none transition-all duration-300 relative overflow-hidden group/btn"
-            onClick={onSelect}
+            className={`w-full font-mono uppercase tracking-widest text-xs h-12 rounded-none transition-all duration-300 relative overflow-hidden group/btn ${isLocked
+                ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                : 'bg-white text-black hover:bg-emerald-500 hover:text-white'
+              }`}
+            onClick={isLocked ? undefined : onSelect}
+            disabled={isLocked}
           >
-            <span className="relative z-10">Initialize Protocol</span>
-            <div className="absolute inset-0 bg-emerald-600 transform scale-x-0 group-hover/btn:scale-x-100 transition-transform origin-left duration-300" />
+            <span className="relative z-10">{isLocked ? 'Unavailable' : 'Initialize Protocol'}</span>
+            {!isLocked && (
+              <div className="absolute inset-0 bg-emerald-600 transform scale-x-0 group-hover/btn:scale-x-100 transition-transform origin-left duration-300" />
+            )}
           </Button>
         </div>
       </div>
@@ -1149,6 +1180,8 @@ function AccountView({
   const filledStars = Math.round(ratingValue)
   const [showBenefits, setShowBenefits] = useState(false)
   const [activeTab, setActiveTab] = useState<'overview' | 'achievements' | 'activity'>('overview')
+  const [showAvatarModal, setShowAvatarModal] = useState(false)
+  const { avatarId, updateAvatar } = useAvatarSelection(localUser.id)
 
   // Mock achievements data with Lucide icons
   const achievements = [
@@ -1194,21 +1227,50 @@ function AccountView({
           <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
             {/* Avatar Section */}
             <div className="relative group -mt-16 md:-mt-12">
-              <div className="w-28 h-28 md:w-32 md:h-32 rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500 p-1 shadow-[0_0_40px_rgba(16,185,129,0.3)]">
-                <div className="w-full h-full rounded-full bg-[#0c0c0e] flex items-center justify-center text-5xl font-bold text-emerald-400 font-mono">
-                  {localUser.name.charAt(0).toUpperCase()}
+              <button
+                onClick={() => setShowAvatarModal(true)}
+                className="relative focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-[#0c0c0e] rounded-full"
+              >
+                <div className={`w-28 h-28 md:w-32 md:h-32 rounded-full overflow-hidden shadow-[0_0_40px_rgba(16,185,129,0.3)] p-4 bg-gradient-to-br ${getAvatarConfig(avatarId).gradient}`}>
+                  <img
+                    src={getAvatarConfig(avatarId).image}
+                    alt="Avatar"
+                    className="w-full h-full object-contain drop-shadow-lg"
+                  />
                 </div>
-              </div>
-              {isVerified && (
-                <div className="absolute bottom-1 right-1 w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center border-4 border-[#0c0c0e] shadow-lg">
-                  <CheckCircle2 className="w-4 h-4 text-white" />
+                {isVerified && (
+                  <div className="absolute bottom-1 right-1 w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center border-4 border-[#0c0c0e] shadow-lg">
+                    <CheckCircle2 className="w-4 h-4 text-white" />
+                  </div>
+                )}
+                {/* Change Avatar hint on hover */}
+                <div className="absolute inset-0 rounded-full bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <span className="text-xs text-white/80">Change Avatar</span>
                 </div>
-              )}
-              {/* Upload hint on hover */}
-              <div className="absolute inset-0 rounded-full bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                <span className="text-xs text-white/80">Change Photo</span>
-              </div>
+              </button>
             </div>
+
+            {/* Avatar Selection Modal */}
+            <Dialog open={showAvatarModal} onOpenChange={setShowAvatarModal}>
+              <DialogContent className="bg-[#0c0c0e] border border-white/10 max-w-md">
+                <DialogHeader>
+                  <DialogTitle className="text-white">Choose Your Avatar</DialogTitle>
+                  <DialogDescription className="text-gray-400">
+                    Select an avatar style that represents you
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="py-4">
+                  <AvatarSelector
+                    currentAvatarId={avatarId}
+                    onSelect={(id) => {
+                      updateAvatar(id)
+                      setShowAvatarModal(false)
+                    }}
+                    userName={localUser.name}
+                  />
+                </div>
+              </DialogContent>
+            </Dialog>
 
             {/* User Info */}
             <div className="flex-1 text-center md:text-left">
@@ -1241,17 +1303,7 @@ function AccountView({
               </p>
             </div>
 
-            {/* Quick Actions */}
-            <div className="flex gap-2">
-              <Button
-                onClick={onOpenSettings}
-                variant="outline"
-                size="sm"
-                className="border-white/10 hover:bg-white/5"
-              >
-                <Settings className="w-4 h-4" />
-              </Button>
-            </div>
+
           </div>
         </div>
       </div>

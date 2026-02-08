@@ -1,13 +1,13 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { 
-  LayoutDashboard, 
-  Wallet, 
-  User, 
-  History, 
-  BarChart2, 
-  LogOut, 
+import {
+  LayoutDashboard,
+  Wallet,
+  User,
+  History,
+  BarChart2,
+  LogOut,
   Bitcoin,
   Settings,
   ChevronLeft,
@@ -18,6 +18,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { NetworkStatus } from '@/components/NetworkStatus'
+import { useAvatarSelection, getAvatarConfig } from '@/components/AvatarSelector'
 import type { View } from './AppShell'
 
 interface SidebarProps {
@@ -38,13 +39,39 @@ const navItems = [
   { id: 'commissions', label: 'Commissions', icon: BarChart2 },
 ]
 
-export function Sidebar({ 
-  user, 
-  collapsed, 
-  onCollapse, 
-  currentView, 
+// Sidebar User Avatar Component
+function SidebarUserAvatar({ user, collapsed }: { user: any; collapsed: boolean }) {
+  const { avatarId } = useAvatarSelection(user?.id)
+  const avatarConfig = getAvatarConfig(avatarId)
+
+  return (
+    <div className={`flex items-center gap-3 ${collapsed ? 'justify-center' : ''}`}>
+      {/* Avatar with crypto logo */}
+      <div className={`w-10 h-10 rounded-full overflow-hidden shrink-0 shadow-lg p-1.5 bg-gradient-to-br ${avatarConfig.gradient}`}>
+        <img
+          src={avatarConfig.image}
+          alt="Avatar"
+          className="w-full h-full object-contain drop-shadow-md"
+        />
+      </div>
+
+      {!collapsed && (
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-white truncate">{user?.name}</p>
+          <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+        </div>
+      )}
+    </div>
+  )
+}
+
+export function Sidebar({
+  user,
+  collapsed,
+  onCollapse,
+  currentView,
   setCurrentView,
-  onLogout 
+  onLogout
 }: SidebarProps) {
   return (
     <TooltipProvider delayDuration={0}>
@@ -56,7 +83,7 @@ export function Sidebar({
       >
         {/* Logo Section */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-border">
-          <motion.div 
+          <motion.div
             className="flex items-center gap-3 overflow-hidden"
             animate={{ opacity: 1 }}
           >
@@ -67,7 +94,7 @@ export function Sidebar({
               </div>
             </div>
             {!collapsed && (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -10 }}
@@ -106,8 +133,8 @@ export function Sidebar({
                 className={`
                   w-full flex items-center gap-3 px-3 py-3 rounded-xl
                   transition-all duration-200 group relative
-                  ${isActive 
-                    ? 'bg-primary text-primary-foreground shadow-lg neon-glow-orange' 
+                  ${isActive
+                    ? 'bg-primary text-primary-foreground shadow-lg neon-glow-orange'
                     : 'text-muted-foreground hover:text-white hover:bg-white/5'
                   }
                 `}
@@ -154,18 +181,8 @@ export function Sidebar({
 
         {/* User Section */}
         <div className="p-3 border-t border-border">
-          <div className={`flex items-center gap-3 ${collapsed ? 'justify-center' : ''}`}>
-            {/* Avatar */}
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/30 to-primary/10 border border-primary/30 flex items-center justify-center shrink-0">
-              <User className="w-5 h-5 text-primary" />
-            </div>
-            
-            {!collapsed && (
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-white truncate">{user?.name}</p>
-                <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
-              </div>
-            )}
+          <div className="flex items-center gap-2">
+            <SidebarUserAvatar user={user} collapsed={collapsed} />
 
             {!collapsed && (
               <Tooltip>
@@ -174,7 +191,7 @@ export function Sidebar({
                     variant="ghost"
                     size="icon"
                     onClick={onLogout}
-                    className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-500/10 shrink-0"
+                    className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-500/10 shrink-0 ml-auto"
                   >
                     <LogOut className="w-4 h-4" />
                   </Button>

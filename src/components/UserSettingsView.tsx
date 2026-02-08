@@ -288,16 +288,138 @@ export function UserSettingsView({
               <Accordion type="single" collapsible className="text-sm text-gray-300">
                 <AccordionItem value="privacy" className="border-white/10">
                   <AccordionTrigger className="hover:no-underline">Privacy Policy</AccordionTrigger>
-                  <AccordionContent className="text-gray-400">
-                    We collect the minimum data required to operate your account, process transactions,
-                    and satisfy verification requirements. Data is encrypted at rest and in transit.
+                  <AccordionContent className="text-gray-400 space-y-4">
+                    <div>
+                      <p className="mb-3">
+                        We are committed to protecting user privacy and maintaining the confidentiality of all data
+                        and information accessed or handled through this website or its related services. This policy
+                        explains how data is handled, the limits of its use, and the obligations imposed on relevant parties.
+                      </p>
+                    </div>
+
+                    <div>
+                      <h4 className="text-white font-medium mb-2">1. Scope of Service</h4>
+                      <p>
+                        The website provides digital services related to marketing and selling Flash Bitcoin packages
+                        generated through private servers. These services are offered exclusively through authorized
+                        entities and under specific guidelines.
+                      </p>
+                    </div>
+
+                    <div>
+                      <h4 className="text-white font-medium mb-2">2. Data Protection</h4>
+                      <ul className="list-disc list-inside space-y-1">
+                        <li>All technical and operational data related to servers and operations is handled with complete confidentiality.</li>
+                        <li>No technical or operational information will be disclosed to any third party under any circumstances.</li>
+                        <li>Necessary technical and organizational measures are taken to protect data from unauthorized access, leakage, or misuse.</li>
+                      </ul>
+                    </div>
+
+                    <div>
+                      <h4 className="text-white font-medium mb-2">3. Confidentiality & Restrictions</h4>
+                      <p className="mb-2">The following are strictly prohibited:</p>
+                      <ul className="list-disc list-inside space-y-1">
+                        <li>Taking screenshots</li>
+                        <li>Recording video or audio</li>
+                        <li>Sharing or publishing any visual or technical content, or operational information related to the service or servers</li>
+                      </ul>
+                      <p className="mt-2 text-amber-400/80">
+                        Any violation of these obligations is considered a serious breach of this Privacy Policy,
+                        resulting in immediate termination of service access without prior notice.
+                      </p>
+                    </div>
+
+                    <div>
+                      <h4 className="text-white font-medium mb-2">4. Access & Permissions</h4>
+                      <ul className="list-disc list-inside space-y-1">
+                        <li>Any access permissions granted are personal and exclusive to the authorized user.</li>
+                        <li>Sharing login credentials or authorizing another person to use the account or access the system is prohibited.</li>
+                        <li>The user bears full responsibility for any activity conducted using their access credentials.</li>
+                      </ul>
+                    </div>
+
+                    <div>
+                      <h4 className="text-white font-medium mb-2">5. Policy Compliance</h4>
+                      <ul className="list-disc list-inside space-y-1">
+                        <li>Users and authorized entities must operate within the framework defined by the website administration.</li>
+                        <li>Any use outside the authorized scope or in violation of technical instructions constitutes a breach of this Privacy Policy and Terms of Use.</li>
+                      </ul>
+                    </div>
+
+                    <div>
+                      <h4 className="text-white font-medium mb-2">6. Policy Modifications</h4>
+                      <p>
+                        The website reserves the right to modify or update this Privacy Policy at any time.
+                        Modifications take effect immediately upon publication on the website. Continued use
+                        of the service constitutes implicit consent to these modifications.
+                      </p>
+                    </div>
+
+                    <div>
+                      <h4 className="text-white font-medium mb-2">7. Consent</h4>
+                      <p className="text-emerald-400/80">
+                        By using this website or any of its services, you acknowledge your complete agreement
+                        to this Privacy Policy and commitment to all its terms.
+                      </p>
+                    </div>
                   </AccordionContent>
                 </AccordionItem>
                 <AccordionItem value="terms" className="border-white/10">
                   <AccordionTrigger className="hover:no-underline">Terms of Service</AccordionTrigger>
-                  <AccordionContent className="text-gray-400">
-                    By using this platform, you agree to comply with all applicable laws and to keep
-                    your credentials secure. Misuse may result in account suspension.
+                  <AccordionContent className="text-gray-400 space-y-4">
+                    <div>
+                      <h4 className="text-white font-medium mb-2">Sales Mechanism</h4>
+                      <p className="mb-3">
+                        We provide, through a dedicated server, a Flash Bitcoin package generation service with clear
+                        and consistent technical specifications. Packages are generated directly from the production
+                        server without any intermediaries.
+                      </p>
+                    </div>
+
+                    <div>
+                      <h4 className="text-white font-medium mb-2">Flash Bitcoin Features</h4>
+                      <ul className="list-disc list-inside space-y-1">
+                        <li>Valid for use up to <span className="text-emerald-400">45 days</span></li>
+                        <li>Transferable up to <span className="text-emerald-400">27 transactions</span></li>
+                        <li>Supports seamless splitting and batch sending</li>
+                      </ul>
+                    </div>
+
+                    <div>
+                      <h4 className="text-white font-medium mb-2">Transaction Process</h4>
+                      <p className="mb-2">
+                        We ensure a direct and secure sales process that guarantees complete transparency and
+                        full compliance with the specifications agreed upon with the client.
+                      </p>
+                      <p className="mb-2">The sales process follows these steps:</p>
+                      <ol className="list-decimal list-inside space-y-2">
+                        <li>
+                          <span className="text-white">In-Person Meeting:</span> Both parties meet face-to-face at the same table to ensure complete transparency.
+                        </li>
+                        <li>
+                          <span className="text-white">Payment Transfer:</span> The buyer transfers the full transaction value in USDT to the wallet code provided, according to the package and amount agreed upon in advance.
+                        </li>
+                        <li>
+                          <span className="text-white">Confirmation & Delivery:</span> After final confirmation that the payment has been received and is irreversible, the agreed Flash Bitcoin package is delivered immediately.
+                        </li>
+                        <li>
+                          <span className="text-white">No Test Transactions:</span> No test transactions are conducted, as the Flash is generated directly as a ready-made package from the production server.
+                        </li>
+                        <li>
+                          <span className="text-white">Full Commitment:</span> We are fully committed to all specifications and terms agreed upon in advance without any changes.
+                        </li>
+                        <li>
+                          <span className="text-white">Post-Delivery Support:</span> After delivery, we remain present with the client until they fully inspect and verify the package in our presence to ensure complete satisfaction.
+                        </li>
+                      </ol>
+                    </div>
+
+                    <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                      <p className="text-emerald-400">
+                        Through this mechanism, we guarantee clarity of concept, speed of execution,
+                        complete credibility, and protection of all parties' rights.
+                      </p>
+                    </div>
                   </AccordionContent>
                 </AccordionItem>
                 <AccordionItem value="data" className="border-white/10">
