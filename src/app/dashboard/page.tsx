@@ -1508,48 +1508,7 @@ function AccountView({
         </div>
       )}
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="bg-[#0c0c0e] border border-white/10 rounded-xl p-4 hover:border-emerald-500/30 transition-all">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-              <Settings className="w-5 h-5 text-emerald-400" />
-            </div>
-            <div>
-              <h4 className="text-white font-semibold">Settings</h4>
-              <p className="text-xs text-gray-500">Preferences & security</p>
-            </div>
-          </div>
-          <Button
-            onClick={onOpenSettings}
-            variant="outline"
-            size="sm"
-            className="w-full border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
-          >
-            Open Settings
-          </Button>
-        </div>
 
-        <div className="bg-[#0c0c0e] border border-red-500/20 rounded-xl p-4 hover:border-red-500/30 transition-all">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="p-2 rounded-lg bg-red-500/10 border border-red-500/20">
-              <LogOut className="w-5 h-5 text-red-400" />
-            </div>
-            <div>
-              <h4 className="text-white font-semibold">Sign Out</h4>
-              <p className="text-xs text-gray-500">End current session</p>
-            </div>
-          </div>
-          <Button
-            onClick={onLogout}
-            variant="outline"
-            size="sm"
-            className="w-full border-red-500/30 text-red-400 hover:bg-red-500/10"
-          >
-            Logout
-          </Button>
-        </div>
-      </div>
     </div>
   )
 }

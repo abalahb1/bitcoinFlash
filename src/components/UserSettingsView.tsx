@@ -174,7 +174,6 @@ export function UserSettingsView({
     { id: 'account', label: 'Account', icon: User },
     { id: 'security', label: 'Security', icon: Shield },
     { id: 'notifications', label: 'Notifications', icon: Bell },
-    { id: 'appearance', label: 'Appearance', icon: Palette },
   ]
 
   return (
@@ -430,6 +429,32 @@ export function UserSettingsView({
                   </AccordionContent>
                 </AccordionItem>
               </Accordion>
+            </CardContent>
+          </Card>
+
+          {/* Sign Out Card */}
+          <Card className="bg-[#0c0c0e]/80 border border-red-500/20">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
+                <LogOut className="w-4 h-4 text-red-400" />
+                Sign Out
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between p-4 rounded-lg bg-red-500/5 border border-red-500/10">
+                <div>
+                  <p className="text-white font-medium">End Session</p>
+                  <p className="text-xs text-gray-500">Sign out of your account on this device</p>
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={onLogout}
+                  className="border-red-500/30 text-red-400 hover:bg-red-500/10"
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Sign Out
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>
