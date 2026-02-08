@@ -16,11 +16,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Loader2, Wallet, Copy, CheckCircle2, Bitcoin, Zap, Shield, Clock, User, LayoutDashboard, LogOut, Activity, BarChart2, History, ChevronRight, QrCode, AlertTriangle, Search } from 'lucide-react'
+import { Loader2, Wallet, Copy, CheckCircle2, Bitcoin, Zap, Shield, Clock, User, LayoutDashboard, LogOut, Activity, BarChart2, History, ChevronRight, QrCode, AlertTriangle, Search, Settings, Briefcase, ShieldCheck, Percent, Star, TrendingUp, Award, Users, Gem, ArrowUpRight, Lock } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
 import type { User as UserType, Package as PackageType } from '@prisma/client'
 import { WalletEnhancements } from '@/components/WalletEnhancements'
-import { AccountSettings } from '@/components/AccountSettings'
 import { LiveTerminal } from '@/components/LiveTerminal'
 import { NetworkMap } from '@/components/NetworkMap'
 import { KYCBlockingModal } from '@/components/KYCBlockingModal'
@@ -29,8 +28,11 @@ import { TierBadge } from '@/components/TierBadge'
 import { PaymentAnimation } from '@/components/PaymentAnimation'
 import { PaymentSuccessPage } from '@/components/PaymentSuccessPage'
 import { AppShell, type View } from '@/components/layout'
+import { UserSettingsView } from '@/components/UserSettingsView'
 import { extractApiError } from '@/lib/error-utils'
 import { GasFeeWidget } from '@/components/GasFeeWidget'
+import { CryptoNews } from '@/components/CryptoNews'
+import { getTierConfig } from '@/lib/tiers'
 
 // Extend UserType to include account_tier
 type ExtendedUserType = UserType & { account_tier?: string }
@@ -245,7 +247,16 @@ export default function DashboardPage() {
           />
         )}
         {currentView === 'wallet' && <WalletView user={user} />}
-        {currentView === 'account' && <AccountView user={user} onLogout={handleLogout} />}
+        {currentView === 'account' && (
+          <AccountView
+            user={user}
+            onLogout={handleLogout}
+            onOpenSettings={() => setCurrentView('settings')}
+          />
+        )}
+        {currentView === 'settings' && (
+          <UserSettingsView user={user} onLogout={handleLogout} />
+        )}
         {currentView === 'history' && <HistoryView user={user} />}
         {currentView === 'commissions' && <CommissionHistoryView user={user} />}
         {currentView === 'payment' && selectedPackage && (
@@ -572,33 +583,19 @@ function LandingView({ setCurrentView, packages, packagesLoading, onSelectPackag
           </span>
         </p>
 
-        {/* Network Map */}
+
+
+        {/* Crypto News Section */}
         <div className="py-8">
-          <NetworkMap />
+          <div className="max-w-5xl mx-auto">
+            <CryptoNews />
+          </div>
         </div>
 
-        {/* Gas Fee Widget */}
-        <div className="max-w-md mx-auto">
-          <GasFeeWidget />
-        </div>
 
-        <div className="flex flex-wrap justify-center gap-4 pt-4">
-          <div className="px-6 py-3 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm flex items-center gap-3">
-            <img src="https://cryptologos.cc/logos/binance-coin-bnb-logo.png?v=026" className="w-6 h-6 grayscale hover:grayscale-0 transition-all" alt="Binance" />
-            <span className="text-sm text-gray-400">Binance</span>
-          </div>
-          <div className="px-6 py-3 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm flex items-center gap-3">
-            <img src="https://cryptologos.cc/logos/okb-okb-logo.png?v=026" className="w-6 h-6 grayscale hover:grayscale-0 transition-all" alt="OKX" />
-            <span className="text-sm text-gray-400">OKX</span>
-          </div>
-          <div className="px-6 py-3 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm flex items-center gap-3">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg" className="w-6 h-6 grayscale hover:grayscale-0 transition-all" alt="MetaMask" />
-            <span className="text-sm text-gray-400">MetaMask</span>
-          </div>
-        </div>
+
+
       </div>
-
-      {/* System Monitoring Grid - REMOVED */}
 
       {/* Packages Section */}
       <div className="space-y-12 pt-12 border-t border-white/5">
@@ -634,8 +631,6 @@ function LandingView({ setCurrentView, packages, packagesLoading, onSelectPackag
           )}
         </div>
       </div>
-
-      {/* Live Terminal Section - REMOVED */}
     </div>
   )
 }
@@ -1130,132 +1125,384 @@ function WalletView({ user }: { user: UserType | null }) {
   )
 }
 
-function AccountView({ user, onLogout }: { user: UserType | null; onLogout: () => void }) {
-  const [localUser, setLocalUser] = useState<UserType | null>(user)
-
-  const refreshUser = () => {
-    fetch('/api/auth/me')
-      .then(res => res.json())
-      .then(data => {
-        if (data.user) {
-          setLocalUser(data.user)
-        }
-      })
-  }
+function AccountView({
+  user,
+  onLogout,
+  onOpenSettings,
+}: {
+  user: ExtendedUserType | null
+  onLogout: () => void
+  onOpenSettings: () => void
+}) {
+  const localUser = user
 
   if (!localUser) return null
 
-  // Calculate stats
-  const totalEarnings = localUser.commission_wallet ? localUser.wallet_balance_usdt * 0.1 : 0
   const isVerified = localUser.kyc_status === 'approved'
+  const tierConfig = getTierConfig((localUser as any).account_tier)
+  const ratingMap: Record<string, number> = {
+    bronze: 4.0,
+    silver: 4.4,
+    gold: 4.8,
+  }
+  const ratingValue = ratingMap[tierConfig.tier] ?? 4.2
+  const filledStars = Math.round(ratingValue)
+  const [showBenefits, setShowBenefits] = useState(false)
+  const [activeTab, setActiveTab] = useState<'overview' | 'achievements' | 'activity'>('overview')
+
+  // Mock achievements data with Lucide icons
+  const achievements = [
+    { id: 1, name: 'First Transaction', icon: Zap, unlocked: true, description: 'Completed your first flash' },
+    { id: 2, name: 'Verified Agent', icon: CheckCircle2, unlocked: isVerified, description: 'KYC verification approved' },
+    { id: 3, name: '10 Transactions', icon: TrendingUp, unlocked: false, description: 'Complete 10 transactions' },
+    { id: 4, name: 'Gold Status', icon: Award, unlocked: tierConfig.tier === 'gold', description: 'Reach gold tier' },
+    { id: 5, name: 'Referral Master', icon: Users, unlocked: false, description: 'Refer 5 active users' },
+    { id: 6, name: 'Loyal Member', icon: Gem, unlocked: true, description: '30 days active member' },
+  ]
+
+  // Mock activity data with Lucide icons
+  const recentActivity = [
+    { id: 1, type: 'login', message: 'Logged in from new device', time: '2 hours ago', icon: Lock },
+    { id: 2, type: 'transaction', message: 'Flash completed successfully', time: '5 hours ago', icon: Zap },
+    { id: 3, type: 'withdrawal', message: 'Withdrawal request submitted', time: '1 day ago', icon: ArrowUpRight },
+    { id: 4, type: 'kyc', message: 'KYC verification approved', time: '3 days ago', icon: ShieldCheck },
+  ]
+
+  // Calculate tier progress
+  const tierProgressMap: Record<string, { current: number; next: string; required: number }> = {
+    bronze: { current: 25, next: 'Silver', required: 50 },
+    silver: { current: 65, next: 'Gold', required: 100 },
+    gold: { current: 100, next: 'Max', required: 100 },
+  }
+  const tierProgress = tierProgressMap[tierConfig.tier] || tierProgressMap.bronze
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono mb-2">
-            <User className="w-3 h-3" />
-            AGENT_IDENTITY
-          </div>
-          <h2 className="text-3xl font-bold text-white tracking-tight">Agent Profile</h2>
-          <p className="text-gray-400 text-sm mt-1">Manage your secure identity and security settings.</p>
+      {/* Profile Header with Banner */}
+      <div className="relative overflow-hidden rounded-2xl">
+        {/* Banner Background */}
+        <div className="h-32 md:h-40 bg-gradient-to-r from-emerald-600/30 via-cyan-600/20 to-purple-600/30 relative">
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(16,185,129,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(16,185,129,0.1)_1px,transparent_1px)] bg-[size:40px_40px]" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0c0c0e] to-transparent" />
+          {/* Decorative elements */}
+          <div className="absolute top-4 right-4 w-20 h-20 bg-emerald-500/20 rounded-full blur-2xl" />
+          <div className="absolute bottom-4 left-1/4 w-32 h-32 bg-cyan-500/10 rounded-full blur-3xl" />
         </div>
-        <div className={`px-4 py-2 rounded-full border text-xs font-mono uppercase tracking-wider flex items-center gap-2 ${isVerified
-          ? 'border-emerald-500/30 text-emerald-400 bg-emerald-500/5 shadow-[0_0_10px_rgba(16,185,129,0.2)]'
-          : 'border-yellow-500/30 text-yellow-400 bg-yellow-500/5'
-          }`}>
-          <Shield className="w-3 h-3" />
-          {isVerified ? 'VERIFIED_OPERATOR' : 'PENDING_VERIFICATION'}
-        </div>
-      </div>
 
-      {/* Profile Card */}
-      <div className="relative group bg-[#0c0c0e] border border-white/10 hover:border-emerald-500/30 transition-all duration-300 p-8 overflow-hidden rounded-xl">
-        {/* Cyber Corners */}
-        <div className="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 border-white/10 group-hover:border-emerald-500 transition-colors" />
-        <div className="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 border-white/10 group-hover:border-emerald-500 transition-colors" />
-        <div className="absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 border-white/10 group-hover:border-emerald-500 transition-colors" />
-        <div className="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 border-white/10 group-hover:border-emerald-500 transition-colors" />
-
-        <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
-
-        <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
-          {/* Avatar */}
-          <div className="relative shrink-0">
-            <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-[#050505] border border-white/10 flex items-center justify-center text-4xl md:text-5xl font-mono font-bold text-emerald-500 shadow-[0_0_30px_rgba(16,185,129,0.15)] ring-1 ring-white/5">
-              {localUser.name.charAt(0).toUpperCase()}
-            </div>
-            {isVerified && (
-              <div className="absolute bottom-0 right-0 w-8 h-8 md:w-10 md:h-10 bg-[#0c0c0e] rounded-full flex items-center justify-center border border-emerald-500/50 shadow-lg">
-                <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-emerald-500" />
+        {/* Profile Card Overlay */}
+        <div className="relative -mt-16 mx-4 md:mx-6 bg-[#0c0c0e] border border-white/10 rounded-xl p-6 shadow-2xl">
+          <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
+            {/* Avatar Section */}
+            <div className="relative group -mt-16 md:-mt-12">
+              <div className="w-28 h-28 md:w-32 md:h-32 rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500 p-1 shadow-[0_0_40px_rgba(16,185,129,0.3)]">
+                <div className="w-full h-full rounded-full bg-[#0c0c0e] flex items-center justify-center text-5xl font-bold text-emerald-400 font-mono">
+                  {localUser.name.charAt(0).toUpperCase()}
+                </div>
               </div>
-            )}
-          </div>
+              {isVerified && (
+                <div className="absolute bottom-1 right-1 w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center border-4 border-[#0c0c0e] shadow-lg">
+                  <CheckCircle2 className="w-4 h-4 text-white" />
+                </div>
+              )}
+              {/* Upload hint on hover */}
+              <div className="absolute inset-0 rounded-full bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                <span className="text-xs text-white/80">Change Photo</span>
+              </div>
+            </div>
 
-          {/* Info */}
-          <div className="flex-1 text-center md:text-left space-y-4 w-full">
-            <div>
-              <h3 className="text-2xl md:text-4xl font-bold text-white mb-3 tracking-tight">{localUser.name}</h3>
-              <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
-                <span className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-gray-300 text-xs font-mono hover:bg-white/10 transition-colors cursor-default">
+            {/* User Info */}
+            <div className="flex-1 text-center md:text-left">
+              <div className="flex flex-col md:flex-row md:items-center gap-3 mb-3">
+                <h2 className="text-2xl md:text-3xl font-bold text-white tracking-tight">{localUser.name}</h2>
+                <div className="flex items-center justify-center md:justify-start gap-2">
+                  <TierBadge tier={tierConfig.tier} size="sm" showIcon={false} />
+                  <Badge className={`text-xs font-mono ${isVerified
+                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                    : 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30'
+                    }`}>
+                    {isVerified ? 'VERIFIED' : 'PENDING'}
+                  </Badge>
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 text-sm text-gray-400">
+                <span className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white/5 border border-white/5">
                   <User className="w-3 h-3 text-emerald-500" />
                   {localUser.email}
                 </span>
-                <span className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-gray-300 text-xs font-mono hover:bg-white/10 transition-colors cursor-default">
-                  <Shield className="w-3 h-3 text-emerald-500" />
-                  REF_ID: <span className="text-emerald-400">{localUser.wallet_ref}</span>
+                <span className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white/5 border border-white/5 font-mono text-xs">
+                  <Shield className="w-3 h-3 text-cyan-500" />
+                  REF: <span className="text-emerald-400">{localUser.wallet_ref}</span>
                 </span>
               </div>
+              {/* Member since */}
+              <p className="text-xs text-gray-500 mt-3 font-mono">
+                <Clock className="w-3 h-3 inline mr-1" />
+                Member since {new Date(localUser.createdAt || Date.now()).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+              </p>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="flex gap-2">
+              <Button
+                onClick={onOpenSettings}
+                variant="outline"
+                size="sm"
+                className="border-white/10 hover:bg-white/5"
+              >
+                <Settings className="w-4 h-4" />
+              </Button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Logout Section */}
-      <div className="bg-[#0c0c0e] border border-white/10 rounded-xl overflow-hidden relative">
-        <div className="bg-white/5 border-b border-white/5 p-6">
-          <h3 className="text-lg font-bold text-white flex items-center gap-2">
-            <LogOut className="w-4 h-4 text-red-500" />
-            Account Actions
-          </h3>
+      {/* Tab Navigation */}
+      <div className="flex gap-1 p-1 bg-[#0c0c0e] border border-white/10 rounded-xl overflow-x-auto">
+        {[
+          { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+          { id: 'achievements', label: 'Achievements', icon: Star },
+          { id: 'activity', label: 'Activity', icon: History },
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id as typeof activeTab)}
+            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg text-sm font-medium transition-all ${activeTab === tab.id
+              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+              : 'text-gray-400 hover:text-white hover:bg-white/5'
+              }`}
+          >
+            <tab.icon className="w-4 h-4" />
+            <span className="hidden sm:inline">{tab.label}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Tab Content */}
+      {activeTab === 'overview' && (
+        <div className="space-y-6 animate-in fade-in duration-300">
+          {/* Stats Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-[#0c0c0e] border border-white/10 rounded-xl p-4 hover:border-emerald-500/30 transition-all group">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-gray-400 text-xs">Status</span>
+                <ShieldCheck className="w-4 h-4 text-cyan-400" />
+              </div>
+              <div className="text-lg font-bold text-white capitalize">{localUser.kyc_status || 'pending'}</div>
+              <Badge
+                className={`mt-1 text-xs ${localUser.kyc_status === 'approved'
+                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                  : 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30'
+                  }`}
+              >
+                {localUser.kyc_status === 'approved' ? 'Active' : 'Pending'}
+              </Badge>
+            </div>
+
+            <div className="bg-[#0c0c0e] border border-white/10 rounded-xl p-4 hover:border-emerald-500/30 transition-all group">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-gray-400 text-xs">Commission</span>
+                <Percent className="w-4 h-4 text-emerald-400" />
+              </div>
+              <div className="text-2xl font-mono font-bold text-white">
+                {(tierConfig.commissionRate * 100).toFixed(0)}%
+              </div>
+              <span className="text-xs text-gray-500">per sale</span>
+            </div>
+
+            <div className="bg-[#0c0c0e] border border-white/10 rounded-xl p-4 hover:border-emerald-500/30 transition-all group">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-gray-400 text-xs">Rating</span>
+                <Star className="w-4 h-4 text-yellow-400" />
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xl font-bold text-white">{ratingValue.toFixed(1)}</span>
+                <span className="text-xs text-gray-500">/ 5.0</span>
+              </div>
+              <div className="flex gap-0.5 mt-1">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Star key={i} className={`w-3 h-3 ${i < filledStars ? 'text-yellow-400 fill-yellow-400' : 'text-gray-600'}`} />
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-[#0c0c0e] border border-white/10 rounded-xl p-4 hover:border-emerald-500/30 transition-all group">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-gray-400 text-xs">Tier Level</span>
+                <Shield className="w-4 h-4 text-emerald-400" />
+              </div>
+              <TierBadge tier={tierConfig.tier} size="md" showIcon={false} />
+            </div>
+          </div>
+
+          {/* Tier Progress */}
+          <Card className="bg-[#0c0c0e]/80 border border-white/10 overflow-hidden">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/30">
+                    <Briefcase className="w-5 h-5 text-emerald-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-white">Agent Program</h3>
+                    <p className="text-xs text-gray-400">Progress to {tierProgress.next} tier</p>
+                  </div>
+                </div>
+                <Badge variant="outline" className="border-emerald-500/50 text-emerald-300 bg-emerald-500/10">
+                  {tierProgress.current}% Complete
+                </Badge>
+              </div>
+              {/* Progress Bar */}
+              <div className="relative h-3 bg-white/5 rounded-full overflow-hidden mb-4">
+                <div
+                  className="absolute inset-y-0 left-0 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-full transition-all duration-500"
+                  style={{ width: `${tierProgress.current}%` }}
+                />
+                <div className="absolute inset-0 bg-[linear-gradient(90deg,transparent_0%,rgba(255,255,255,0.1)_50%,transparent_100%)] animate-pulse" />
+              </div>
+              {/* Tier Features */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowBenefits(!showBenefits)}
+                className="text-gray-400 hover:text-white"
+              >
+                {showBenefits ? 'Hide Features' : 'View Tier Features'}
+                <ChevronRight className={`w-4 h-4 ml-1 transition-transform ${showBenefits ? 'rotate-90' : ''}`} />
+              </Button>
+              {showBenefits && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                  {tierConfig.features.map((feature, index) => (
+                    <div key={index} className="flex items-start gap-2 p-3 rounded-lg bg-white/5 border border-white/5">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
+                      <span className="text-sm text-gray-300">{feature}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
-        <div className="p-6 md:p-8">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-lg bg-red-500/5 border border-red-500/20">
+      )}
+
+      {activeTab === 'achievements' && (
+        <div className="space-y-4 animate-in fade-in duration-300">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {achievements.map((achievement) => {
+              const IconComponent = achievement.icon
+              return (
+                <div
+                  key={achievement.id}
+                  className={`relative p-4 rounded-xl border transition-all ${achievement.unlocked
+                    ? 'bg-emerald-500/5 border-emerald-500/30 hover:border-emerald-500/50'
+                    : 'bg-white/5 border-white/10 opacity-50'
+                    }`}
+                >
+                  <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center mb-3">
+                    <IconComponent className={`w-5 h-5 ${achievement.unlocked ? 'text-emerald-400' : 'text-gray-500'}`} />
+                  </div>
+                  <h4 className={`font-semibold mb-1 ${achievement.unlocked ? 'text-white' : 'text-gray-400'}`}>
+                    {achievement.name}
+                  </h4>
+                  <p className="text-xs text-gray-500">{achievement.description}</p>
+                  {achievement.unlocked && (
+                    <div className="absolute top-2 right-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+          {/* Achievement Progress */}
+          <Card className="bg-[#0c0c0e] border border-white/10">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-gray-400 text-sm">Achievements Unlocked</span>
+                <span className="text-emerald-400 font-bold">
+                  {achievements.filter(a => a.unlocked).length} / {achievements.length}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {activeTab === 'activity' && (
+        <div className="space-y-3 animate-in fade-in duration-300">
+          {recentActivity.map((activity, index) => {
+            const ActivityIcon = activity.icon
+            return (
+              <div
+                key={activity.id}
+                className="flex items-start gap-4 p-4 bg-[#0c0c0e] border border-white/10 rounded-xl hover:border-white/20 transition-all"
+              >
+                <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center">
+                  <ActivityIcon className="w-5 h-5 text-emerald-400" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-white font-medium">{activity.message}</p>
+                  <p className="text-xs text-gray-500 mt-1">{activity.time}</p>
+                </div>
+                {index === 0 && (
+                  <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/30 text-xs">
+                    New
+                  </Badge>
+                )}
+              </div>
+            )
+          })}
+          <Button variant="outline" className="w-full border-white/10 text-gray-400 hover:text-white">
+            View All Activity
+          </Button>
+        </div>
+      )}
+
+      {/* Quick Actions */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="bg-[#0c0c0e] border border-white/10 rounded-xl p-4 hover:border-emerald-500/30 transition-all">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+              <Settings className="w-5 h-5 text-emerald-400" />
+            </div>
             <div>
-              <h4 className="text-white font-semibold mb-1">Sign Out</h4>
-              <p className="text-gray-400 text-sm">End your current session securely</p>
+              <h4 className="text-white font-semibold">Settings</h4>
+              <p className="text-xs text-gray-500">Preferences & security</p>
             </div>
-            <Button
-              onClick={onLogout}
-              variant="outline"
-              className="bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20 hover:text-red-300 hover:border-red-500/50"
-            >
-              <LogOut className="w-4 h-4 mr-2" />
-              Logout
-            </Button>
           </div>
+          <Button
+            onClick={onOpenSettings}
+            variant="outline"
+            size="sm"
+            className="w-full border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
+          >
+            Open Settings
+          </Button>
         </div>
-      </div>
 
-      {/* Account Settings */}
-      <div className="bg-[#0c0c0e] border border-white/10 rounded-xl overflow-hidden relative">
-        <div className="bg-white/5 border-b border-white/5 p-6">
-          <h3 className="text-lg font-bold text-white flex items-center gap-2">
-            <Zap className="w-4 h-4 text-emerald-500" />
-            Security Configuration
-          </h3>
-        </div>
-        <div className="p-6 md:p-8">
-          <AccountSettings
-            user={localUser as any}
-            onUpdate={refreshUser}
-          />
+        <div className="bg-[#0c0c0e] border border-red-500/20 rounded-xl p-4 hover:border-red-500/30 transition-all">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2 rounded-lg bg-red-500/10 border border-red-500/20">
+              <LogOut className="w-5 h-5 text-red-400" />
+            </div>
+            <div>
+              <h4 className="text-white font-semibold">Sign Out</h4>
+              <p className="text-xs text-gray-500">End current session</p>
+            </div>
+          </div>
+          <Button
+            onClick={onLogout}
+            variant="outline"
+            size="sm"
+            className="w-full border-red-500/30 text-red-400 hover:bg-red-500/10"
+          >
+            Logout
+          </Button>
         </div>
       </div>
     </div>
   )
 }
+
 
 function HistoryView({ user }: { user: UserType | null }) {
   const [transactions, setTransactions] = useState<any[]>([])

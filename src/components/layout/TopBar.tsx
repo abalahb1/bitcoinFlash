@@ -43,6 +43,7 @@ const viewTitles: Record<View, string> = {
   wallet: 'Wallet',
   payment: 'Checkout',
   account: 'Agent Profile',
+  settings: 'Settings',
   history: 'Transaction History',
   commissions: 'Commissions',
 }
@@ -161,11 +162,11 @@ export function TopBar({
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => setCurrentView('account')}>
                   <User className="w-4 h-4 mr-2" />
-                  Profile Settings
+                  Profile
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setCurrentView('settings')}>
                   <Settings className="w-4 h-4 mr-2" />
-                  Preferences
+                  Settings
                 </DropdownMenuItem>
                 <DropdownMenuItem>
                   <HelpCircle className="w-4 h-4 mr-2" />
@@ -210,12 +211,23 @@ export function TopBar({
                     variant="ghost"
                     className="w-full justify-start"
                     onClick={() => {
-                      setCurrentView('account')
+                      setCurrentView('settings')
                       setShowMobileMenu(false)
                     }}
                   >
                     <Settings className="w-4 h-4 mr-3" />
                     Settings
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start"
+                    onClick={() => {
+                      setCurrentView('account')
+                      setShowMobileMenu(false)
+                    }}
+                  >
+                    <User className="w-4 h-4 mr-3" />
+                    Profile
                   </Button>
                   <Button
                     variant="ghost"

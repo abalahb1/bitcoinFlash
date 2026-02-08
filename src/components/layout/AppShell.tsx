@@ -8,7 +8,7 @@ import { BottomNav } from './BottomNav'
 import { TopBar } from './TopBar'
 
 // Types
-export type View = 'landing' | 'wallet' | 'payment' | 'account' | 'history' | 'commissions'
+export type View = 'landing' | 'wallet' | 'payment' | 'account' | 'settings' | 'history' | 'commissions'
 
 interface AppShellContextType {
   sidebarCollapsed: boolean

@@ -6,8 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Badge } from '@/components/ui/badge'
-import { Upload, Loader2, ShieldCheck, Percent, Briefcase, FileCheck, Wallet, Camera, UserSquare2, CheckCircle2, Shield, Key, Eye, EyeOff, ChevronDown, ChevronUp } from 'lucide-react'
+import { Upload, Loader2, FileCheck, Wallet, Camera, UserSquare2, CheckCircle2, Shield, Key, Eye, EyeOff, ChevronDown, ChevronUp } from 'lucide-react'
 import { FaceCapture } from '@/components/FaceCapture'
 import { extractApiError } from '@/lib/error-utils'
 
@@ -25,11 +24,6 @@ type User = {
   account_tier?: string
 }
 
-const TIER_BENEFITS: Record<string, { commission: string, features: string[], color: string }> = {
-  'bronze': { commission: '5%', features: ['Standard Support', 'Basic Withdrawal Limit', 'Community Access'], color: 'text-emerald-300' },
-  'silver': { commission: '7%', features: ['Priority Support', 'Higher Withdrawal Limit', 'Exclusive Webinars'], color: 'text-cyan-300' },
-  'gold': { commission: '10%', features: ['Dedicated Manager', 'Instant Withdrawals', 'Beta Features Access'], color: 'text-emerald-200' },
-}
 
 export function AccountSettings({ user, onUpdate }: {
   user: User
@@ -56,11 +50,6 @@ export function AccountSettings({ user, onUpdate }: {
   const [changingPassword, setChangingPassword] = useState(false)
   const [passwordMessage, setPasswordMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null)
   const [showPasswordChange, setShowPasswordChange] = useState(false)
-
-  const [showBenefits, setShowBenefits] = useState(false)
-  const currentTier = user.account_tier?.toLowerCase() || 'bronze'
-  // Use a fallback for tierInfo to prevent crash if tier is invalid
-  const tierInfo = TIER_BENEFITS[currentTier] || TIER_BENEFITS['bronze']
 
   const showMessage = (msg: string) => {
     setMessage(msg)
@@ -204,117 +193,6 @@ export function AccountSettings({ user, onUpdate }: {
           <AlertDescription className="text-cyan-400 font-medium">{message}</AlertDescription>
         </Alert>
       )}
-
-      {/* Agent Dashboard Card - Modern Global Design */}
-      <Card className="bg-[#050510]/80 border border-white/10 overflow-hidden relative shadow-[0_0_25px_rgba(16,185,129,0.15)]">
-        <CardContent className="p-8 relative z-10">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/40 shadow-[0_0_25px_rgba(16,185,129,0.25)]">
-                <Briefcase className="w-8 h-8 text-emerald-300" />
-              </div>
-              <div>
-                <h3 className="text-2xl font-bold text-white tracking-tight">Agent Program</h3>
-                <p className="text-gray-400 text-sm">Earn commissions on every sale</p>
-              </div>
-            </div>
-            <Badge variant="outline" className="border-emerald-500/50 text-emerald-300 bg-emerald-500/10 px-4 py-2">
-              <Percent className="w-3 h-3 mr-1" />
-              10% Commission
-            </Badge>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-gray-400 text-sm">Verification Status</span>
-                <ShieldCheck className="w-4 h-4 text-cyan-300" />
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xl font-bold text-white capitalize">{user.kyc_status}</span>
-                <Badge
-                  variant={user.kyc_status === 'approved' ? 'default' : 'secondary'}
-                  className={user.kyc_status === 'approved' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30'}
-                >
-                  {user.kyc_status === 'approved' ? 'Active' : 'Pending'}
-                </Badge>
-              </div>
-            </div>
-
-            <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-gray-400 text-sm">Commission Rate</span>
-                <Percent className="w-4 h-4 text-emerald-300" />
-              </div>
-              <div className="text-3xl font-mono font-bold text-white">
-                10<span className="text-gray-300 text-xl">%</span>
-                <span className="text-gray-500 text-sm ml-2">per sale</span>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Tier Benefits Feature */}
-      <Card className="bg-[#050510]/80 border border-white/10 relative overflow-hidden">
-        <div className="absolute top-0 right-0 p-32 bg-gradient-to-br from-emerald-500/10 to-transparent rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-foreground flex items-center gap-2">
-                <div className="p-2 bg-secondary rounded-lg">
-                  <Shield className={`w-5 h-5 ${tierInfo.color}`} />
-                </div>
-                Current Tier: <span className={`capitalize ${tierInfo.color}`}>{currentTier}</span>
-              </CardTitle>
-              <CardDescription className="text-muted-foreground mt-1">
-                Your account privileges and commission rates
-              </CardDescription>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowBenefits(!showBenefits)}
-              className="border-white/10 hover:bg-white/5"
-            >
-              {showBenefits ? 'Hide Features' : 'View Tier Features'}
-            </Button>
-          </div>
-        </CardHeader>
-
-        {showBenefits && (
-          <CardContent className="animate-in fade-in slide-in-from-top-2 duration-300">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-2">
-              {Object.entries(TIER_BENEFITS).map(([tier, info]) => (
-                <div
-                  key={tier}
-                  className={`
-                        rounded-xl p-4 border transition-all duration-300
-                        ${tier === currentTier
-                      ? 'bg-white/10 border-white/20 shadow-lg scale-105 ring-1 ring-white/20'
-                      : 'bg-white/5 border-white/5 opacity-60 hover:opacity-100'
-                    }
-                      `}
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <span className={`font-bold capitalize ${info.color}`}>{tier}</span>
-                    {tier === currentTier && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
-                  </div>
-                  <div className="text-2xl font-bold text-emerald-300 mb-4">{info.commission} <span className="text-xs text-gray-500 font-normal">comm.</span></div>
-                  <ul className="space-y-2">
-                    {info.features.map((feature, i) => (
-                      <li key={i} className="text-xs text-gray-300 flex items-center gap-2">
-                        <div className="w-1 h-1 rounded-full bg-gray-500" />
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        )}
-      </Card>
 
       {/* Change Password Section */}
       <Card className="bg-card border-border shadow-sm">

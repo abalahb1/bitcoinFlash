@@ -5,7 +5,7 @@ export const TIERS = {
     name: 'Bronze',
     commissionRate: 0.05, // 5%
     color: '#CD7F32',
-    icon: '🥉',
+    iconName: 'medal' as const,
     features: [
       'Basic support',
       '5% commission on sales',
@@ -17,8 +17,8 @@ export const TIERS = {
     tier: 'silver' as const,
     name: 'Silver',
     commissionRate: 0.07, // 7%
-    color: '#C0C0C0',
-    icon: '🥈',
+    color: '#9CA3AF',
+    iconName: 'medal' as const,
     features: [
       'Priority support',
       '7% commission on sales',
@@ -31,8 +31,8 @@ export const TIERS = {
     tier: 'gold' as const,
     name: 'Gold',
     commissionRate: 0.10, // 10%
-    color: '#FFD700',
-    icon: '🥇',
+    color: '#F59E0B',
+    iconName: 'crown' as const,
     features: [
       'VIP support 24/7',
       '10% commission on sales',

@@ -9,6 +9,7 @@ import {
   BarChart2, 
   LogOut, 
   Bitcoin,
+  Settings,
   ChevronLeft,
   ChevronRight,
   Zap,
@@ -32,6 +33,7 @@ const navItems = [
   { id: 'landing', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'wallet', label: 'Wallet', icon: Wallet },
   { id: 'account', label: 'Agent Profile', icon: User },
+  { id: 'settings', label: 'Settings', icon: Settings },
   { id: 'history', label: 'Transactions', icon: History },
   { id: 'commissions', label: 'Commissions', icon: BarChart2 },
 ]
