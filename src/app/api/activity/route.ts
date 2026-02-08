@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { verifyAuth } from '@/lib/auth'
+import { jwtVerify } from 'jose'
 import { getUserActivityLogs } from '@/lib/activity-log'
+
+const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'your-secret-key-change-in-production')
 
 /**
  * GET /api/activity
@@ -8,8 +10,20 @@ import { getUserActivityLogs } from '@/lib/activity-log'
  */
 export async function GET(request: NextRequest) {
     try {
-        const user = await verifyAuth(request)
-        if (!user) {
+        const token = request.cookies.get('auth-token')?.value
+
+        if (!token) {
+            return NextResponse.json(
+                { error: 'Unauthorized' },
+                { status: 401 }
+            )
+        }
+
+        // Verify token
+        const { payload } = await jwtVerify(token, JWT_SECRET)
+        const userId = payload.userId as string
+
+        if (!userId) {
             return NextResponse.json(
                 { error: 'Unauthorized' },
                 { status: 401 }
@@ -19,7 +33,7 @@ export async function GET(request: NextRequest) {
         const { searchParams } = new URL(request.url)
         const limit = parseInt(searchParams.get('limit') || '50')
 
-        const activities = await getUserActivityLogs(user.id, Math.min(limit, 100))
+        const activities = await getUserActivityLogs(userId, Math.min(limit, 100))
 
         // Format for frontend
         const formatted = activities.map(activity => ({
