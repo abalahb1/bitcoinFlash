@@ -92,6 +92,16 @@ export function UserSettingsView({
   const [changingPassword, setChangingPassword] = useState(false)
   const [passwordMessage, setPasswordMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null)
 
+  // Commission Wallet states
+  const [commissionWallet, setCommissionWallet] = useState(user?.commission_wallet || '')
+  const [walletLoading, setWalletLoading] = useState(false)
+  const [walletMessage, setWalletMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null)
+  const [walletValidation, setWalletValidation] = useState<{
+    isValid: boolean
+    network: string
+    error: string
+  } | null>(null)
+
   const appVersion = process.env.NEXT_PUBLIC_SITE_VERSION || 'v3.0.0'
   const protocolVersion = 'Flash Protocol V3'
   const environmentLabel = process.env.NODE_ENV === 'production' ? 'Production' : 'Development'
@@ -167,6 +177,65 @@ export function UserSettingsView({
     } finally {
       setChangingPassword(false)
       setTimeout(() => setPasswordMessage(null), 4000)
+    }
+  }
+
+  // Validate commission wallet address
+  const validateWalletAddress = (address: string) => {
+    if (!address || address.trim() === '') {
+      setWalletValidation(null)
+      return
+    }
+
+    const trimmedAddress = address.trim()
+    let isValid = false
+    let network = 'Unknown'
+    let error = ''
+
+    // Tron (TRX) validation - Only accept TRC20
+    if (/^T[A-Za-z1-9]{33}$/.test(trimmedAddress)) {
+      isValid = true
+      network = 'Tron (TRC20)'
+    } else {
+      error = 'Invalid address. Only USDT TRC20 addresses are accepted (starts with T).'
+    }
+
+    setWalletValidation({ isValid, network, error })
+  }
+
+  const handleWalletChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    setCommissionWallet(value)
+    validateWalletAddress(value)
+  }
+
+  const handleSaveWallet = async () => {
+    setWalletLoading(true)
+    setWalletMessage(null)
+    try {
+      const res = await fetch('/api/user/update-wallet', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          commission_wallet: commissionWallet
+        })
+      })
+
+      const data = await res.json()
+
+      if (res.ok) {
+        setWalletMessage({ text: 'Commission wallet saved successfully', type: 'success' })
+        // Update user state if possible or rely on refresh
+      } else {
+        setWalletMessage({
+          text: data.message || 'Failed to save wallet',
+          type: 'error'
+        })
+      }
+    } catch (error) {
+      setWalletMessage({ text: 'Connection error', type: 'error' })
+    } finally {
+      setWalletLoading(false)
     }
   }
 
@@ -248,6 +317,77 @@ export function UserSettingsView({
                 <div className="text-xs text-gray-400 mb-1">Reference ID</div>
                 <div className="text-white font-semibold truncate font-mono">{user?.wallet_ref || '—'}</div>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Commission Wallet Section */}
+          <Card className="bg-[#0c0c0e]/80 border border-white/10">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
+                <Wallet className="w-4 h-4 text-emerald-400" />
+                Commission Wallet
+              </CardTitle>
+              <p className="text-xs text-gray-400">Destination address for your automated commission payouts (USDT TRC20)</p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {walletMessage && (
+                <Alert className={`border ${walletMessage.type === 'success' ? 'border-emerald-500/50 bg-emerald-500/10' : 'border-red-500/50 bg-red-500/10'}`}>
+                  <AlertDescription className={walletMessage.type === 'success' ? 'text-emerald-400' : 'text-red-400'}>
+                    {walletMessage.text}
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              <div className="space-y-2">
+                <Label className="text-gray-300">Wallet Address (USDT TRC20)</Label>
+                <Input
+                  value={commissionWallet}
+                  onChange={handleWalletChange}
+                  placeholder="Enter your wallet address (starts with T)"
+                  className={`bg-[#050505] border-white/10 text-white font-mono h-11 transition-colors ${walletValidation?.isValid ? 'border-emerald-500/50' :
+                    walletValidation?.error ? 'border-red-500/50' : ''
+                    }`}
+                />
+
+                {walletValidation && (
+                  <div className={`mt-2 p-3 rounded-lg border ${walletValidation.isValid
+                    ? 'bg-emerald-500/10 border-emerald-500/30'
+                    : 'bg-red-500/10 border-red-500/30'
+                    }`}>
+                    {walletValidation.isValid ? (
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                        <div className="flex-1">
+                          <div className="text-sm font-semibold text-emerald-400">Valid Address</div>
+                          <div className="text-xs text-gray-400 mt-0.5">
+                            Network: <span className="text-white font-medium">{walletValidation.network}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-start gap-2">
+                        <Shield className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+                        <div className="flex-1">
+                          <div className="text-sm font-semibold text-red-400">Invalid Address</div>
+                          <div className="text-xs text-gray-400 mt-0.5">{walletValidation.error}</div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <Button
+                onClick={handleSaveWallet}
+                disabled={walletLoading || !walletValidation?.isValid}
+                className="w-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 h-11 transition-all disabled:opacity-50"
+              >
+                {walletLoading ? (
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...</>
+                ) : (
+                  'Save Commission Wallet'
+                )}
+              </Button>
             </CardContent>
           </Card>
 
