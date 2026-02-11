@@ -355,6 +355,7 @@ function PaymentView({
     'Metamask',
     'FastPay',
     'Trustwallet',
+    'TronLink',
   ]
 
   return (
