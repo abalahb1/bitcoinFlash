@@ -351,13 +351,10 @@ function PaymentView({
     'Binance',
     'Coinbase',
     'OKX',
-    'Kraken',
-    'KuCoin',
     'Bybit',
-    'Bitfinex',
-    'Gate.io',
-    'HTX (Huobi)',
-    'Bitstamp',
+    'Metamask',
+    'FastPay',
+    'Trustwallet',
   ]
 
   return (
