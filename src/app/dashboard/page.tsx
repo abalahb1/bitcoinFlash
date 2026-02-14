@@ -405,7 +405,7 @@ function PaymentView({
             </div>
 
             <div className="grid grid-cols-2 gap-px bg-white/5 border border-white/5 rounded-md overflow-hidden">
-              {[{ label: 'Price', value: `$${price.toLocaleString()}` }, { label: 'USDT', value: `${pkg.usdt_amount} USDT` }, { label: 'Duration', value: `${pkg.duration} Days` }, { label: 'Transfers', value: `${pkg.transfers} / Day` }].map((item, idx) => (
+              {[{ label: 'Price', value: `$${price.toLocaleString()}` }, { label: 'USDT', value: `${pkg.usdt_amount} USDT` }, { label: 'Duration', value: `${pkg.duration} Days` }, { label: 'Number of Transfers', value: `${pkg.transfers}` }].map((item, idx) => (
                 <div key={idx} className="p-3 bg-[#050505] flex flex-col gap-1">
                   <span className="text-[10px] uppercase tracking-[0.2em] text-gray-500 font-mono">{item.label}</span>
                   <span className="text-white font-semibold">{item.value}</span>
@@ -737,7 +737,7 @@ function PackageCard({ pkg, onSelect }: {
           </div>
           <div className={`bg-[#0c0c0e] p-3 text-center transition-colors ${!isLocked && 'group-hover:bg-[#0f1512]'}`}>
             <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Rate</div>
-            <div className="text-sm font-mono text-white">{pkg.transfers}/Day</div>
+            <div className="text-sm font-mono text-white">{pkg.transfers}</div>
           </div>
           <div className={`bg-[#0c0c0e] p-3 text-center col-span-2 border-t border-white/5 transition-colors ${!isLocked && 'group-hover:bg-[#0f1512]'}`}>
             <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Unit Cost</div>
